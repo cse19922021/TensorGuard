@@ -2,6 +2,7 @@ import json
 import re
 import os
 import re
+import subprocess
 import requests
 import random
 import datetime
@@ -9,13 +10,14 @@ import time
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 from csv import writer
+from pydriller import Repository
 
 # (0, nimashiri2012@gmail.com, 1, cse19922021@gmail.com, 2, nshiri@yorku.ca, 3, nshiri@cse.yorku.ca)
-tokens = {0: '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', 1: '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',
-          2: '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', 3: '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'}
+tokens = {0: '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', 1: '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',
+          2: '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', 3: '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'}
 
-tokens_status = {'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': True, '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': True,
-                 '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': True, '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': True}
+tokens_status = {'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': True, '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': True,
+                 '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': True, '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': True}
 
 
 def decompose_code_linens(splitted_lines):
@@ -129,10 +131,6 @@ def main():
             commit_base_str = "https://api.github.com/repos/pytorch/pytorch"
             branchLink = f"{commit_base_str}/commits/{sha_str}"
             commit_flag = True
-        elif 'pull' in item:
-            pull_base_str = "https://api.github.com/repos/pytorch/pytorch"
-            branchLink = f"{pull_base_str}/pulls/{sha_str}"
-            pull_flag = True
         else:
             issue_base_str = "https://api.github.com/repos/pytorch/pytorch"
             branchLink = f"{issue_base_str}/issues/{sha_str}"
@@ -181,19 +179,19 @@ def main():
             if re.findall(r'Bug((.|\n)*?)To Reproduce', data_['body']):
                 issue_description = re.findall(
                     r'Bug((.|\n)*?)To Reproduce', data_['body'])[0][0]
-                
+
             if re.findall(r'Describe the bug((.|\n)*?)code', data_['body']):
                 issue_description = re.findall(
                     r'Describe the bug((.|\n)*?)code', data_['body'])[0][0]
-                            
+
             if re.findall(r'Describe the bug((.|\n)*?)Code example', data_['body']):
                 issue_description = re.findall(
                     r'Describe the bug((.|\n)*?)Code example', data_['body'])[0][0]
-                
+
             if re.findall(r'Problem((.|\n)*?)torch 1.11 and before', data_['body']):
                 issue_description = re.findall(
                     r'Problem((.|\n)*?)torch 1.11 and before', data_['body'])[0][0]
-                
+
             if re.findall(r'Describe the bug((.|\n)*?)Which results in:', data_['body']):
                 issue_description = re.findall(
                     r'Describe the bug((.|\n)*?)Which results in:', data_['body'])[0][0]
@@ -209,7 +207,7 @@ def main():
             if re.findall(r'Bug((.|\n)*?)Expected behavior', data_['body']):
                 issue_description = re.findall(
                     r'Bug((.|\n)*?)Expected behavior', data_['body'])[0][0]
-                
+
             if re.findall(r'Describe the bug((.|\n)*?)Example to reproduce', data_['body']):
                 issue_description = re.findall(
                     r'Describe the bug((.|\n)*?)Example to reproduce', data_['body'])[0][0]
@@ -221,7 +219,7 @@ def main():
             if re.findall(r'description((.|\n)*)', data_['body']):
                 issue_description = re.findall(
                     r'description((.|\n)*)', data_['body'])[0][0]
-                
+
             if re.findall(r'Segmentation fault in the CPU 2D kernel((.|\n)*?)The CUDA kernels \(both 2D and 3D\)', data_['body']):
                 issue_code = re.findall(
                     r'Segmentation fault in the CPU 2D kernel((.|\n)*?)The CUDA kernels \(both 2D and 3D\)', data_['body'])[0][0]
@@ -237,10 +235,10 @@ def main():
             if re.findall(r'To Reproduce((.|\n)*?)Expected behavior', data_['body']):
                 issue_code = re.findall(
                     r'To Reproduce((.|\n)*?)Expected behavior', data_['body'])[0][0]
-                
+
             if re.findall(r'Example to reproduce((.|\n)*?)Result', data_['body']):
                 issue_code = re.findall(
-                    r'Example to reproduce((.|\n)*?)Result', data_['body']))[0][0]
+                    r'Example to reproduce((.|\n)*?)Result', data_['body'])[0][0]
 
             if re.findall(r'To Reproduce((.|\n)*?)Output', data_['body']):
                 issue_code = re.findall(
@@ -249,11 +247,11 @@ def main():
             if re.findall(r'To Reproduce((.|\n)*?)Error:', data_['body']):
                 issue_code = re.findall(
                     r'To Reproduce((.|\n)*?)Error:', data_['body'])[0][0]
-                
+
             if re.findall(r'torch 1.11 and before((.|\n)*?)torch 1.12:', data_['body']):
                 issue_code = re.findall(
                     r'torch 1.11 and before((.|\n)*?)torch 1.12:', data_['body'])[0][0]
-                
+
             if re.findall(r'Minimal example((.|\n)*?)leads to the following CLI output under torch 1.11.0, tested on two different systems:', data_['body']):
                 issue_code = re.findall(
                     r'Minimal example((.|\n)*?)leads to the following CLI output under torch 1.11.0, tested on two different systems:', data_['body'])[0][0]
@@ -261,11 +259,11 @@ def main():
             if re.findall(r'Describe the bug((.|\n)*?)Versions', data_['body']):
                 issue_code = re.findall(
                     r'Describe the bug((.|\n)*?)Versions', data_['body'])[0][0]
-                
+
             if re.findall(r'Code((.|\n)*?)output', data_['body']):
                 issue_code = re.findall(
                     r'Code((.|\n)*?)output', data_['body'])[0][0]
-                
+
             if re.findall(r'Code example((.|\n)*?)By using this script,', data_['body']):
                 issue_code = re.findall(
                     r'Code example((.|\n)*?)By using this script,', data_['body'])[0][0]
@@ -278,8 +276,28 @@ def main():
                 issue_code = re.findall(
                     r'To Reproduce((.|\n)*?)Additional context', data_['body'])[0][0]
 
+            data = {'Bug description': commit.msg,
+                    'Sample Code': issue_code,
+                    'Bug fix': changes}
         else:
-            pass
+            if not os.path.exists('repos/pytorch'):
+                subprocess.call(
+                    f'git clone https://github.com/pytorch/pytorch.git repos/pytorch', shell=True)
+
+            changes = []
+            try:
+                for commit in Repository('repos/pytorch', single=sha_str).traverse_commits():
+                    for modification in commit.modified_files:
+                        changes.append(modification.diff)
+            except Exception as e:
+                print(e)
+
+            data = {'Issue title': issue_title_,
+                    'Bug description': issue_description,
+                    'Sample Code': changes,
+                    'Bug fix': ''}
+
+            return data
 
 
 if __name__ == "__main__":
