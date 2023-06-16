@@ -12,6 +12,6 @@ def get_token_count(string):
     return num_tokens
 
 
-prompt = ''' prompt '''
+prompt = ''' Generate a python test case that use torch.rand() API. '''
 
 print(get_token_count(prompt))
