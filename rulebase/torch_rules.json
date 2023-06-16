@@ -1,3756 +1,2928 @@
-{
+[
+  {
     "model": "torch",
     "function_name": "view_as_complex",
     "vulnerability_type": "Segmentation Fault",
     "bug_pattern": [
-        {
-            "condition": "zero-dimensional tensor is passed as input",
-            "input": "z = torch.tensor(2.0)\n torch.view_as_complex(z)",
-            "expected_output": "RuntimeError: Input tensor must have one or more dimensions"
-        }
+      {
+        "condition": "zero-dimensional tensor is passed as input",
+        "input": "z = torch.tensor(2.0)\n torch.view_as_complex(z)",
+        "expected_output": "RuntimeError: Input tensor must have one or more dimensions"
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/commits/b6b1c01adfdadf93a4a1d30c3661ff177412a876"
-},
-{
+  },
+  {
     "api": "torch.Generator",
     "input_type": {
-        "device": {
-            "type": "string",
-            "values": [
-                "cpu",
-                "cuda",
-                "mkldnn"
-            ],
-            "mutate_probability": 0.1
-        },
-        "dtype": {
-            "type": "string",
-            "values": [
-                "float32",
-                "int32",
-                "bool"
-            ],
-            "mutate_probability": 0.1
-        },
-        "layout": {
-            "type": "string",
-            "values": [
-                "strided",
-                "sparse_coo",
-                "mkldnn"
-            ],
-            "mutate_probability": 0.1
-        }
+      "device": {
+        "type": "string",
+        "values": ["cpu", "cuda", "mkldnn"],
+        "mutate_probability": 0.1
+      },
+      "dtype": {
+        "type": "string",
+        "values": ["float32", "int32", "bool"],
+        "mutate_probability": 0.1
+      },
+      "layout": {
+        "type": "string",
+        "values": ["strided", "sparse_coo", "mkldnn"],
+        "mutate_probability": 0.1
+      }
     },
     "output_type": {
-        "type": "null"
+      "type": "null"
     },
     "mutation_probability": 0.05,
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/42281"
-},
-{
+  },
+  {
     "api": "max_pool1d",
     "rule": {
-        "inputs": [
-            {
-                "name": "input",
-                "type": "Tensor",
-                "max_dims": 3,
-                "min_dims": 3,
-                "max_shape": [
-                    1024,
-                    1024,
-                    1024
-                ],
-                "min_shape": [
-                    1,
-                    1,
-                    1
-                ]
-            },
-            {
-                "name": "kernel_size",
-                "type": "list[int]",
-                "max_length": 101,
-                "min_length": 101
-            }
-        ],
-        "outputs": [
-            {
-                "name": "output",
-                "type": "Tensor"
-            }
-        ],
-        "exceptions": [
-            {
-                "type": "RuntimeError",
-                "message": "cuda runtime error (77) : an illegal memory access was encountered"
-            }
-        ],
-        "config": {
-            "device": "'cuda'"
+      "inputs": [
+        {
+          "name": "input",
+          "type": "Tensor",
+          "max_dims": 3,
+          "min_dims": 3,
+          "max_shape": [1024, 1024, 1024],
+          "min_shape": [1, 1, 1]
+        },
+        {
+          "name": "kernel_size",
+          "type": "list[int]",
+          "max_length": 101,
+          "min_length": 101
         }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "Tensor"
+        }
+      ],
+      "exceptions": [
+        {
+          "type": "RuntimeError",
+          "message": "cuda runtime error (77) : an illegal memory access was encountered"
+        }
+      ],
+      "config": {
+        "device": "'cuda'"
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/38764"
-},
-{
+  },
+  {
     "api": "torch.Generator",
     "input": [
-        {
-            "param": "device",
-            "type": "string",
-            "values": [
-                "cuda",
-                "cpu"
-            ],
-            "malformed_values": [
-                "cuda",
-                "cuda",
-                "cuda",
-                "cuda",
-                "cuda",
-                "cpu_cuda",
-                "cuda ",
-                "",
-                "cuda/"
-            ]
-        }
+      {
+        "param": "device",
+        "type": "string",
+        "values": ["cuda", "cpu"],
+        "malformed_values": [
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cpu_cuda",
+          "cuda ",
+          "",
+          "cuda/"
+        ]
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/327"
-},
-{
+  },
+  {
     "target": "GET_BLOCKS",
     "mutation": {
-        "type": "replace",
-        "token": "/CUDA_NUM_THREADS - 1/",
-        "replacement": "/CUDA_NUM_THREADS + 1/"
+      "type": "replace",
+      "token": "/CUDA_NUM_THREADS - 1/",
+      "replacement": "/CUDA_NUM_THREADS + 1/"
     },
     "description": "Replace the subtract operation with addition in calculating the number of blocks for threads.",
-    "input": [
-        "N"
-    ],
+    "input": ["N"],
     "vulnerability": "Integer overflow",
     "link": "https://api.github.com/repos/pytorch/pytorch/commits/c010ef7f0c6d837809a7e973048afac76373e3de"
-},
-{
+  },
+  {
     "API": "at::native::embedding",
     "description": "This rule generates a 0-D tensor as input for the 'weight' argument of at::native::embedding API, which should result in a RuntimeError.",
     "malformed_input": {
-        "weight": {
-            "shape": [],
-            "dtype": "float",
-            "value": "nan"
-        },
-        "indices": {
-            "shape": [
-                2,
-                2
-            ],
-            "dtype": "int",
-            "value": [
-                0,
-                1,
-                1,
-                0
-            ]
-        },
-        "padding_idx": -1,
-        "scale_grad_by_freq": false,
-        "sparse": false
+      "weight": {
+        "shape": [],
+        "dtype": "float",
+        "value": "nan"
+      },
+      "indices": {
+        "shape": [2, 2],
+        "dtype": "int",
+        "value": [0, 1, 1, 0]
+      },
+      "padding_idx": -1,
+      "scale_grad_by_freq": false,
+      "sparse": false
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/commits/42b4a7132e7c6f1df963b473d1583e4791fb1808"
-},
-{
+  },
+  {
     "API": "torch.distributed.broadcast",
     "input_generation_rule": {
-        "tensor_type": "torch.bool",
-        "tensor_shape": "random_uniform_int(0, 10)",
-        "src_rank": "random_uniform_int(0, num_ranks)",
-        "num_ranks": "fixed_value(2)",
-        "device": "fixed_value('cuda')"
+      "tensor_type": "torch.bool",
+      "tensor_shape": "random_uniform_int(0, 10)",
+      "src_rank": "random_uniform_int(0, num_ranks)",
+      "num_ranks": "fixed_value(2)",
+      "device": "fixed_value('cuda')"
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/24137"
-},
-{
+  },
+  {
     "api": "max_pool1d",
-    "input_type": [
-        "torch.Tensor"
-    ],
+    "input_type": ["torch.Tensor"],
     "input_constraints": {
-        "size": {
-            "min": "2",
-            "max": "1000"
-        },
-        "kernel_size": {
-            "min": "1001",
-            "max": "10000"
-        }
+      "size": {
+        "min": "2",
+        "max": "1000"
+      },
+      "kernel_size": {
+        "min": "1001",
+        "max": "10000"
+      }
     },
     "mutation": {
-        "method": "insertion",
-        "params": [
-            {
-                "type": "int",
-                "value": "1000"
-            }
-        ],
-        "target": {
-            "type": "int",
-            "value": "\\bsize\\b"
+      "method": "insertion",
+      "params": [
+        {
+          "type": "int",
+          "value": "1000"
         }
+      ],
+      "target": {
+        "type": "int",
+        "value": "\\bsize\\b"
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/38764"
-},
-{
+  },
+  {
     "api": "torch.remainder",
     "input_pattern": [
-        {
-            "dividend": {
-                "type": "float",
-                "min": 1000000000.0
-            },
-            "divisor": {
-                "type": "float",
-                "min": -3.14159265358979,
-                "max": 3.14159265358979
-            }
+      {
+        "dividend": {
+          "type": "float",
+          "min": 1000000000.0
+        },
+        "divisor": {
+          "type": "float",
+          "min": -3.14159265358979,
+          "max": 3.14159265358979
         }
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/commits/63b1ae69831cd21bc4d6059a5854bc1155a152c9"
-},
-{
+  },
+  {
     "API": "torch.gather",
     "vulnerable_parameters": [
-        {
-            "name": "index",
-            "type": "Tensor",
-            "description": "Tensor containing the indices to gather"
-        }
+      {
+        "name": "index",
+        "type": "Tensor",
+        "description": "Tensor containing the indices to gather"
+      }
     ],
     "malformed_input": {
-        "mutation_type": "Change size of index",
-        "mutation_location": "Random dimension in index tensor",
-        "mutation_value": "Random integer smaller than original size of the mutated dimension"
+      "mutation_type": "Change size of index",
+      "mutation_location": "Random dimension in index tensor",
+      "mutation_value": "Random integer smaller than original size of the mutated dimension"
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/commits/7aec364bdf9ed7297b77e8445a6a6d4116265dde"
-},
-{
+  },
+  {
     "API": "torch.zeros",
     "input_type": "tuple",
     "input_value": [
-        {
-            "type": "int",
-            "value": -1
-        }
+      {
+        "type": "int",
+        "value": -1
+      }
     ],
     "target": "cuda",
     "malformed_value": [
-        {
-            "type": "str",
-            "value": "invalid"
-        }
+      {
+        "type": "str",
+        "value": "invalid"
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/33300"
-},
-{
+  },
+  {
     "name": "Single element array indexing causes segfault",
     "target_api": "torch.FloatTensor",
     "target_method": "__getitem__",
     "input_type": "array",
     "input_rule": {
-        "array_type": "float",
-        "shape": [
-            1,
-            135
-        ],
-        "values": [
-            {
-                "value": 0,
-                "probability": 1.0
-            }
-        ],
-        "mutations": [
-            {
-                "mutation_type": "single_element_array_indexing",
-                "probability": 1.0
-            }
-        ]
+      "array_type": "float",
+      "shape": [1, 135],
+      "values": [
+        {
+          "value": 0,
+          "probability": 1.0
+        }
+      ],
+      "mutations": [
+        {
+          "mutation_type": "single_element_array_indexing",
+          "probability": 1.0
+        }
+      ]
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/33001"
-},
-{
+  },
+  {
     "API": "pdist",
     "malformed_input": [
-        {
-            "input": {
-                "size": [
-                    50000,
-                    128
-                ],
-                "data": "binary data"
-            },
-            "mutation": {
-                "type": "change_dtype",
-                "params": {
-                    "dtype": "int32"
-                }
-            },
-            "output": "RuntimeError: CUDA error: invalid configuration argument"
+      {
+        "input": {
+          "size": [50000, 128],
+          "data": "binary data"
         },
-        {
-            "input": {
-                "size": [
-                    1500,
-                    1
-                ],
-                "data": "binary data"
-            },
-            "mutation": {
-                "type": "change_size",
-                "params": {
-                    "size": [
-                        1449,
-                        1
-                    ]
-                }
-            },
-            "output": "RuntimeError: CUDA error: invalid configuration argument"
+        "mutation": {
+          "type": "change_dtype",
+          "params": {
+            "dtype": "int32"
+          }
         },
-        {
-            "input": {
-                "size": [
-                    4,
-                    5
-                ],
-                "data": "binary data"
-            },
-            "mutation": {
-                "type": "change_dim_order",
-                "params": {
-                    "from": "row_major",
-                    "to": "column_major"
-                }
-            },
-            "output": "RuntimeError: CUDA error: invalid configuration argument"
+        "output": "RuntimeError: CUDA error: invalid configuration argument"
+      },
+      {
+        "input": {
+          "size": [1500, 1],
+          "data": "binary data"
         },
-        {
-            "input": {
-                "size": [
-                    4,
-                    5
-                ],
-                "data": "binary data"
-            },
-            "mutation": {
-                "type": "change_data_value",
-                "params": {
-                    "value": "inf"
-                }
-            },
-            "output": "nan"
-        }
+        "mutation": {
+          "type": "change_size",
+          "params": {
+            "size": [1449, 1]
+          }
+        },
+        "output": "RuntimeError: CUDA error: invalid configuration argument"
+      },
+      {
+        "input": {
+          "size": [4, 5],
+          "data": "binary data"
+        },
+        "mutation": {
+          "type": "change_dim_order",
+          "params": {
+            "from": "row_major",
+            "to": "column_major"
+          }
+        },
+        "output": "RuntimeError: CUDA error: invalid configuration argument"
+      },
+      {
+        "input": {
+          "size": [4, 5],
+          "data": "binary data"
+        },
+        "mutation": {
+          "type": "change_data_value",
+          "params": {
+            "value": "inf"
+          }
+        },
+        "output": "nan"
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/commits/a64d0ffe81b250889a3e6670daa9c7d07d946e32"
-},
-{
+  },
+  {
     "API": "torch.utils.tensorboard.SummaryWriter.add_images",
     "input": [
-        {
-            "dtype": "uint8",
-            "shape": "[1, 3, 224, 224]",
-            "data": "random_bytes"
-        }
+      {
+        "dtype": "uint8",
+        "shape": "[1, 3, 224, 224]",
+        "data": "random_bytes"
+      }
     ],
     "mutation": {
-        "target": {
-            "path": "torch.utils.tensorboard.summary._calc_scale_factor",
-            "mutation_type": "bit_flip"
-        }
+      "target": {
+        "path": "torch.utils.tensorboard.summary._calc_scale_factor",
+        "mutation_type": "bit_flip"
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/commits/ddff014b79303e5239d5cb876ba97143cad6405a"
-},
-{
+  },
+  {
     "api": "torch.histc",
     "input_pattern": [
-        {
-            "type": "tensor",
-            "value": [
-                "inf"
-            ]
-        },
-        {
-            "type": "tensor",
-            "value": [
-                "inf",
-                1.0,
-                2.0,
-                "inf"
-            ]
-        },
-        {
-            "type": "tensor",
-            "value": [
-                "nan"
-            ]
-        },
-        {
-            "type": "tensor",
-            "value": [
-                1.0,
-                2.0,
-                3.0
-            ],
-            "min": 5,
-            "max": 1
-        }
+      {
+        "type": "tensor",
+        "value": ["inf"]
+      },
+      {
+        "type": "tensor",
+        "value": ["inf", 1.0, 2.0, "inf"]
+      },
+      {
+        "type": "tensor",
+        "value": ["nan"]
+      },
+      {
+        "type": "tensor",
+        "value": [1.0, 2.0, 3.0],
+        "min": 5,
+        "max": 1
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/commits/136bb07a93b779acbc84ff341bc397551a8cfcc2"
-},
-{
+  },
+  {
     "API": "getBin",
     "parameters": [
-        {
-            "name": "bVal",
-            "type": "input_t"
-        },
-        {
-            "name": "minvalue",
-            "type": "input_t"
-        },
-        {
-            "name": "maxvalue",
-            "type": "input_t"
-        },
-        {
-            "name": "nbins",
-            "type": "int64_t",
-            "max_value": "9223372036854775807"
-        }
+      {
+        "name": "bVal",
+        "type": "input_t"
+      },
+      {
+        "name": "minvalue",
+        "type": "input_t"
+      },
+      {
+        "name": "maxvalue",
+        "type": "input_t"
+      },
+      {
+        "name": "nbins",
+        "type": "int64_t",
+        "max_value": "9223372036854775807"
+      }
     ],
     "malformed_input": {
-        "input": [
-            {
-                "name": "bVal",
-                "type": "input_t",
-                "value": "10000000000000000000000000000000000000"
-            },
-            {
-                "name": "minvalue",
-                "type": "input_t",
-                "value": "0"
-            },
-            {
-                "name": "maxvalue",
-                "type": "input_t",
-                "value": "10000000000000000000000000000000000000"
-            },
-            {
-                "name": "nbins",
-                "type": "int64_t",
-                "value": "9223372036854775807"
-            }
-        ],
-        "description": "Input values of bVal, minvalue, maxvalue and nbins are set to extreme values causing int64 overflow during multiplication"
+      "input": [
+        {
+          "name": "bVal",
+          "type": "input_t",
+          "value": "10000000000000000000000000000000000000"
+        },
+        {
+          "name": "minvalue",
+          "type": "input_t",
+          "value": "0"
+        },
+        {
+          "name": "maxvalue",
+          "type": "input_t",
+          "value": "10000000000000000000000000000000000000"
+        },
+        {
+          "name": "nbins",
+          "type": "int64_t",
+          "value": "9223372036854775807"
+        }
+      ],
+      "description": "Input values of bVal, minvalue, maxvalue and nbins are set to extreme values causing int64 overflow during multiplication"
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/commits/ec8e75ea92ae2b5ea73b4aeb3ec7cb39e9f95db9"
-},
-{
+  },
+  {
     "API": "torch.cat",
     "description": "Int overflow in `cat` when concatenating tensors larger than 2GB",
     "bug_pattern": [
-        {
-            "input": {
-                "size": [
-                    "int",
-                    ">0"
-                ],
-                "dtype": [
-                    "torch_datatype"
-                ],
-                "val": [
-                    "bytes",
-                    "size*dtype_size"
-                ],
-                "requires_grad": [
-                    "bool"
-                ]
-            },
-            "probability": "high"
+      {
+        "input": {
+          "size": ["int", ">0"],
+          "dtype": ["torch_datatype"],
+          "val": ["bytes", "size*dtype_size"],
+          "requires_grad": ["bool"]
         },
-        {
-            "input": {
-                "size": [
-                    "int",
-                    ">0"
-                ],
-                "dtype": [
-                    "torch_datatype"
-                ],
-                "val": [
-                    "bytes",
-                    "size*dtype_size"
-                ],
-                "requires_grad": [
-                    "bool"
-                ],
-                "device": [
-                    "torch_device"
-                ]
-            },
-            "probability": "low"
-        }
+        "probability": "high"
+      },
+      {
+        "input": {
+          "size": ["int", ">0"],
+          "dtype": ["torch_datatype"],
+          "val": ["bytes", "size*dtype_size"],
+          "requires_grad": ["bool"],
+          "device": ["torch_device"]
+        },
+        "probability": "low"
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/commits/74828be4a7d0d2dba3f0ec3f6e79265cdfae5329"
-},
-{
+  },
+  {
     "model": "torch.distributions.Binomial",
     "method": "log_prob",
-    "vulnerable_parameters": [
-        "logits"
-    ],
+    "vulnerable_parameters": ["logits"],
     "vulnerability": "potential overflow when logits is large and not clamped",
     "input": {
-        "logits": {
-            "type": "float",
-            "min": 1000,
-            "max": 9000
-        },
-        "value": {
-            "type": "float",
-            "min": 0,
-            "max": 1
-        }
+      "logits": {
+        "type": "float",
+        "min": 1000,
+        "max": 9000
+      },
+      "value": {
+        "type": "float",
+        "min": 0,
+        "max": 1
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/commits/071971476d7431a24e527bdc181981678055a95d"
-},
-{
+  },
+  {
     "api": "torch.isinf",
     "error": "RuntimeError: value cannot be converted to type int16_t without overflow: inf",
     "malformed_input": [
-        {
-            "tensor_type": [
-                "uint8",
-                "int8",
-                "int16",
-                "int32",
-                "int64"
-            ],
-            "tensor_value": [
-                "inf",
-                "-inf"
-            ],
-            "expected_output": "torch.zeros_like(tensor, dtype=torch.uint8)"
-        }
+      {
+        "tensor_type": ["uint8", "int8", "int16", "int32", "int64"],
+        "tensor_value": ["inf", "-inf"],
+        "expected_output": "torch.zeros_like(tensor, dtype=torch.uint8)"
+      }
     ],
     "fuzzing_strategy": "Random mutation of tensor values",
     "link": "https://api.github.com/repos/pytorch/pytorch/commits/d4712ee218cd6af3c2096ca7a76fef350173b703"
-},
-{
-    "input_size": [
-        50,
-        100
-    ],
-    "input_type": [
-        "torch.Tensor"
-    ],
+  },
+  {
+    "input_size": [50, 100],
+    "input_type": ["torch.Tensor"],
     "mutation": {
-        "type": "shuffle",
-        "params": {
-            "axis": 0,
-            "prob": 0.5
-        }
+      "type": "shuffle",
+      "params": {
+        "axis": 0,
+        "prob": 0.5
+      }
     },
     "preconditions": [
-        {
-            "type": "assertion",
-            "expr": "len(torch.unique(torch.sort(seq_lengths, descending=True)[1])) > 1"
-        }
+      {
+        "type": "assertion",
+        "expr": "len(torch.unique(torch.sort(seq_lengths, descending=True)[1])) > 1"
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/9264"
-},
-{
+  },
+  {
     "inputs": [
-        {
-            "name": "data",
+      {
+        "name": "data",
+        "type": "list",
+        "value": [
+          {
+            "name": "first_sequence",
             "type": "list",
             "value": [
-                {
-                    "name": "first_sequence",
-                    "type": "list",
-                    "value": [
-                        {
-                            "name": "tensor",
-                            "type": "object",
-                            "value": "torch.Tensor",
-                            "properties": {
-                                "shape": "tuple",
-                                "dtype": "torch.dtype",
-                                "min_value": "int",
-                                "max_value": "int",
-                                "max_byte_size": "int"
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "second_sequence",
-                    "type": "list",
-                    "value": [
-                        {
-                            "name": "tensor",
-                            "type": "object",
-                            "value": "torch.Tensor",
-                            "properties": {
-                                "shape": "tuple",
-                                "dtype": "torch.dtype",
-                                "min_value": "int",
-                                "max_value": "int",
-                                "max_byte_size": "int"
-                            }
-                        }
-                    ]
+              {
+                "name": "tensor",
+                "type": "object",
+                "value": "torch.Tensor",
+                "properties": {
+                  "shape": "tuple",
+                  "dtype": "torch.dtype",
+                  "min_value": "int",
+                  "max_value": "int",
+                  "max_byte_size": "int"
                 }
+              }
             ]
-        },
-        {
-            "name": "lengths",
+          },
+          {
+            "name": "second_sequence",
             "type": "list",
             "value": [
-                {
-                    "name": "length_first_sequence",
-                    "type": "int",
-                    "min_value": "0",
-                    "max_value": "100"
-                },
-                {
-                    "name": "length_second_sequence",
-                    "type": "int",
-                    "min_value": "0",
-                    "max_value": "100"
+              {
+                "name": "tensor",
+                "type": "object",
+                "value": "torch.Tensor",
+                "properties": {
+                  "shape": "tuple",
+                  "dtype": "torch.dtype",
+                  "min_value": "int",
+                  "max_value": "int",
+                  "max_byte_size": "int"
                 }
+              }
             ]
-        }
+          }
+        ]
+      },
+      {
+        "name": "lengths",
+        "type": "list",
+        "value": [
+          {
+            "name": "length_first_sequence",
+            "type": "int",
+            "min_value": "0",
+            "max_value": "100"
+          },
+          {
+            "name": "length_second_sequence",
+            "type": "int",
+            "min_value": "0",
+            "max_value": "100"
+          }
+        ]
+      }
     ],
     "output": "null",
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/3498"
-},
-{
+  },
+  {
     "target": "torch.special.round",
     "mutation": {
-        "inputs": [
-            {
-                "dtype": [
-                    "Short",
-                    "Char",
-                    "Int",
-                    "Long",
-                    "Half"
-                ],
-                "shape": [
-                    1
-                ],
-                "values": [
-                    2
-                ]
-            }
-        ]
+      "inputs": [
+        {
+          "dtype": ["Short", "Char", "Int", "Long", "Half"],
+          "shape": [1],
+          "values": [2]
+        }
+      ]
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/86326"
-},
-{
+  },
+  {
     "input_type": "tensor",
-    "data_type": [
-        "int16",
-        "int32"
-    ],
+    "data_type": ["int16", "int32"],
     "function_name": "torch.nn.functional.one_hot",
     "malformed_input": {
-        "values": [
-            "string",
-            "float",
-            "bool"
-        ],
-        "indices": [
-            2,
-            3,
-            -1,
-            500
-        ],
-        "depth": 0
+      "values": ["string", "float", "bool"],
+      "indices": [2, 3, -1, 500],
+      "depth": 0
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/86162"
-},
-{
+  },
+  {
     "api": "torch.remainder",
     "input": [
-        {
-            "dtype": "int32",
-            "value": "random"
-        },
-        {
-            "dtype": "int16",
-            "value": "random"
-        }
+      {
+        "dtype": "int32",
+        "value": "random"
+      },
+      {
+        "dtype": "int16",
+        "value": "random"
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/86074"
-},
-{
+  },
+  {
     "operation": "torch.mm",
     "input": {
-        "type": "tensor",
-        "shape": [
-            ">=2",
-            ">=2"
-        ],
-        "values": "random_float"
+      "type": "tensor",
+      "shape": [">=2", ">=2"],
+      "values": "random_float"
     },
     "output": {
-        "type": "tensor",
-        "shape": [
-            ">=2",
-            ">=2"
-        ],
-        "random": true
+      "type": "tensor",
+      "shape": [">=2", ">=2"],
+      "random": true
     },
     "args": {
-        "out": true
+      "out": true
     },
     "target_device": "cpu",
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/85852"
-},
-{
+  },
+  {
     "API": "torch.native_batch_norm",
     "input": {
-        "size": [
-            0,
-            0
-        ],
-        "max_value": 1e+300,
-        "min_value": -1e+300,
-        "dtype": "float64"
+      "size": [0, 0],
+      "max_value": 1e300,
+      "min_value": -1e300,
+      "dtype": "float64"
     },
     "weight": {
-        "size": [
-            14,
-            9,
-            12,
-            0,
-            6,
-            0,
-            15,
-            0,
-            0,
-            0
-        ],
-        "max_value": 1e+300,
-        "min_value": -1e+300,
-        "dtype": "float64"
+      "size": [14, 9, 12, 0, 6, 0, 15, 0, 0, 0],
+      "max_value": 1e300,
+      "min_value": -1e300,
+      "dtype": "float64"
     },
     "bias": {
-        "size": [
-            0
-        ],
-        "max_value": 1e+300,
-        "min_value": -1e+300,
-        "dtype": "float64"
+      "size": [0],
+      "max_value": 1e300,
+      "min_value": -1e300,
+      "dtype": "float64"
     },
     "running_mean": {
-        "size": [
-            1
-        ],
-        "max_value": 1e+300,
-        "min_value": -1e+300,
-        "dtype": "float64"
+      "size": [1],
+      "max_value": 1e300,
+      "min_value": -1e300,
+      "dtype": "float64"
     },
     "running_var": {
-        "size": [
-            1
-        ],
-        "max_value": 1e+300,
-        "min_value": -1e+300,
-        "dtype": "float64"
+      "size": [1],
+      "max_value": 1e300,
+      "min_value": -1e300,
+      "dtype": "float64"
     },
     "training": 2,
     "momentum": 1.5,
     "eps": -1,
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/85217"
-},
-{
+  },
+  {
     "api": "_mkldnn_transpose",
     "input_type": "tensor",
     "rules": [
-        {
-            "rule_type": "negative_number",
-            "parameter": "dim0"
-        },
-        {
-            "rule_type": "exceeding_range",
-            "parameter": "dim1",
-            "min": "total_tensor_dimensions + 1"
-        },
-        {
-            "rule_type": "positive_number",
-            "parameter": "dim1"
-        }
+      {
+        "rule_type": "negative_number",
+        "parameter": "dim0"
+      },
+      {
+        "rule_type": "exceeding_range",
+        "parameter": "dim1",
+        "min": "total_tensor_dimensions + 1"
+      },
+      {
+        "rule_type": "positive_number",
+        "parameter": "dim1"
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/85216"
-},
-{
+  },
+  {
     "API": "mkldnn_reorder_conv2d_weight/mkldnn_reorder_conv3d_weight",
     "inputs": [
-        {
-            "name": "self",
-            "type": "torch.Tensor",
-            "rules": [
-                {
-                    "rule": "full",
-                    "args": [
-                        3,
-                        3,
-                        1,
-                        1
-                    ],
-                    "kwargs": {
-                        "fill_value": 1,
-                        "dtype": "float32",
-                        "requires_grad": false
-                    }
-                },
-                {
-                    "rule": "full",
-                    "args": [
-                        32,
-                        3,
-                        3,
-                        3,
-                        3
-                    ],
-                    "kwargs": {
-                        "fill_value": 1,
-                        "dtype": "float32",
-                        "requires_grad": false
-                    }
-                }
-            ],
-            "mutate_rules": [
-                {
-                    "rule": "corrupt_byte",
-                    "args": [
-                        0,
-                        1,
-                        2,
-                        3,
-                        4,
-                        5,
-                        6,
-                        7,
-                        8,
-                        65533,
-                        65534,
-                        65535
-                    ]
-                },
-                {
-                    "rule": "corrupt_byte_chunk",
-                    "args": [
-                        0,
-                        65535,
-                        1,
-                        65534,
-                        2,
-                        65533,
-                        3,
-                        65532,
-                        4,
-                        65531,
-                        5,
-                        65530,
-                        6,
-                        65529
-                    ]
-                }
+      {
+        "name": "self",
+        "type": "torch.Tensor",
+        "rules": [
+          {
+            "rule": "full",
+            "args": [3, 3, 1, 1],
+            "kwargs": {
+              "fill_value": 1,
+              "dtype": "float32",
+              "requires_grad": false
+            }
+          },
+          {
+            "rule": "full",
+            "args": [32, 3, 3, 3, 3],
+            "kwargs": {
+              "fill_value": 1,
+              "dtype": "float32",
+              "requires_grad": false
+            }
+          }
+        ],
+        "mutate_rules": [
+          {
+            "rule": "corrupt_byte",
+            "args": [0, 1, 2, 3, 4, 5, 6, 7, 8, 65533, 65534, 65535]
+          },
+          {
+            "rule": "corrupt_byte_chunk",
+            "args": [
+              0, 65535, 1, 65534, 2, 65533, 3, 65532, 4, 65531, 5, 65530, 6,
+              65529
             ]
-        },
-        {
-            "name": "padding",
-            "type": "List[int]",
-            "rules": [
-                {
-                    "rule": "empty_list"
-                }
+          }
+        ]
+      },
+      {
+        "name": "padding",
+        "type": "List[int]",
+        "rules": [
+          {
+            "rule": "empty_list"
+          }
+        ]
+      },
+      {
+        "name": "stride",
+        "type": "List[int]",
+        "rules": [
+          {
+            "rule": "list_of",
+            "args": [
+              {
+                "rule": "int"
+              },
+              {
+                "rule": "int"
+              },
+              {
+                "rule": "int"
+              }
             ]
-        },
-        {
-            "name": "stride",
-            "type": "List[int]",
-            "rules": [
-                {
-                    "rule": "list_of",
-                    "args": [
-                        {
-                            "rule": "int"
-                        },
-                        {
-                            "rule": "int"
-                        },
-                        {
-                            "rule": "int"
-                        }
-                    ]
-                }
-            ],
-            "mutate_rules": [
-                {
-                    "rule": "corrupt_element",
-                    "args": [
-                        0,
-                        65533,
-                        65534,
-                        65535
-                    ]
-                },
-                {
-                    "rule": "corrupt_element_chunk",
-                    "args": [
-                        65535,
-                        65534,
-                        65533
-                    ]
-                }
+          }
+        ],
+        "mutate_rules": [
+          {
+            "rule": "corrupt_element",
+            "args": [0, 65533, 65534, 65535]
+          },
+          {
+            "rule": "corrupt_element_chunk",
+            "args": [65535, 65534, 65533]
+          }
+        ]
+      },
+      {
+        "name": "dilation",
+        "type": "List[int]",
+        "rules": [
+          {
+            "rule": "list_of",
+            "args": [
+              {
+                "rule": "int"
+              },
+              {
+                "rule": "int"
+              },
+              {
+                "rule": "int"
+              }
             ]
-        },
-        {
-            "name": "dilation",
-            "type": "List[int]",
-            "rules": [
-                {
-                    "rule": "list_of",
-                    "args": [
-                        {
-                            "rule": "int"
-                        },
-                        {
-                            "rule": "int"
-                        },
-                        {
-                            "rule": "int"
-                        }
-                    ]
-                }
-            ],
-            "mutate_rules": [
-                {
-                    "rule": "change_sign"
-                },
-                {
-                    "rule": "corrupt_element_chunk",
-                    "args": [
-                        65535,
-                        65534,
-                        65533
-                    ]
-                }
-            ]
-        },
-        {
-            "name": "groups",
-            "type": "int",
-            "rules": [
-                {
-                    "rule": "const",
-                    "args": [
-                        0
-                    ]
-                }
-            ]
-        }
+          }
+        ],
+        "mutate_rules": [
+          {
+            "rule": "change_sign"
+          },
+          {
+            "rule": "corrupt_element_chunk",
+            "args": [65535, 65534, 65533]
+          }
+        ]
+      },
+      {
+        "name": "groups",
+        "type": "int",
+        "rules": [
+          {
+            "rule": "const",
+            "args": [0]
+          }
+        ]
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/85214"
-},
-{
+  },
+  {
     "input_type": "torch.nn.functional.embedding_bag",
     "malformed_input": [
-        {
-            "inputs": [
-                {
-                    "shape": [
-                        0,
-                        0,
-                        0,
-                        0,
-                        0
-                    ],
-                    "dtype": "float32"
-                },
-                {
-                    "shape": [
-                        0,
-                        0,
-                        0,
-                        0,
-                        0
-                    ],
-                    "dtype": "int64"
-                },
-                {
-                    "shape": [
-                        0,
-                        0,
-                        0,
-                        0,
-                        0
-                    ],
-                    "dtype": "int64"
-                },
-                true,
-                0,
-                true,
-                {
-                    "shape": [
-                        0
-                    ],
-                    "dtype": "int64"
-                },
-                true
-            ],
-            "expected_output": "segmentation fault"
-        },
-        {
-            "inputs": [
-                {
-                    "shape": [
-                        0,
-                        0,
-                        0,
-                        0,
-                        0
-                    ],
-                    "dtype": "float32"
-                },
-                {
-                    "shape": [
-                        0,
-                        0,
-                        0,
-                        0,
-                        0
-                    ],
-                    "dtype": "int64"
-                },
-                {
-                    "shape": [
-                        0,
-                        0,
-                        0,
-                        0,
-                        0
-                    ],
-                    "dtype": "int64"
-                },
-                true,
-                0,
-                true,
-                {
-                    "shape": [
-                        0
-                    ],
-                    "dtype": "int64"
-                },
-                true,
-                "string"
-            ],
-            "expected_output": "invalid argument for '_embedding_bag': string"
-        },
-        {
-            "inputs": [
-                {
-                    "shape": [
-                        2,
-                        0,
-                        0,
-                        6,
-                        6
-                    ],
-                    "dtype": "float64"
-                },
-                {
-                    "shape": [
-                        2,
-                        0,
-                        0,
-                        6,
-                        6
-                    ],
-                    "dtype": "int32"
-                },
-                {
-                    "shape": [
-                        2,
-                        0,
-                        0,
-                        6,
-                        6
-                    ],
-                    "dtype": "int32"
-                },
-                true,
-                0,
-                false,
-                {
-                    "shape": [
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1
-                    ],
-                    "dtype": "float32"
-                },
-                false,
-                1
-            ],
-            "expected_output": "segmentation fault"
-        }
+      {
+        "inputs": [
+          {
+            "shape": [0, 0, 0, 0, 0],
+            "dtype": "float32"
+          },
+          {
+            "shape": [0, 0, 0, 0, 0],
+            "dtype": "int64"
+          },
+          {
+            "shape": [0, 0, 0, 0, 0],
+            "dtype": "int64"
+          },
+          true,
+          0,
+          true,
+          {
+            "shape": [0],
+            "dtype": "int64"
+          },
+          true
+        ],
+        "expected_output": "segmentation fault"
+      },
+      {
+        "inputs": [
+          {
+            "shape": [0, 0, 0, 0, 0],
+            "dtype": "float32"
+          },
+          {
+            "shape": [0, 0, 0, 0, 0],
+            "dtype": "int64"
+          },
+          {
+            "shape": [0, 0, 0, 0, 0],
+            "dtype": "int64"
+          },
+          true,
+          0,
+          true,
+          {
+            "shape": [0],
+            "dtype": "int64"
+          },
+          true,
+          "string"
+        ],
+        "expected_output": "invalid argument for '_embedding_bag': string"
+      },
+      {
+        "inputs": [
+          {
+            "shape": [2, 0, 0, 6, 6],
+            "dtype": "float64"
+          },
+          {
+            "shape": [2, 0, 0, 6, 6],
+            "dtype": "int32"
+          },
+          {
+            "shape": [2, 0, 0, 6, 6],
+            "dtype": "int32"
+          },
+          true,
+          0,
+          false,
+          {
+            "shape": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            "dtype": "float32"
+          },
+          false,
+          1
+        ],
+        "expected_output": "segmentation fault"
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/85213"
-},
-{
+  },
+  {
     "API": "torch.jit.wait",
     "description": "Passing None as the input to torch.jit.wait() causes a segmentation fault",
     "inputs": [
-        {
-            "input_type": "NoneType",
-            "input_value": null,
-            "probability": 1
-        }
+      {
+        "input_type": "NoneType",
+        "input_value": null,
+        "probability": 1
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/85072"
-},
-{
+  },
+  {
     "API": "torch.futures.collect_all",
     "input_generation_rule": {
-        "futures": {
-            "type": "list",
-            "min_length": 1,
-            "max_length": 10,
-            "content": {
-                "type": [
-                    "None",
-                    "float",
-                    "int",
-                    "str",
-                    "bool",
-                    "list",
-                    "tuple",
-                    "dict",
-                    "set",
-                    "torch.Tensor"
-                ]
-            }
+      "futures": {
+        "type": "list",
+        "min_length": 1,
+        "max_length": 10,
+        "content": {
+          "type": [
+            "None",
+            "float",
+            "int",
+            "str",
+            "bool",
+            "list",
+            "tuple",
+            "dict",
+            "set",
+            "torch.Tensor"
+          ]
         }
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/84990"
-},
-{
+  },
+  {
     "api": "torch.nn.functional.pad",
     "malformed_input": {
-        "arguments": {
-            "input": {
-                "type": "tensor",
-                "shape": [
-                    4,
-                    4
-                ],
-                "values": [
-                    [
-                        1,
-                        2,
-                        3,
-                        4
-                    ],
-                    [
-                        5,
-                        6,
-                        7,
-                        8
-                    ],
-                    [
-                        9,
-                        10,
-                        11,
-                        12
-                    ],
-                    [
-                        13,
-                        14,
-                        15,
-                        16
-                    ]
-                ]
-            },
-            "pad": {
-                "type": [
-                    "string",
-                    "list"
-                ],
-                "values": [
-                    "bad_shape",
-                    [
-                        1,
-                        2,
-                        3
-                    ],
-                    [
-                        1,
-                        2
-                    ],
-                    "bad_value"
-                ]
-            },
-            "mode": {
-                "type": "string",
-                "values": [
-                    "reflect",
-                    "symmetric",
-                    "bad_mode"
-                ]
-            }
+      "arguments": {
+        "input": {
+          "type": "tensor",
+          "shape": [4, 4],
+          "values": [
+            [1, 2, 3, 4],
+            [5, 6, 7, 8],
+            [9, 10, 11, 12],
+            [13, 14, 15, 16]
+          ]
+        },
+        "pad": {
+          "type": ["string", "list"],
+          "values": ["bad_shape", [1, 2, 3], [1, 2], "bad_value"]
+        },
+        "mode": {
+          "type": "string",
+          "values": ["reflect", "symmetric", "bad_mode"]
         }
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/84979"
-},
-{
+  },
+  {
     "API": "torch.pinverse",
     "input_type": "tensor",
-    "shape": [
-        3,
-        3
-    ],
+    "shape": [3, 3],
     "values": [
-        [
-            {
-                "value": "nan",
-                "probability": 0.2
-            },
-            {
-                "value": "inf",
-                "probability": 0.2
-            },
-            {
-                "value": "-inf",
-                "probability": 0.2
-            },
-            {
-                "value": "",
-                "probability": 0.4
-            }
-        ],
-        [
-            {
-                "value": "nan",
-                "probability": 0.2
-            },
-            {
-                "value": "inf",
-                "probability": 0.2
-            },
-            {
-                "value": "-inf",
-                "probability": 0.2
-            },
-            {
-                "value": "",
-                "probability": 0.4
-            }
-        ],
-        [
-            {
-                "value": "nan",
-                "probability": 0.2
-            },
-            {
-                "value": "inf",
-                "probability": 0.2
-            },
-            {
-                "value": "-inf",
-                "probability": 0.2
-            },
-            {
-                "value": "",
-                "probability": 0.4
-            }
-        ]
+      [
+        {
+          "value": "nan",
+          "probability": 0.2
+        },
+        {
+          "value": "inf",
+          "probability": 0.2
+        },
+        {
+          "value": "-inf",
+          "probability": 0.2
+        },
+        {
+          "value": "",
+          "probability": 0.4
+        }
+      ],
+      [
+        {
+          "value": "nan",
+          "probability": 0.2
+        },
+        {
+          "value": "inf",
+          "probability": 0.2
+        },
+        {
+          "value": "-inf",
+          "probability": 0.2
+        },
+        {
+          "value": "",
+          "probability": 0.4
+        }
+      ],
+      [
+        {
+          "value": "nan",
+          "probability": 0.2
+        },
+        {
+          "value": "inf",
+          "probability": 0.2
+        },
+        {
+          "value": "-inf",
+          "probability": 0.2
+        },
+        {
+          "value": "",
+          "probability": 0.4
+        }
+      ]
     ],
     "noise": {
-        "missing_values": 0.2,
-        "wrong_datatype": 0.2,
-        "outliers": 0.2,
-        "random_numbers": 0.4
+      "missing_values": 0.2,
+      "wrong_datatype": 0.2,
+      "outliers": 0.2,
+      "random_numbers": 0.4
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/83494"
-},
-{
+  },
+  {
     "API": "torch.nn.Conv2d",
     "description": "segfault when passing dtype='float16' for input tensor",
     "rule": {
-        "input": {
-            "name": "arg_1",
-            "type": "torch.Tensor",
-            "shape": [
-                128,
-                512,
-                16,
-                16
-            ],
-            "dtype": "float16"
-        },
-        "output": {
-            "type": "torch.Tensor"
-        },
-        "args": {
-            "in_channels": 512,
-            "out_channels": 2048,
-            "kernel_size": 1
-        }
+      "input": {
+        "name": "arg_1",
+        "type": "torch.Tensor",
+        "shape": [128, 512, 16, 16],
+        "dtype": "float16"
+      },
+      "output": {
+        "type": "torch.Tensor"
+      },
+      "args": {
+        "in_channels": 512,
+        "out_channels": 2048,
+        "kernel_size": 1
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/83328"
-},
-{
+  },
+  {
     "method": "torch.nn.MaxUnpool2d",
     "input": [
-        {
-            "type": "int",
-            "name": "kernel_size",
-            "min": "-100",
-            "max": "0",
-            "distribution": "uniform"
-        },
-        {
-            "type": "bool",
-            "name": "stride",
-            "values": [
-                false,
-                true
-            ],
-            "distribution": "random"
-        },
-        {
-            "type": "tensor",
-            "name": "input_tensor",
-            "dimension": 4,
-            "shape": [
-                1,
-                1,
-                "kernel_size",
-                "kernel_size"
-            ],
-            "dtype": "float32",
-            "distribution": "random"
-        },
-        {
-            "type": "tensor",
-            "name": "indices_tensor",
-            "dimension": 4,
-            "shape": [
-                1,
-                1,
-                "kernel_size",
-                "kernel_size"
-            ],
-            "dtype": "int64",
-            "min": "-1",
-            "max": "64",
-            "distribution": "uniform"
-        }
+      {
+        "type": "int",
+        "name": "kernel_size",
+        "min": "-100",
+        "max": "0",
+        "distribution": "uniform"
+      },
+      {
+        "type": "bool",
+        "name": "stride",
+        "values": [false, true],
+        "distribution": "random"
+      },
+      {
+        "type": "tensor",
+        "name": "input_tensor",
+        "dimension": 4,
+        "shape": [1, 1, "kernel_size", "kernel_size"],
+        "dtype": "float32",
+        "distribution": "random"
+      },
+      {
+        "type": "tensor",
+        "name": "indices_tensor",
+        "dimension": 4,
+        "shape": [1, 1, "kernel_size", "kernel_size"],
+        "dtype": "int64",
+        "min": "-1",
+        "max": "64",
+        "distribution": "uniform"
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/83229"
-},
-{
+  },
+  {
     "API": "torch.nn.InstanceNorm1d",
     "input_type": "Tensor",
-    "input_shape": [
-        ">= 0",
-        "> 0",
-        "> 0"
-    ],
+    "input_shape": [">= 0", "> 0", "> 0"],
     "input_values": [
-        {
-            "num_features": [
-                "<-sys.maxsize-1",
-                "str",
-                "list",
-                "tuple",
-                "set",
-                "dict",
-                "None"
-            ]
-        }
+      {
+        "num_features": [
+          "<-sys.maxsize-1",
+          "str",
+          "list",
+          "tuple",
+          "set",
+          "dict",
+          "None"
+        ]
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/83221"
-},
-{
+  },
+  {
     "input_type": "torch.nn.InstanceNorm1d",
     "input_value": {
-        "arg_1": "negative_integral/string/other_type_value",
-        "arg_2": "bool_value"
+      "arg_1": "negative_integral/string/other_type_value",
+      "arg_2": "bool_value"
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/83175"
-},
-{
+  },
+  {
     "input_type": "torch.Tensor",
     "input_rules": {
-        "shape": [
-            10
-        ],
-        "values": {
-            "min": -100,
-            "max": 100,
-            "count": 2,
-            "equal": true
-        },
-        "requires_grad_": true
+      "shape": [10],
+      "values": {
+        "min": -100,
+        "max": 100,
+        "count": 2,
+        "equal": true
+      },
+      "requires_grad_": true
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/82635"
-},
-{
+  },
+  {
     "target_api": "torch.matrix_exp",
     "malformed_input": {
-        "input_type": "torch.Tensor",
-        "mutation_type": "insertion",
-        "location": {
-            "function": "torch.randn",
-            "arg": "dtype"
-        },
-        "value": "torch.float32",
-        "mutation_details": "Insertion of an invalid dtype, like torch.bool, in the dtype argument of torch.randn to generate a tensor with NaN values."
+      "input_type": "torch.Tensor",
+      "mutation_type": "insertion",
+      "location": {
+        "function": "torch.randn",
+        "arg": "dtype"
+      },
+      "value": "torch.float32",
+      "mutation_details": "Insertion of an invalid dtype, like torch.bool, in the dtype argument of torch.randn to generate a tensor with NaN values."
     },
     "trigger": {
-        "input": "torch.randn(3, 3, dtype=torch.bool)",
-        "output": "NaN values in the input tensor and incorrect output when passed to torch.matrix_exp. "
+      "input": "torch.randn(3, 3, dtype=torch.bool)",
+      "output": "NaN values in the input tensor and incorrect output when passed to torch.matrix_exp. "
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/82282"
-},
-{
+  },
+  {
     "input_size": [
-        {
-            "Ih": "random_int(0, 100)",
-            "Iw": "random_int(0, 100)"
-        }
+      {
+        "Ih": "random_int(0, 100)",
+        "Iw": "random_int(0, 100)"
+      }
     ],
     "output_size": [
-        {
-            "Oh": "random_int(0, 100)",
-            "Ow": "random_int(0, 100)"
-        }
+      {
+        "Oh": "random_int(0, 100)",
+        "Ow": "random_int(0, 100)"
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/81409"
-},
-{
+  },
+  {
     "name": "torch_weight_norm_wrong_output",
     "description": "Generates inputs causing torch._weight_norm() API to return wrong output",
     "conditions": [
-        {
-            "function": "torch.Tensor",
-            "args": [
-                {
-                    "type": "list",
-                    "min_len": 1,
-                    "max_len": 10,
-                    "content": {
-                        "type": "list",
-                        "min_len": 1,
-                        "max_len": 10,
-                        "content": {
-                            "type": "float",
-                            "min": -1000,
-                            "max": 1000
-                        }
-                    }
-                }
-            ]
-        },
-        {
-            "function": "torch.Tensor",
-            "args": [
-                {
-                    "type": "list",
-                    "min_len": 1,
-                    "max_len": 10,
-                    "content": {
-                        "type": "list",
-                        "min_len": 1,
-                        "max_len": 10,
-                        "content": {
-                            "type": "float",
-                            "min": -1000,
-                            "max": 1000
-                        }
-                    }
-                }
-            ]
-        },
-        {
-            "function": "random.randint",
-            "args": [
-                0,
-                10
-            ]
-        }
+      {
+        "function": "torch.Tensor",
+        "args": [
+          {
+            "type": "list",
+            "min_len": 1,
+            "max_len": 10,
+            "content": {
+              "type": "list",
+              "min_len": 1,
+              "max_len": 10,
+              "content": {
+                "type": "float",
+                "min": -1000,
+                "max": 1000
+              }
+            }
+          }
+        ]
+      },
+      {
+        "function": "torch.Tensor",
+        "args": [
+          {
+            "type": "list",
+            "min_len": 1,
+            "max_len": 10,
+            "content": {
+              "type": "list",
+              "min_len": 1,
+              "max_len": 10,
+              "content": {
+                "type": "float",
+                "min": -1000,
+                "max": 1000
+              }
+            }
+          }
+        ]
+      },
+      {
+        "function": "random.randint",
+        "args": [0, 10]
+      }
     ],
     "code": "torch._weight_norm(args[0], args[1], dim=args[2])",
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/81195"
-},
-{
+  },
+  {
     "api": "torch.nn.functional.conv1d",
     "input": [
-        {
-            "name": "a",
-            "type": "tensor",
-            "shape": [
-                "batch_size",
-                "in_channels",
-                "in_length"
-            ],
-            "value": "(randn((batch_size, in_channels, in_length)) * 1e20).float()",
-            "description": "Input tensor a. Can have NaN values."
-        },
-        {
-            "name": "b",
-            "type": "tensor",
-            "shape": [
-                "out_channels",
-                "in_channels",
-                "kernel_length"
-            ],
-            "value": "randn((out_channels, in_channels, kernel_length)).float()",
-            "description": "Input tensor b."
-        },
-        {
-            "name": "bias",
-            "type": "tensor",
-            "shape": [
-                "out_channels"
-            ],
-            "value": "randn((out_channels,)).float()",
-            "description": "Optional bias tensor."
-        },
-        {
-            "name": "stride",
-            "type": "int",
-            "value": "1",
-            "description": "Stride of the convolution."
-        },
-        {
-            "name": "padding",
-            "type": "int",
-            "value": "0",
-            "description": "Zero-padding added to both sides of the input."
-        },
-        {
-            "name": "dilation",
-            "type": "int",
-            "value": "1",
-            "description": "Spacing between kernel elements."
-        },
-        {
-            "name": "groups",
-            "type": "int",
-            "value": "1",
-            "description": "Number of blocked connections from input channels to output channels."
-        }
+      {
+        "name": "a",
+        "type": "tensor",
+        "shape": ["batch_size", "in_channels", "in_length"],
+        "value": "(randn((batch_size, in_channels, in_length)) * 1e20).float()",
+        "description": "Input tensor a. Can have NaN values."
+      },
+      {
+        "name": "b",
+        "type": "tensor",
+        "shape": ["out_channels", "in_channels", "kernel_length"],
+        "value": "randn((out_channels, in_channels, kernel_length)).float()",
+        "description": "Input tensor b."
+      },
+      {
+        "name": "bias",
+        "type": "tensor",
+        "shape": ["out_channels"],
+        "value": "randn((out_channels,)).float()",
+        "description": "Optional bias tensor."
+      },
+      {
+        "name": "stride",
+        "type": "int",
+        "value": "1",
+        "description": "Stride of the convolution."
+      },
+      {
+        "name": "padding",
+        "type": "int",
+        "value": "0",
+        "description": "Zero-padding added to both sides of the input."
+      },
+      {
+        "name": "dilation",
+        "type": "int",
+        "value": "1",
+        "description": "Spacing between kernel elements."
+      },
+      {
+        "name": "groups",
+        "type": "int",
+        "value": "1",
+        "description": "Number of blocked connections from input channels to output channels."
+      }
     ],
     "output": {
-        "type": "tensor",
-        "shape": [
-            "batch_size",
-            "out_channels",
-            "out_length"
-        ],
-        "description": "Output tensor. Can have NaN values."
+      "type": "tensor",
+      "shape": ["batch_size", "out_channels", "out_length"],
+      "description": "Output tensor. Can have NaN values."
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/81185"
-},
-{
+  },
+  {
     "API": "torch.nn.functional.conv1d",
     "input": {
-        "a": {
-            "type": "torch.Tensor",
-            "shape": [
-                "batch_size",
-                "in_channels",
-                "length"
-            ],
-            "values": "random_normal"
-        },
-        "b": {
-            "type": "torch.Tensor",
-            "shape": [
-                "out_channels",
-                "in_channels",
-                "kernel_size"
-            ],
-            "values": "random_normal"
-        },
-        "stride": {
-            "type": "int",
-            "value": "random_choice([1,2])"
-        },
-        "padding": {
-            "type": "int",
-            "value": "random_choice([1,2])"
-        },
-        "dilation": {
-            "type": "int",
-            "value": "random_choice([1,2])"
-        },
-        "groups": {
-            "type": "int",
-            "value": "random_choice([1,2])"
-        }
+      "a": {
+        "type": "torch.Tensor",
+        "shape": ["batch_size", "in_channels", "length"],
+        "values": "random_normal"
+      },
+      "b": {
+        "type": "torch.Tensor",
+        "shape": ["out_channels", "in_channels", "kernel_size"],
+        "values": "random_normal"
+      },
+      "stride": {
+        "type": "int",
+        "value": "random_choice([1,2])"
+      },
+      "padding": {
+        "type": "int",
+        "value": "random_choice([1,2])"
+      },
+      "dilation": {
+        "type": "int",
+        "value": "random_choice([1,2])"
+      },
+      "groups": {
+        "type": "int",
+        "value": "random_choice([1,2])"
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/80946"
-},
-{
+  },
+  {
     "API": "torch.einsum",
     "input": {
-        "As": {
-            "type": "tensor",
-            "shape": [
-                null,
-                null,
-                null
-            ],
-            "dtype": "float32"
-        },
-        "Bs": {
-            "type": "tensor",
-            "shape": [
-                null,
-                null,
-                null
-            ],
-            "dtype": "float32"
-        },
-        "operation": {
-            "type": "string",
-            "value": "AABB,CDCD->DEEF"
-        }
+      "As": {
+        "type": "tensor",
+        "shape": [null, null, null],
+        "dtype": "float32"
+      },
+      "Bs": {
+        "type": "tensor",
+        "shape": [null, null, null],
+        "dtype": "float32"
+      },
+      "operation": {
+        "type": "string",
+        "value": "AABB,CDCD->DEEF"
+      }
     },
     "mutation": {
-        "type": "malformed",
-        "operation": {
-            "type": "string",
-            "value": "AABB,CDCD->DEE+"
-        }
+      "type": "malformed",
+      "operation": {
+        "type": "string",
+        "value": "AABB,CDCD->DEE+"
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/80805"
-},
-{
+  },
+  {
     "API": "torch.renorm",
     "rule": [
-        {
-            "input": {
-                "shape": [
-                    2,
-                    3
-                ],
-                "values": [
-                    [
-                        1.23,
-                        0.0,
-                        2.34
-                    ],
-                    [
-                        0.0,
-                        0.0,
-                        0.0
-                    ]
-                ]
-            },
-            "params": {
-                "p": 4,
-                "dim": 1,
-                "maxnorm": 0
-            }
+      {
+        "input": {
+          "shape": [2, 3],
+          "values": [
+            [1.23, 0.0, 2.34],
+            [0.0, 0.0, 0.0]
+          ]
+        },
+        "params": {
+          "p": 4,
+          "dim": 1,
+          "maxnorm": 0
         }
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/80804"
-},
-{
+  },
+  {
     "API": "torch.baddbmm",
     "input_types": [
-        "torch.FloatTensor",
-        "torch.FloatTensor",
-        "torch.FloatTensor"
+      "torch.FloatTensor",
+      "torch.FloatTensor",
+      "torch.FloatTensor"
     ],
     "malformed_input": {
-        "type": "random",
-        "values": [
-            {
-                "shape": [
-                    1,
-                    1,
-                    1
-                ],
-                "data": [
-                    [
-                        [
-                            1
-                        ]
-                    ]
-                ]
-            },
-            {
-                "shape": [
-                    1,
-                    1,
-                    1
-                ],
-                "data": [
-                    [
-                        [
-                            0
-                        ]
-                    ]
-                ]
-            },
-            {
-                "shape": [
-                    1,
-                    1
-                ],
-                "data": [
-                    [
-                        0
-                    ]
-                ]
-            },
-            {
-                "shape": [
-                    1,
-                    2,
-                    3
-                ],
-                "data": [
-                    [
-                        [
-                            [
-                                4,
-                                3,
-                                7
-                            ],
-                            [
-                                2,
-                                1,
-                                5
-                            ]
-                        ]
-                    ]
-                ]
-            },
-            {
-                "shape": [
-                    3,
-                    3,
-                    2
-                ],
-                "data": [
-                    [
-                        [
-                            [
-                                3,
-                                5
-                            ],
-                            [
-                                1,
-                                7
-                            ]
-                        ],
-                        [
-                            [
-                                6,
-                                4
-                            ],
-                            [
-                                2,
-                                1
-                            ]
-                        ],
-                        [
-                            [
-                                3,
-                                0
-                            ],
-                            [
-                                5,
-                                8
-                            ]
-                        ]
-                    ],
-                    [
-                        [
-                            [
-                                0,
-                                2
-                            ],
-                            [
-                                1,
-                                3
-                            ]
-                        ],
-                        [
-                            [
-                                4,
-                                2
-                            ],
-                            [
-                                7,
-                                6
-                            ]
-                        ],
-                        [
-                            [
-                                8,
-                                3
-                            ],
-                            [
-                                1,
-                                0
-                            ]
-                        ]
-                    ],
-                    [
-                        [
-                            [
-                                6,
-                                2
-                            ],
-                            [
-                                4,
-                                3
-                            ]
-                        ],
-                        [
-                            [
-                                0,
-                                1
-                            ],
-                            [
-                                7,
-                                7
-                            ]
-                        ],
-                        [
-                            [
-                                2,
-                                8
-                            ],
-                            [
-                                1,
-                                5
-                            ]
-                        ]
-                    ]
-                ]
-            }
-        ]
-    },
-    "link": "https://api.github.com/repos/pytorch/pytorch/issues/80588"
-},
-{
-    "api": "torch.nn.functional.kl_div",
-    "inputs": [
+      "type": "random",
+      "values": [
         {
-            "a": {
-                "type": "torch.tensor",
-                "shape": "variable",
-                "value": "*"
-            },
-            "b": {
-                "type": "torch.tensor",
-                "shape": "variable",
-                "value": "*"
-            },
-            "reduction": {
-                "type": "str",
-                "value": [
-                    "sum",
-                    "mean",
-                    "batchmean",
-                    "none",
-                    "invalid_reduction"
-                ]
-            },
-            "log_target": {
-                "type": "bool",
-                "value": true
-            }
-        }
-    ],
-    "malformed": [
-        {
-            "a": {
-                "type": "torch.tensor",
-                "value": "*",
-                "min_value": "-inf",
-                "max_value": "inf"
-            },
-            "b": {
-                "type": "torch.tensor",
-                "value": "*",
-                "min_value": "-inf",
-                "max_value": "inf"
-            },
-            "reduction": {
-                "type": "str",
-                "value": "invalid_reduction"
-            }
+          "shape": [1, 1, 1],
+          "data": [[[1]]]
         },
         {
-            "a": {
-                "type": "torch.tensor",
-                "value": "*",
-                "min_value": 0,
-                "max_value": "inf"
-            },
-            "b": {
-                "type": "torch.tensor",
-                "value": "*",
-                "min_value": 0,
-                "max_value": "inf"
-            }
+          "shape": [1, 1, 1],
+          "data": [[[0]]]
+        },
+        {
+          "shape": [1, 1],
+          "data": [[0]]
+        },
+        {
+          "shape": [1, 2, 3],
+          "data": [
+            [
+              [
+                [4, 3, 7],
+                [2, 1, 5]
+              ]
+            ]
+          ]
+        },
+        {
+          "shape": [3, 3, 2],
+          "data": [
+            [
+              [
+                [3, 5],
+                [1, 7]
+              ],
+              [
+                [6, 4],
+                [2, 1]
+              ],
+              [
+                [3, 0],
+                [5, 8]
+              ]
+            ],
+            [
+              [
+                [0, 2],
+                [1, 3]
+              ],
+              [
+                [4, 2],
+                [7, 6]
+              ],
+              [
+                [8, 3],
+                [1, 0]
+              ]
+            ],
+            [
+              [
+                [6, 2],
+                [4, 3]
+              ],
+              [
+                [0, 1],
+                [7, 7]
+              ],
+              [
+                [2, 8],
+                [1, 5]
+              ]
+            ]
+          ]
         }
+      ]
+    },
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/80588"
+  },
+  {
+    "api": "torch.nn.functional.kl_div",
+    "inputs": [
+      {
+        "a": {
+          "type": "torch.tensor",
+          "shape": "variable",
+          "value": "*"
+        },
+        "b": {
+          "type": "torch.tensor",
+          "shape": "variable",
+          "value": "*"
+        },
+        "reduction": {
+          "type": "str",
+          "value": ["sum", "mean", "batchmean", "none", "invalid_reduction"]
+        },
+        "log_target": {
+          "type": "bool",
+          "value": true
+        }
+      }
+    ],
+    "malformed": [
+      {
+        "a": {
+          "type": "torch.tensor",
+          "value": "*",
+          "min_value": "-inf",
+          "max_value": "inf"
+        },
+        "b": {
+          "type": "torch.tensor",
+          "value": "*",
+          "min_value": "-inf",
+          "max_value": "inf"
+        },
+        "reduction": {
+          "type": "str",
+          "value": "invalid_reduction"
+        }
+      },
+      {
+        "a": {
+          "type": "torch.tensor",
+          "value": "*",
+          "min_value": 0,
+          "max_value": "inf"
+        },
+        "b": {
+          "type": "torch.tensor",
+          "value": "*",
+          "min_value": 0,
+          "max_value": "inf"
+        }
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/80488"
-},
-{
+  },
+  {
     "API": "torch.nn.utils.rnn.pack_sequence",
     "input_type": "list of torch tensors",
     "mutation": {
-        "size_mutation": {
-            "type": "random",
-            "parameters": {
-                "size_range": [
-                    1,
-                    200
-                ],
-                "dimensions": [
-                    2,
-                    3
-                ],
-                "data_type": [
-                    "float32",
-                    "float16",
-                    "int8",
-                    "bool"
-                ]
-            }
-        },
-        "datatype_mutation": {
-            "type": "random",
-            "parameters": {
-                "data_type": [
-                    "float32",
-                    "float16",
-                    "int8",
-                    "bool"
-                ]
-            }
-        },
-        "order_mutation": {
-            "type": "random",
-            "parameters": {
-                "order": [
-                    "ascending",
-                    "descending",
-                    "not_sorted"
-                ]
-            }
-        },
-        "missing_tensor_mutation": {
-            "type": "random",
-            "parameters": {
-                "missing_tensor": true
-            }
+      "size_mutation": {
+        "type": "random",
+        "parameters": {
+          "size_range": [1, 200],
+          "dimensions": [2, 3],
+          "data_type": ["float32", "float16", "int8", "bool"]
         }
+      },
+      "datatype_mutation": {
+        "type": "random",
+        "parameters": {
+          "data_type": ["float32", "float16", "int8", "bool"]
+        }
+      },
+      "order_mutation": {
+        "type": "random",
+        "parameters": {
+          "order": ["ascending", "descending", "not_sorted"]
+        }
+      },
+      "missing_tensor_mutation": {
+        "type": "random",
+        "parameters": {
+          "missing_tensor": true
+        }
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/78153"
-},
-{
+  },
+  {
     "api": "torch._pad_packed_sequence",
     "input_structure": [
-        {
-            "name": "data",
-            "type": "torch.Tensor",
-            "properties": {
-                "shape": "(1, 1, 1, 1)",
-                "dtype": "torch.float16",
-                "requires_grad": false,
-                "values": [
-                    -10000
-                ]
-            }
-        },
-        {
-            "name": "batch_sizes",
-            "type": "torch.Tensor",
-            "properties": {
-                "shape": "(0,)",
-                "dtype": "torch.int64",
-                "requires_grad": false,
-                "values": []
-            }
-        },
-        {
-            "name": "batch_first",
-            "type": "bool",
-            "required": true,
-            "properties": {}
-        },
-        {
-            "name": "padding_value",
-            "type": "bool",
-            "required": true,
-            "properties": {}
-        },
-        {
-            "name": "total_length",
-            "type": "torch.Tensor",
-            "properties": {
-                "dtype": "torch.int64",
-                "requires_grad": false,
-                "values": [
-                    -9937
-                ]
-            }
+      {
+        "name": "data",
+        "type": "torch.Tensor",
+        "properties": {
+          "shape": "(1, 1, 1, 1)",
+          "dtype": "torch.float16",
+          "requires_grad": false,
+          "values": [-10000]
         }
+      },
+      {
+        "name": "batch_sizes",
+        "type": "torch.Tensor",
+        "properties": {
+          "shape": "(0,)",
+          "dtype": "torch.int64",
+          "requires_grad": false,
+          "values": []
+        }
+      },
+      {
+        "name": "batch_first",
+        "type": "bool",
+        "required": true,
+        "properties": {}
+      },
+      {
+        "name": "padding_value",
+        "type": "bool",
+        "required": true,
+        "properties": {}
+      },
+      {
+        "name": "total_length",
+        "type": "torch.Tensor",
+        "properties": {
+          "dtype": "torch.int64",
+          "requires_grad": false,
+          "values": [-9937]
+        }
+      }
     ],
     "malformed_input": {
-        "description": "Generate a batch_sizes tensor that contains a negative value",
-        "steps": [
-            {
-                "action": "modify_value",
-                "parameter": {
-                    "name": "batch_sizes",
-                    "operation": "replace",
-                    "path": "[0]",
-                    "new_value": -1
-                }
-            }
-        ]
+      "description": "Generate a batch_sizes tensor that contains a negative value",
+      "steps": [
+        {
+          "action": "modify_value",
+          "parameter": {
+            "name": "batch_sizes",
+            "operation": "replace",
+            "path": "[0]",
+            "new_value": -1
+          }
+        }
+      ]
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/78131"
-},
-{
+  },
+  {
     "api": "torch._grid_sampler_2d_cpu_fallback",
     "input_rules": [
-        {
-            "name": "input",
-            "type": "tensor",
-            "shape": [
-                null,
-                null,
-                null,
-                2
-            ],
-            "dtype": "float32"
-        },
-        {
-            "name": "grid",
-            "type": "tensor",
-            "shape": [
-                null,
-                3,
-                null,
-                2,
-                null,
-                null
-            ],
-            "dtype": "float32"
-        },
-        {
-            "name": "interpolation_mode",
-            "type": "int",
-            "min": 0,
-            "max": 3
-        },
-        {
-            "name": "padding_mode",
-            "type": "int",
-            "min": 0,
-            "max": 2
-        },
-        {
-            "name": "align_corners",
-            "type": "bool"
-        }
+      {
+        "name": "input",
+        "type": "tensor",
+        "shape": [null, null, null, 2],
+        "dtype": "float32"
+      },
+      {
+        "name": "grid",
+        "type": "tensor",
+        "shape": [null, 3, null, 2, null, null],
+        "dtype": "float32"
+      },
+      {
+        "name": "interpolation_mode",
+        "type": "int",
+        "min": 0,
+        "max": 3
+      },
+      {
+        "name": "padding_mode",
+        "type": "int",
+        "min": 0,
+        "max": 2
+      },
+      {
+        "name": "align_corners",
+        "type": "bool"
+      }
     ],
     "malformed_input": {
-        "operation": "random",
-        "parameters": {
-            "p": 0.5
+      "operation": "random",
+      "parameters": {
+        "p": 0.5
+      },
+      "input_mutations": [
+        {
+          "operation": "modify",
+          "parameters": {
+            "name": "grid",
+            "randomize": true,
+            "shuffle_axis": true
+          }
         },
-        "input_mutations": [
-            {
-                "operation": "modify",
-                "parameters": {
-                    "name": "grid",
-                    "randomize": true,
-                    "shuffle_axis": true
-                }
-            },
-            {
-                "operation": "delete",
-                "parameters": {
-                    "name": "input",
-                    "min_num": 1
-                }
-            },
-            {
-                "operation": "modify",
-                "parameters": {
-                    "name": "interpolation_mode",
-                    "randomize": true
-                }
-            },
-            {
-                "operation": "modify",
-                "parameters": {
-                    "name": "padding_mode",
-                    "randomize": true
-                }
-            },
-            {
-                "operation": "modify",
-                "parameters": {
-                    "name": "align_corners",
-                    "randomize": true
-                }
-            }
-        ]
+        {
+          "operation": "delete",
+          "parameters": {
+            "name": "input",
+            "min_num": 1
+          }
+        },
+        {
+          "operation": "modify",
+          "parameters": {
+            "name": "interpolation_mode",
+            "randomize": true
+          }
+        },
+        {
+          "operation": "modify",
+          "parameters": {
+            "name": "padding_mode",
+            "randomize": true
+          }
+        },
+        {
+          "operation": "modify",
+          "parameters": {
+            "name": "align_corners",
+            "randomize": true
+          }
+        }
+      ]
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/78130"
-},
-{
+  },
+  {
     "API": "torch._embedding_bag_forward_only",
     "inputs": [
-        {
-            "name": "weight",
-            "type": "torch.Tensor",
-            "size": [
-                2,
-                2,
-                5,
-                3,
-                3
-            ],
-            "values": [
-                {
-                    "type": "full",
-                    "value": -8670,
-                    "dtype": "torch.float64",
-                    "requires_grad": false
-                },
-                {
-                    "type": "random",
-                    "range": [
-                        -10,
-                        10
-                    ],
-                    "dtype": "torch.float64",
-                    "requires_grad": false
-                }
-            ]
-        },
-        {
-            "name": "indices",
-            "type": "torch.Tensor",
-            "size": [
-                3,
-                0,
-                1
-            ],
-            "values": [
-                {
-                    "type": "full",
-                    "value": -4468,
-                    "dtype": "torch.int32",
-                    "requires_grad": false
-                },
-                {
-                    "type": "random",
-                    "range": [
-                        -5000,
-                        5000
-                    ],
-                    "dtype": "torch.int32",
-                    "requires_grad": false
-                }
-            ]
-        },
-        {
-            "name": "offsets",
-            "type": "torch.Tensor",
-            "size": [
-                7,
-                1,
-                0
-            ],
-            "values": [
-                {
-                    "type": "full",
-                    "value": -7226,
-                    "dtype": "torch.int64",
-                    "requires_grad": false
-                },
-                {
-                    "type": "random",
-                    "range": [
-                        -8000,
-                        8000
-                    ],
-                    "dtype": "torch.int64",
-                    "requires_grad": false
-                }
-            ]
-        },
-        {
-            "name": "scale_grad_by_freq",
-            "type": "bool",
-            "values": [
-                true,
-                false,
-                true,
-                false
-            ]
-        },
-        {
-            "name": "mode",
-            "type": "torch.Tensor",
-            "size": [],
-            "values": [
-                {
-                    "type": "full",
-                    "value": 6318,
-                    "dtype": "torch.int64",
-                    "requires_grad": false
-                },
-                {
-                    "type": "random",
-                    "range": [
-                        -10000,
-                        10000
-                    ],
-                    "dtype": "torch.int64",
-                    "requires_grad": false
-                }
-            ]
-        },
-        {
-            "name": "sparse",
-            "type": "bool",
-            "values": [
-                true,
-                false,
-                true,
-                false
-            ]
-        },
-        {
-            "name": "per_sample_weights",
-            "type": "torch.Tensor",
-            "size": [
-                3
-            ],
-            "values": [
-                {
-                    "type": "full",
-                    "value": -8750,
-                    "dtype": "torch.int64",
-                    "requires_grad": false
-                },
-                {
-                    "type": "random",
-                    "range": [
-                        -9000,
-                        9000
-                    ],
-                    "dtype": "torch.int64",
-                    "requires_grad": false
-                }
-            ]
-        },
-        {
-            "name": "include_last_offset",
-            "type": "bool",
-            "values": [
-                true,
-                false
-            ]
-        },
-        {
-            "name": "padding_idx",
-            "type": "torch.Tensor",
-            "size": [],
-            "values": [
-                {
-                    "type": "full",
-                    "value": 6383,
-                    "dtype": "torch.int64",
-                    "requires_grad": false
-                },
-                {
-                    "type": "random",
-                    "range": [
-                        -8000,
-                        8000
-                    ],
-                    "dtype": "torch.int64",
-                    "requires_grad": false
-                }
-            ]
-        }
+      {
+        "name": "weight",
+        "type": "torch.Tensor",
+        "size": [2, 2, 5, 3, 3],
+        "values": [
+          {
+            "type": "full",
+            "value": -8670,
+            "dtype": "torch.float64",
+            "requires_grad": false
+          },
+          {
+            "type": "random",
+            "range": [-10, 10],
+            "dtype": "torch.float64",
+            "requires_grad": false
+          }
+        ]
+      },
+      {
+        "name": "indices",
+        "type": "torch.Tensor",
+        "size": [3, 0, 1],
+        "values": [
+          {
+            "type": "full",
+            "value": -4468,
+            "dtype": "torch.int32",
+            "requires_grad": false
+          },
+          {
+            "type": "random",
+            "range": [-5000, 5000],
+            "dtype": "torch.int32",
+            "requires_grad": false
+          }
+        ]
+      },
+      {
+        "name": "offsets",
+        "type": "torch.Tensor",
+        "size": [7, 1, 0],
+        "values": [
+          {
+            "type": "full",
+            "value": -7226,
+            "dtype": "torch.int64",
+            "requires_grad": false
+          },
+          {
+            "type": "random",
+            "range": [-8000, 8000],
+            "dtype": "torch.int64",
+            "requires_grad": false
+          }
+        ]
+      },
+      {
+        "name": "scale_grad_by_freq",
+        "type": "bool",
+        "values": [true, false, true, false]
+      },
+      {
+        "name": "mode",
+        "type": "torch.Tensor",
+        "size": [],
+        "values": [
+          {
+            "type": "full",
+            "value": 6318,
+            "dtype": "torch.int64",
+            "requires_grad": false
+          },
+          {
+            "type": "random",
+            "range": [-10000, 10000],
+            "dtype": "torch.int64",
+            "requires_grad": false
+          }
+        ]
+      },
+      {
+        "name": "sparse",
+        "type": "bool",
+        "values": [true, false, true, false]
+      },
+      {
+        "name": "per_sample_weights",
+        "type": "torch.Tensor",
+        "size": [3],
+        "values": [
+          {
+            "type": "full",
+            "value": -8750,
+            "dtype": "torch.int64",
+            "requires_grad": false
+          },
+          {
+            "type": "random",
+            "range": [-9000, 9000],
+            "dtype": "torch.int64",
+            "requires_grad": false
+          }
+        ]
+      },
+      {
+        "name": "include_last_offset",
+        "type": "bool",
+        "values": [true, false]
+      },
+      {
+        "name": "padding_idx",
+        "type": "torch.Tensor",
+        "size": [],
+        "values": [
+          {
+            "type": "full",
+            "value": 6383,
+            "dtype": "torch.int64",
+            "requires_grad": false
+          },
+          {
+            "type": "random",
+            "range": [-8000, 8000],
+            "dtype": "torch.int64",
+            "requires_grad": false
+          }
+        ]
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/78129"
-},
-{
+  },
+  {
     "API": "torch._C._nn.thnn_conv2d",
     "input_generation_rule": {
-        "tensor_0": {
-            "type": "torch.Tensor",
-            "size": [
-                1,
-                3,
-                3,
-                3
-            ],
-            "values": [
-                "float",
-                "int",
-                "bool",
-                "str",
-                "complex"
-            ],
-            "allow_inf_nan": true,
-            "allow_non_finite_values": true
-        },
-        "tensor_1": {
-            "type": "torch.Tensor",
-            "size": [
-                1,
-                1
-            ],
-            "values": [
-                "float",
-                "int",
-                "bool",
-                "str",
-                "complex"
-            ],
-            "allow_inf_nan": true,
-            "allow_non_finite_values": true
-        },
-        "intarrayref_2": {
-            "type": "int",
-            "values": [
-                "str",
-                "float",
-                "bool"
-            ]
-        },
-        "tensor_3": {
-            "type": "torch.Tensor",
-            "size": [
-                1,
-                3,
-                3,
-                3,
-                1,
-                1
-            ],
-            "values": [
-                "float",
-                "int",
-                "bool",
-                "str",
-                "complex"
-            ],
-            "allow_inf_nan": true,
-            "allow_non_finite_values": true
-        },
-        "intarrayref_4": {
-            "type": "int",
-            "values": [
-                "str",
-                "float",
-                "bool"
-            ]
-        },
-        "intarrayref_5": {
-            "type": "list",
-            "values": [
-                "new object()"
-            ]
-        }
+      "tensor_0": {
+        "type": "torch.Tensor",
+        "size": [1, 3, 3, 3],
+        "values": ["float", "int", "bool", "str", "complex"],
+        "allow_inf_nan": true,
+        "allow_non_finite_values": true
+      },
+      "tensor_1": {
+        "type": "torch.Tensor",
+        "size": [1, 1],
+        "values": ["float", "int", "bool", "str", "complex"],
+        "allow_inf_nan": true,
+        "allow_non_finite_values": true
+      },
+      "intarrayref_2": {
+        "type": "int",
+        "values": ["str", "float", "bool"]
+      },
+      "tensor_3": {
+        "type": "torch.Tensor",
+        "size": [1, 3, 3, 3, 1, 1],
+        "values": ["float", "int", "bool", "str", "complex"],
+        "allow_inf_nan": true,
+        "allow_non_finite_values": true
+      },
+      "intarrayref_4": {
+        "type": "int",
+        "values": ["str", "float", "bool"]
+      },
+      "intarrayref_5": {
+        "type": "list",
+        "values": ["new object()"]
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/78128"
-},
-{
+  },
+  {
     "API": "torch._C._nn.reflection_pad2d",
     "input_type": "tensor",
     "malformed_input": [
-        {
-            "mutation_type": "random_integer",
-            "param": "padding",
-            "min_val": "-100000",
-            "max_val": "100000"
-        },
-        {
-            "mutation_type": "random_integer",
-            "param": "nDims",
-            "min_val": "0",
-            "max_val": "100"
-        },
-        {
-            "mutation_type": "random_integer",
-            "param": "input_shape",
-            "min_val": "0",
-            "max_val": "100"
-        },
-        {
-            "mutation_type": "random_integer",
-            "param": "input_values",
-            "min_val": "-100000",
-            "max_val": "100000"
-        }
+      {
+        "mutation_type": "random_integer",
+        "param": "padding",
+        "min_val": "-100000",
+        "max_val": "100000"
+      },
+      {
+        "mutation_type": "random_integer",
+        "param": "nDims",
+        "min_val": "0",
+        "max_val": "100"
+      },
+      {
+        "mutation_type": "random_integer",
+        "param": "input_shape",
+        "min_val": "0",
+        "max_val": "100"
+      },
+      {
+        "mutation_type": "random_integer",
+        "param": "input_values",
+        "min_val": "-100000",
+        "max_val": "100000"
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/78127"
-},
-{
+  },
+  {
     "API": "torch.max_unpool3d",
     "input_format": {
-        "tensor_0": {
-            "type": "Tensor",
-            "size": "[]"
-        },
-        "tensor_1": {
-            "type": "Tensor",
-            "size": "[7, 7, 7, 4, 4, 4, 7, 7]"
-        },
-        "intarrayref_2": {
-            "type": "List",
-            "elements": {
-                "type": "Int"
-            }
-        },
-        "intarrayref_3": {
-            "type": "Int"
-        },
-        "intarrayref_4": {
-            "type": "Int"
+      "tensor_0": {
+        "type": "Tensor",
+        "size": "[]"
+      },
+      "tensor_1": {
+        "type": "Tensor",
+        "size": "[7, 7, 7, 4, 4, 4, 7, 7]"
+      },
+      "intarrayref_2": {
+        "type": "List",
+        "elements": {
+          "type": "Int"
         }
+      },
+      "intarrayref_3": {
+        "type": "Int"
+      },
+      "intarrayref_4": {
+        "type": "Int"
+      }
     },
     "input_generation_rule": [
-        {
-            "tensor_0": {
-                "value": "torch.full([], 0, dtype=torch.int64, requires_grad=True)"
-            },
-            "tensor_1": {
-                "value": "torch.randn([7, 7, 7, 4, 4, 4, 7, 7], dtype=torch.float16)"
-            },
-            "intarrayref_2": {
-                "value": "[]"
-            },
-            "intarrayref_3": {
-                "value": "torch.rand(1) * 100"
-            },
-            "intarrayref_4": {
-                "value": "torch.randint(-10000, 0, (1,))"
-            }
+      {
+        "tensor_0": {
+          "value": "torch.full([], 0, dtype=torch.int64, requires_grad=True)"
         },
-        {
-            "tensor_0": {
-                "value": "torch.full([], -10000, dtype=torch.int64, requires_grad=False)"
-            },
-            "tensor_1": {
-                "value": "torch.full([7, 7, 7, 4, 4, 4, 7, 7], -8695, dtype=torch.float16, requires_grad=False)"
-            },
-            "intarrayref_2": {
-                "value": "torch.randint(-10000, 0, (4,)).tolist()"
-            },
-            "intarrayref_3": {
-                "value": "torch.randint(-10000, 0, (1,))"
-            },
-            "intarrayref_4": {
-                "value": "torch.randint(0, 10000, (1,))"
-            }
+        "tensor_1": {
+          "value": "torch.randn([7, 7, 7, 4, 4, 4, 7, 7], dtype=torch.float16)"
         },
-        {
-            "tensor_0": {
-                "value": "torch.full([], 0, dtype=torch.int64, requires_grad=True)"
-            },
-            "tensor_1": {
-                "value": "torch.full([7, 7, 7, 4, 4, 4, 7, 7], 8695, dtype=torch.float32, requires_grad=True)"
-            },
-            "intarrayref_2": {
-                "value": "None"
-            },
-            "intarrayref_3": {
-                "value": "torch.randint(-10000, 0, (1,))"
-            },
-            "intarrayref_4": {
-                "value": "torch.randint(-10000, 0, (1,))"
-            }
+        "intarrayref_2": {
+          "value": "[]"
+        },
+        "intarrayref_3": {
+          "value": "torch.rand(1) * 100"
+        },
+        "intarrayref_4": {
+          "value": "torch.randint(-10000, 0, (1,))"
         }
+      },
+      {
+        "tensor_0": {
+          "value": "torch.full([], -10000, dtype=torch.int64, requires_grad=False)"
+        },
+        "tensor_1": {
+          "value": "torch.full([7, 7, 7, 4, 4, 4, 7, 7], -8695, dtype=torch.float16, requires_grad=False)"
+        },
+        "intarrayref_2": {
+          "value": "torch.randint(-10000, 0, (4,)).tolist()"
+        },
+        "intarrayref_3": {
+          "value": "torch.randint(-10000, 0, (1,))"
+        },
+        "intarrayref_4": {
+          "value": "torch.randint(0, 10000, (1,))"
+        }
+      },
+      {
+        "tensor_0": {
+          "value": "torch.full([], 0, dtype=torch.int64, requires_grad=True)"
+        },
+        "tensor_1": {
+          "value": "torch.full([7, 7, 7, 4, 4, 4, 7, 7], 8695, dtype=torch.float32, requires_grad=True)"
+        },
+        "intarrayref_2": {
+          "value": "None"
+        },
+        "intarrayref_3": {
+          "value": "torch.randint(-10000, 0, (1,))"
+        },
+        "intarrayref_4": {
+          "value": "torch.randint(-10000, 0, (1,))"
+        }
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/78126"
-},
-{
+  },
+  {
     "API": "torch.grid_sampler_3d",
     "input_type": "tensor",
-    "input_shape": [
-        4,
-        2,
-        0,
-        0,
-        4,
-        0,
-        0,
-        3
-    ],
+    "input_shape": [4, 2, 0, 0, 4, 0, 0, 3],
     "input_value": {
-        "values": [
-            "-1480"
-        ],
-        "probabilities": [
-            0.9,
-            0.1
-        ],
-        "distribution": "choose_from_values"
+      "values": ["-1480"],
+      "probabilities": [0.9, 0.1],
+      "distribution": "choose_from_values"
     },
     "grid_type": "tensor",
-    "grid_shape": [
-        1,
-        6,
-        3,
-        5,
-        3,
-        4,
-        0,
-        6
-    ],
+    "grid_shape": [1, 6, 3, 5, 3, 4, 0, 6],
     "grid_value": {
-        "values": [
-            "-2024"
-        ],
-        "probabilities": [
-            0.9,
-            0.1
-        ],
-        "distribution": "choose_from_values"
+      "values": ["-2024"],
+      "probabilities": [0.9, 0.1],
+      "distribution": "choose_from_values"
     },
     "interpolation_mode": {
-        "values": [
-            -3278
-        ],
-        "distribution": "choose_from_values"
+      "values": [-3278],
+      "distribution": "choose_from_values"
     },
     "padding_mode": {
-        "values": [
-            -1469
-        ],
-        "distribution": "choose_from_values"
+      "values": [-1469],
+      "distribution": "choose_from_values"
     },
     "align_corners": {
-        "values": [
-            true,
-            false
-        ],
-        "probabilities": [
-            0.7,
-            0.3
-        ],
-        "distribution": "choose_from_values"
+      "values": [true, false],
+      "probabilities": [0.7, 0.3],
+      "distribution": "choose_from_values"
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/78125"
-},
-{
+  },
+  {
     "api": "torch.bincount",
     "input_type": {
-        "self": "int[]",
-        "weights": "int[][][]",
-        "minlength": "int"
+      "self": "int[]",
+      "weights": "int[][][]",
+      "minlength": "int"
     },
     "malformed_input": [
-        {
-            "mutation": "swapped_arguments",
-            "description": "Swapped self and weights arguments",
-            "input": {
-                "self": "int[][][]",
-                "weights": "int[]",
-                "minlength": "int"
-            }
-        },
-        {
-            "mutation": "incorrect_datatype",
-            "description": "Changed data type of self to float",
-            "input": {
-                "self": "float[]",
-                "weights": "int[][][]",
-                "minlength": "int"
-            }
-        },
-        {
-            "mutation": "long_array",
-            "description": "Increased length of self array",
-            "input": {
-                "self": "int[10000]",
-                "weights": "int[][][]",
-                "minlength": "int"
-            }
-        },
-        {
-            "mutation": "empty_array",
-            "description": "Empty self array",
-            "input": {
-                "self": "int[]",
-                "weights": "int[][][]",
-                "minlength": "int"
-            }
-        },
-        {
-            "mutation": "negative_values",
-            "description": "Changed weights array to contain negative values.",
-            "input": {
-                "self": "int[]",
-                "weights": "int[][][]",
-                "minlength": "int"
-            }
-        },
-        {
-            "mutation": "incorrect_length",
-            "description": "Changed minlength to a negative value",
-            "input": {
-                "self": "int[]",
-                "weights": "int[][][]",
-                "minlength": "-5"
-            }
+      {
+        "mutation": "swapped_arguments",
+        "description": "Swapped self and weights arguments",
+        "input": {
+          "self": "int[][][]",
+          "weights": "int[]",
+          "minlength": "int"
         }
+      },
+      {
+        "mutation": "incorrect_datatype",
+        "description": "Changed data type of self to float",
+        "input": {
+          "self": "float[]",
+          "weights": "int[][][]",
+          "minlength": "int"
+        }
+      },
+      {
+        "mutation": "long_array",
+        "description": "Increased length of self array",
+        "input": {
+          "self": "int[10000]",
+          "weights": "int[][][]",
+          "minlength": "int"
+        }
+      },
+      {
+        "mutation": "empty_array",
+        "description": "Empty self array",
+        "input": {
+          "self": "int[]",
+          "weights": "int[][][]",
+          "minlength": "int"
+        }
+      },
+      {
+        "mutation": "negative_values",
+        "description": "Changed weights array to contain negative values.",
+        "input": {
+          "self": "int[]",
+          "weights": "int[][][]",
+          "minlength": "int"
+        }
+      },
+      {
+        "mutation": "incorrect_length",
+        "description": "Changed minlength to a negative value",
+        "input": {
+          "self": "int[]",
+          "weights": "int[][][]",
+          "minlength": "-5"
+        }
+      }
     ],
     "expected_output": "Python Exception",
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/78122"
-},
-{
+  },
+  {
     "API": "_remove_batch_dim",
     "input_type": "tensor",
     "fields": [
-        {
-            "name": "self",
-            "type": "tensor",
-            "properties": {
-                "dtype": [
-                    "float16",
-                    "float32",
-                    "float64",
-                    "int8",
-                    "int16",
-                    "int32",
-                    "int64",
-                    "uint8"
-                ],
-                "ndim": 5
-            }
-        },
-        {
-            "name": "level",
-            "type": "int"
-        },
-        {
-            "name": "batch_size",
-            "type": "int"
-        },
-        {
-            "name": "out_dim",
-            "type": "int",
-            "properties": {
-                "value": "maxint"
-            }
+      {
+        "name": "self",
+        "type": "tensor",
+        "properties": {
+          "dtype": [
+            "float16",
+            "float32",
+            "float64",
+            "int8",
+            "int16",
+            "int32",
+            "int64",
+            "uint8"
+          ],
+          "ndim": 5
         }
+      },
+      {
+        "name": "level",
+        "type": "int"
+      },
+      {
+        "name": "batch_size",
+        "type": "int"
+      },
+      {
+        "name": "out_dim",
+        "type": "int",
+        "properties": {
+          "value": "maxint"
+        }
+      }
     ],
     "malformed_input": {
-        "fault_type": "segmentation fault",
-        "trigger": "passing a tensor with ndim less than 5",
-        "payload": "torch.full((3, 3), 1)"
+      "fault_type": "segmentation fault",
+      "trigger": "passing a tensor with ndim less than 5",
+      "payload": "torch.full((3, 3), 1)"
     },
     "test_case": {
-        "description": "generates random tensor of shape (5, 5, 5, 5, 5) and passes it along with other valid input parameters",
-        "input": {
-            "self": "torch.randn((5, 5, 5, 5, 5))",
-            "level": "random integer between 0 and 4",
-            "batch_size": "random integer between 0 and 5",
-            "out_dim": "random integer greater than 0"
-        }
+      "description": "generates random tensor of shape (5, 5, 5, 5, 5) and passes it along with other valid input parameters",
+      "input": {
+        "self": "torch.randn((5, 5, 5, 5, 5))",
+        "level": "random integer between 0 and 4",
+        "batch_size": "random integer between 0 and 5",
+        "out_dim": "random integer greater than 0"
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/77893"
-},
-{
+  },
+  {
     "API": "torch.pow",
     "input": [
-        {
-            "name": "input_tensor",
-            "type": "torch.Tensor",
-            "size": [
-                1,
-                1,
-                1
-            ],
-            "dtype": [
-                "bfloat16"
-            ]
-        },
-        {
-            "name": "exponent_tensor",
-            "type": "float",
-            "value": "nan"
-        }
+      {
+        "name": "input_tensor",
+        "type": "torch.Tensor",
+        "size": [1, 1, 1],
+        "dtype": ["bfloat16"]
+      },
+      {
+        "name": "exponent_tensor",
+        "type": "float",
+        "value": "nan"
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/77493"
-},
-{
+  },
+  {
     "API": "torch.scatter_add",
     "malformed_input_rule": {
-        "index": {
-            "type": "complex",
-            "shape": [
-                13,
-                0
-            ]
-        }
+      "index": {
+        "type": "complex",
+        "shape": [13, 0]
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/77231"
-},
-{
+  },
+  {
     "API": "torch.addmv",
     "inputs": [
-        {
-            "name": "input",
-            "type": "tensor",
-            "dtype": "float64",
-            "shape": [
-                2
-            ],
-            "required_grad": true
-        },
-        {
-            "name": "mat",
-            "type": "tensor",
-            "dtype": "complex128",
-            "shape": [
-                2,
-                3
-            ],
-            "required_grad": true
-        },
-        {
-            "name": "vec",
-            "type": "tensor",
-            "dtype": "complex128",
-            "shape": [
-                3
-            ],
-            "required_grad": true
-        }
+      {
+        "name": "input",
+        "type": "tensor",
+        "dtype": "float64",
+        "shape": [2],
+        "required_grad": true
+      },
+      {
+        "name": "mat",
+        "type": "tensor",
+        "dtype": "complex128",
+        "shape": [2, 3],
+        "required_grad": true
+      },
+      {
+        "name": "vec",
+        "type": "tensor",
+        "dtype": "complex128",
+        "shape": [3],
+        "required_grad": true
+      }
     ],
     "malformed_input": {
-        "float64": {
-            "mat": "complex128",
-            "vec": "complex128"
-        }
+      "float64": {
+        "mat": "complex128",
+        "vec": "complex128"
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/76778"
-},
-{
+  },
+  {
     "function_name": "torch.unique",
     "input_type": "tensor",
     "malformed_input": {
-        "type": "cuda tensor",
-        "value": "NaN",
-        "behavior": "randomly replace some NaN values with non-NaN values"
+      "type": "cuda tensor",
+      "value": "NaN",
+      "behavior": "randomly replace some NaN values with non-NaN values"
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/76571"
-},
-{
+  },
+  {
     "input_pattern": [
-        {
-            "name": "path",
-            "type": "string",
-            "value_pattern": "C:\\\\Users\\\\\u6d41\u661f\u66b4\u96e8\\\\.cache\\\\clip\\\\ViT-B-16.pt",
-            "mutate": true
-        }
+      {
+        "name": "path",
+        "type": "string",
+        "value_pattern": "C:\\\\Users\\\\\u6d41\u661f\u66b4\u96e8\\\\.cache\\\\clip\\\\ViT-B-16.pt",
+        "mutate": true
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/75171"
-},
-{
+  },
+  {
     "model": "torch",
     "method": "distributed.gather",
     "input": [
-        {
-            "type": "ndarray",
-            "shape": "(n,m)",
-            "dtype": "float32",
-            "value": "<malformed input>"
-        },
-        {
-            "type": "list",
-            "element_type": "ndarray",
-            "list_length": "world_size",
-            "element_shape": "(n,m)",
-            "element_dtype": "float32",
-            "value": null
-        },
-        {
-            "type": "int",
-            "value": "<world_rank>"
-        }
+      {
+        "type": "ndarray",
+        "shape": "(n,m)",
+        "dtype": "float32",
+        "value": "<malformed input>"
+      },
+      {
+        "type": "list",
+        "element_type": "ndarray",
+        "list_length": "world_size",
+        "element_shape": "(n,m)",
+        "element_dtype": "float32",
+        "value": null
+      },
+      {
+        "type": "int",
+        "value": "<world_rank>"
+      }
     ],
     "vulnerability": "Non-contiguous NumPy array used to create tensor which is passed to distributed.gather can lead to incorrect results on destination rank.",
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/74809"
-},
-{
+  },
+  {
     "API": "torch.pow",
     "input_generation_rule": {
-        "inputs": [
-            {
-                "type": "tensor",
-                "shape": "random",
-                "elements": {
-                    "type": "integer",
-                    "values": [
-                        "0",
-                        "-1",
-                        "999999999999999"
-                    ]
-                },
-                "properties": {
-                    "dtype": [
-                        "int32",
-                        "long"
-                    ],
-                    "device": [
-                        "cuda",
-                        "cpu"
-                    ]
-                }
-            },
-            {
-                "type": "tensor",
-                "shape": "random",
-                "elements": {
-                    "type": "integer",
-                    "values": [
-                        "0",
-                        "-1"
-                    ]
-                },
-                "properties": {
-                    "dtype": [
-                        "int",
-                        "int32",
-                        "float32"
-                    ],
-                    "device": [
-                        "cuda",
-                        "cpu"
-                    ]
-                }
-            }
-        ]
+      "inputs": [
+        {
+          "type": "tensor",
+          "shape": "random",
+          "elements": {
+            "type": "integer",
+            "values": ["0", "-1", "999999999999999"]
+          },
+          "properties": {
+            "dtype": ["int32", "long"],
+            "device": ["cuda", "cpu"]
+          }
+        },
+        {
+          "type": "tensor",
+          "shape": "random",
+          "elements": {
+            "type": "integer",
+            "values": ["0", "-1"]
+          },
+          "properties": {
+            "dtype": ["int", "int32", "float32"],
+            "device": ["cuda", "cpu"]
+          }
+        }
+      ]
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/73196"
-},
-{
+  },
+  {
     "API": "max_pool3d",
     "malformed_input": [
-        {
-            "input_type": "list",
-            "param": "kernel_size",
-            "value": [
-                536870912,
-                536870912,
-                536870912,
-                536870912
-            ]
-        },
-        {
-            "input_type": "list",
-            "param": "dilation",
-            "value": [
-                1879048192,
-                1879048192,
-                1879048192,
-                1879048192
-            ]
-        }
+      {
+        "input_type": "list",
+        "param": "kernel_size",
+        "value": [536870912, 536870912, 536870912, 536870912]
+      },
+      {
+        "input_type": "list",
+        "param": "dilation",
+        "value": [1879048192, 1879048192, 1879048192, 1879048192]
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/73191"
-},
-{
+  },
+  {
     "function_name": "max_pool1d",
     "input_template": {
-        "self": "Tensor",
-        "kernel_size": [
-            1
-        ],
-        "stride": [
-            1
-        ],
-        "padding": [
-            0
-        ],
-        "dilation": [
-            1
-        ],
-        "ceil_mode": false
+      "self": "Tensor",
+      "kernel_size": [1],
+      "stride": [1],
+      "padding": [0],
+      "dilation": [1],
+      "ceil_mode": false
     },
     "mutation_strategies": {
-        "max_kernel_size": {
-            "mutation_function": "random_int",
-            "mutation_args": {
-                "min_bound": "10",
-                "max_bound": "100000000000000000"
-            },
-            "mutation_ratio": 0.2
+      "max_kernel_size": {
+        "mutation_function": "random_int",
+        "mutation_args": {
+          "min_bound": "10",
+          "max_bound": "100000000000000000"
         },
-        "max_stride": {
-            "mutation_function": "random_int",
-            "mutation_args": {
-                "min_bound": "10",
-                "max_bound": "100000000000000000"
-            },
-            "mutation_ratio": 0.2
+        "mutation_ratio": 0.2
+      },
+      "max_stride": {
+        "mutation_function": "random_int",
+        "mutation_args": {
+          "min_bound": "10",
+          "max_bound": "100000000000000000"
         },
-        "max_dilation": {
-            "mutation_function": "random_int",
-            "mutation_args": {
-                "min_bound": "10",
-                "max_bound": "100000000000000000"
-            },
-            "mutation_ratio": 0.2
-        }
+        "mutation_ratio": 0.2
+      },
+      "max_dilation": {
+        "mutation_function": "random_int",
+        "mutation_args": {
+          "min_bound": "10",
+          "max_bound": "100000000000000000"
+        },
+        "mutation_ratio": 0.2
+      }
     },
-    "expected_exceptions": [
-        "SegmentationFault"
-    ],
+    "expected_exceptions": ["SegmentationFault"],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/73190"
-},
-{
+  },
+  {
     "target_function": "torch._C._nn.fractional_max_pool3d",
     "input_config": [
-        {
-            "name": "self",
-            "type": "torch.Tensor",
-            "shape": [
-                ">=0",
-                ">=0",
-                ">=0",
-                ">=0",
-                ">=0"
-            ],
-            "dtype": "float"
-        },
-        {
-            "name": "kernel_size",
-            "type": "list[int]",
-            "length": 3,
-            "range": [
-                0,
-                ">0"
-            ]
-        },
-        {
-            "name": "output_size",
-            "type": "list[int]",
-            "length": 3,
-            "range": [
-                0,
-                ">0"
-            ]
-        },
-        {
-            "name": "random_samples",
-            "type": "torch.Tensor",
-            "shape": [
-                ">=0",
-                ">=0",
-                ">=0",
-                ">=0",
-                ">=0"
-            ],
-            "dtype": "float"
-        }
+      {
+        "name": "self",
+        "type": "torch.Tensor",
+        "shape": [">=0", ">=0", ">=0", ">=0", ">=0"],
+        "dtype": "float"
+      },
+      {
+        "name": "kernel_size",
+        "type": "list[int]",
+        "length": 3,
+        "range": [0, ">0"]
+      },
+      {
+        "name": "output_size",
+        "type": "list[int]",
+        "length": 3,
+        "range": [0, ">0"]
+      },
+      {
+        "name": "random_samples",
+        "type": "torch.Tensor",
+        "shape": [">=0", ">=0", ">=0", ">=0", ">=0"],
+        "dtype": "float"
+      }
     ],
     "input_generation": {
-        "type": "random_combinations",
-        "params": {
-            "combinations": 100,
-            "mutators": [
-                {
-                    "type": "insertion",
-                    "params": {
-                        "field": "kernel_size",
-                        "value": 0
-                    }
-                },
-                {
-                    "type": "insertion",
-                    "params": {
-                        "field": "output_size",
-                        "value": 0
-                    }
-                },
-                {
-                    "type": "insertion",
-                    "params": {
-                        "field": "self",
-                        "value": 0
-                    }
-                },
-                {
-                    "type": "insertion",
-                    "params": {
-                        "field": "random_samples",
-                        "value": 0
-                    }
-                }
-            ]
-        },
-        "validity_check": {
-            "type": "custom",
+      "type": "random_combinations",
+      "params": {
+        "combinations": 100,
+        "mutators": [
+          {
+            "type": "insertion",
             "params": {
-                "function": "check_valid",
-                "source": "user",
-                "description": "Check if output_size contains 0s."
+              "field": "kernel_size",
+              "value": 0
             }
+          },
+          {
+            "type": "insertion",
+            "params": {
+              "field": "output_size",
+              "value": 0
+            }
+          },
+          {
+            "type": "insertion",
+            "params": {
+              "field": "self",
+              "value": 0
+            }
+          },
+          {
+            "type": "insertion",
+            "params": {
+              "field": "random_samples",
+              "value": 0
+            }
+          }
+        ]
+      },
+      "validity_check": {
+        "type": "custom",
+        "params": {
+          "function": "check_valid",
+          "source": "user",
+          "description": "Check if output_size contains 0s."
         }
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/73186"
-},
-{
+  },
+  {
     "API": "_sobol_engine_scramble_",
     "inputs": [
-        {
-            "name": "self",
-            "type": "torch.Tensor",
-            "size": [
-                100,
-                30
-            ],
-            "value": "random_unsigned_integers"
-        },
-        {
-            "name": "ltm",
-            "type": "torch.Tensor",
-            "size": [
-                100,
-                30,
-                30
-            ],
-            "value": "random_unsigned_integers"
-        },
-        {
-            "name": "dimension",
-            "type": "float",
-            "range": [
-                1000000000000.0,
-                Infinity
-            ],
-            "probability_distribution": "random_uniform"
-        }
-    ],
-    "malformed_input": {
+      {
+        "name": "self",
+        "type": "torch.Tensor",
+        "size": [100, 30],
+        "value": "random_unsigned_integers"
+      },
+      {
+        "name": "ltm",
+        "type": "torch.Tensor",
+        "size": [100, 30, 30],
+        "value": "random_unsigned_integers"
+      },
+      {
         "name": "dimension",
         "type": "float",
-        "value": "random_dictionary"
+        "range": [1000000000000.0, Infinity],
+        "probability_distribution": "random_uniform"
+      }
+    ],
+    "malformed_input": {
+      "name": "dimension",
+      "type": "float",
+      "value": "random_dictionary"
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/73182"
-},
-{
+  },
+  {
     "API": "_sobol_engine_initialize_state_",
     "input_type": "torch tensor",
     "input_constraints": {
-        "shape": [
-            2,
-            {
-                "min": 30
-            }
-        ],
-        "dtype": "int64",
-        "requires_grad": false
+      "shape": [
+        2,
+        {
+          "min": 30
+        }
+      ],
+      "dtype": "int64",
+      "requires_grad": false
     },
     "fault_trigger": {
-        "param": "dimension",
-        "trigger_value": ">1000000000000"
+      "param": "dimension",
+      "trigger_value": ">1000000000000"
     },
     "bug_description": "Segmentation fault in _sobol_engine_initialize_state_ when dimension is large",
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/73181"
-},
-{
+  },
+  {
     "API": "_sobol_engine_ff_",
     "inputs": [
-        {
-            "name": "self",
-            "type": "torch.Tensor",
-            "size": [
-                2
-            ],
-            "dtype": "torch.int64"
-        },
-        {
-            "name": "n",
-            "type": "int",
-            "min": 1,
-            "max": 10000000000000
-        },
-        {
-            "name": "sobolstate",
-            "type": "torch.Tensor",
-            "size": [
-                2,
-                30
-            ],
-            "dtype": "torch.int64"
-        },
-        {
-            "name": "dimension",
-            "type": "int",
-            "min": 1,
-            "max": 10000000000000
-        },
-        {
-            "name": "num_generated",
-            "type": "int",
-            "min": 1,
-            "max": 10000000000000
-        }
+      {
+        "name": "self",
+        "type": "torch.Tensor",
+        "size": [2],
+        "dtype": "torch.int64"
+      },
+      {
+        "name": "n",
+        "type": "int",
+        "min": 1,
+        "max": 10000000000000
+      },
+      {
+        "name": "sobolstate",
+        "type": "torch.Tensor",
+        "size": [2, 30],
+        "dtype": "torch.int64"
+      },
+      {
+        "name": "dimension",
+        "type": "int",
+        "min": 1,
+        "max": 10000000000000
+      },
+      {
+        "name": "num_generated",
+        "type": "int",
+        "min": 1,
+        "max": 10000000000000
+      }
     ],
     "malformed_inputs": [
-        {
-            "input": "self",
-            "mutation": "change_dtype",
-            "new_dtype": "torch.float64"
-        },
-        {
-            "input": "n",
-            "mutation": "max_to_min"
-        },
-        {
-            "input": "sobolstate",
-            "mutation": "random_bit_flip",
-            "flip_probability": 0.01
-        },
-        {
-            "input": "dimension",
-            "mutation": "max_to_min"
-        },
-        {
-            "input": "num_generated",
-            "mutation": "max_to_min"
-        }
+      {
+        "input": "self",
+        "mutation": "change_dtype",
+        "new_dtype": "torch.float64"
+      },
+      {
+        "input": "n",
+        "mutation": "max_to_min"
+      },
+      {
+        "input": "sobolstate",
+        "mutation": "random_bit_flip",
+        "flip_probability": 0.01
+      },
+      {
+        "input": "dimension",
+        "mutation": "max_to_min"
+      },
+      {
+        "input": "num_generated",
+        "mutation": "max_to_min"
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/73180"
-},
-{
+  },
+  {
     "target": "torch.distributions.categorical.Categorical",
     "method": "__init__",
     "inputs": [
-        {
-            "logits": {
-                "shape": [
-                    "no_of_batches",
-                    "no_of_categories"
-                ],
-                "type": "float"
-            }
+      {
+        "logits": {
+          "shape": ["no_of_batches", "no_of_categories"],
+          "type": "float"
         }
+      }
     ],
     "mutations": [
-        {
-            "operation": "replace",
-            "target": "no_of_batches",
-            "params": {
-                "type": "int",
-                "min": 0,
-                "max": "arbitrary_large_value"
-            }
-        },
-        {
-            "operation": "replace",
-            "target": "no_of_categories",
-            "params": {
-                "type": "int",
-                "max": "arbitrary_large_value"
-            }
-        },
-        {
-            "operation": "delete",
-            "target": "logits",
-            "params": {}
-        },
-        {
-            "operation": "add",
-            "target": "log_probs",
-            "params": {
-                "shape": [
-                    "no_of_batches",
-                    "no_of_categories"
-                ],
-                "type": "float"
-            }
+      {
+        "operation": "replace",
+        "target": "no_of_batches",
+        "params": {
+          "type": "int",
+          "min": 0,
+          "max": "arbitrary_large_value"
         }
+      },
+      {
+        "operation": "replace",
+        "target": "no_of_categories",
+        "params": {
+          "type": "int",
+          "max": "arbitrary_large_value"
+        }
+      },
+      {
+        "operation": "delete",
+        "target": "logits",
+        "params": {}
+      },
+      {
+        "operation": "add",
+        "target": "log_probs",
+        "params": {
+          "shape": ["no_of_batches", "no_of_categories"],
+          "type": "float"
+        }
+      }
     ],
     "expected_output": {
-        "type": "exception",
-        "class": "RuntimeError",
-        "message": "cannot reshape tensor of 0 elements into shape [0, -1] because the unspecified dimension size -1 can be any value and is ambiguous"
+      "type": "exception",
+      "class": "RuntimeError",
+      "message": "cannot reshape tensor of 0 elements into shape [0, -1] because the unspecified dimension size -1 can be any value and is ambiguous"
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/71689"
-},
-{
+  },
+  {
     "api": "torch.bmm",
     "input": {
-        "a": {
-            "type": "sparse",
-            "shape": [
-                100,
-                100
-            ],
-            "density": 0.5,
-            "values": {
-                "type": "float"
-            }
-        },
-        "b": {
-            "type": "dense",
-            "shape": [
-                100,
-                100
-            ],
-            "values": {
-                "type": "float"
-            }
+      "a": {
+        "type": "sparse",
+        "shape": [100, 100],
+        "density": 0.5,
+        "values": {
+          "type": "float"
         }
+      },
+      "b": {
+        "type": "dense",
+        "shape": [100, 100],
+        "values": {
+          "type": "float"
+        }
+      }
     },
     "output": {
-        "type": "dense",
-        "shape": [
-            100,
-            100
-        ],
-        "values": {
-            "type": "float"
-        }
+      "type": "dense",
+      "shape": [100, 100],
+      "values": {
+        "type": "float"
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/71678"
-},
-{
+  },
+  {
     "issue_title": "torch.median will return -2147483648 when input is an empty tensor",
     "api": "torch.median",
     "malformed_input": {
-        "input": {
-            "shape": [
-                0
-            ],
-            "dtype": "torch.int32"
-        }
+      "input": {
+        "shape": [0],
+        "dtype": "torch.int32"
+      }
     },
     "bug_description": "Segmentation fault in _sobol_engine_ff_ when n and dimension are large.",
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/71636"
-},
-{
+  },
+  {
     "API": "torch.cummin",
     "input_type": "tensor",
     "malformed_input": {
-        "dims": 0,
-        "data": "non-numeric value"
+      "dims": 0,
+      "data": "non-numeric value"
     },
     "trigger": "torch.cummin(input, dim)",
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/71477"
-},
-{
+  },
+  {
     "API_name": "torch.nn.MultiheadAttention",
     "input_type": "function_arguments",
     "malformed_input": [
-        {
-            "kdim": "string",
-            "vdim": "string"
-        },
-        {
-            "kdim": 10000000000000000000000000,
-            "vdim": 10000000000000000000000000
-        },
-        {
-            "kdim": -100,
-            "vdim": -100
-        }
+      {
+        "kdim": "string",
+        "vdim": "string"
+      },
+      {
+        "kdim": 10000000000000000000000000,
+        "vdim": 10000000000000000000000000
+      },
+      {
+        "kdim": -100,
+        "vdim": -100
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/71470"
-},
-{
+  },
+  {
     "API": "torch.diag",
     "malformed_input_rule": {
-        "input_type": "tensor",
-        "dimension": 2,
-        "diagonal": {
-            "type": "integer",
-            "min": 2
-        }
+      "input_type": "tensor",
+      "dimension": 2,
+      "diagonal": {
+        "type": "integer",
+        "min": 2
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/71204"
-},
-{
+  },
+  {
     "api": "torch.combinations",
     "mutation_type": "faulty_input",
     "input_type": "tensor",
     "mutation_rules": {
-        "rule_1": {
-            "mutation_operation": "generate_input",
-            "description": "Generate input tensor with length greater than r",
-            "mutation_details": [
-                {
-                    "parameter": "input",
-                    "type": "tensor",
-                    "value": [],
-                    "mutation_type": "custom",
-                    "mutation_logic": "torch.randint(-1, 1, [r+1], dtype=torch.int64)"
-                },
-                {
-                    "parameter": "r",
-                    "type": "int",
-                    "value": [],
-                    "mutation_type": "random",
-                    "range": [
-                        1,
-                        1000
-                    ]
-                }
-            ]
-        }
+      "rule_1": {
+        "mutation_operation": "generate_input",
+        "description": "Generate input tensor with length greater than r",
+        "mutation_details": [
+          {
+            "parameter": "input",
+            "type": "tensor",
+            "value": [],
+            "mutation_type": "custom",
+            "mutation_logic": "torch.randint(-1, 1, [r+1], dtype=torch.int64)"
+          },
+          {
+            "parameter": "r",
+            "type": "int",
+            "value": [],
+            "mutation_type": "random",
+            "range": [1, 1000]
+          }
+        ]
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/71082"
-},
-{
+  },
+  {
     "API": "torch.Tensor.where",
     "malformed_input": [
-        {
-            "condition": {
-                "value": [
-                    "string",
-                    12,
-                    {}
-                ]
-            },
-            "y": {
-                "value": [
-                    "float",
-                    {}
-                ]
-            }
+      {
+        "condition": {
+          "value": ["string", 12, {}]
         },
-        {
-            "condition": {
-                "shape": [
-                    "int",
-                    "string"
-                ]
-            },
-            "y": {
-                "shape": [
-                    "int",
-                    "bool"
-                ]
-            }
+        "y": {
+          "value": ["float", {}]
         }
+      },
+      {
+        "condition": {
+          "shape": ["int", "string"]
+        },
+        "y": {
+          "shape": ["int", "bool"]
+        }
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/71058"
-},
-{
-    "input_size": [
-        5,
-        4,
-        10,
-        10
-    ],
+  },
+  {
+    "input_size": [5, 4, 10, 10],
     "input_values": {
-        "i": {
-            "type": "float",
-            "value": "random"
-        },
-        "c": {
-            "type": "half",
-            "value": "fill",
-            "fill_value": "500"
-        },
-        "m": {
-            "type": "float",
-            "value": "random"
-        },
-        "rm": {
-            "type": "half",
-            "value": "random"
-        },
-        "v": {
-            "type": "float",
-            "value": "random",
-            "mutation": "add_small_value"
-        },
-        "rv": {
-            "type": "half",
-            "value": "random",
-            "mutaion": "add_small_value"
-        },
-        "epsilon": 1.2,
-        "momentum": 0.001
+      "i": {
+        "type": "float",
+        "value": "random"
+      },
+      "c": {
+        "type": "half",
+        "value": "fill",
+        "fill_value": "500"
+      },
+      "m": {
+        "type": "float",
+        "value": "random"
+      },
+      "rm": {
+        "type": "half",
+        "value": "random"
+      },
+      "v": {
+        "type": "float",
+        "value": "random",
+        "mutation": "add_small_value"
+      },
+      "rv": {
+        "type": "half",
+        "value": "random",
+        "mutaion": "add_small_value"
+      },
+      "epsilon": 1.2,
+      "momentum": 0.001
     },
     "bug_trigger": {
-        "type": "overflow",
-        "variable": "count",
-        "value": "half"
+      "type": "overflow",
+      "variable": "count",
+      "value": "half"
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/70901"
-},
-{
+  },
+  {
     "API": "torch.as_strided",
     "mutation_type": "negative_dimension",
     "mutation_arguments": {
-        "new_size": [
-            1,
-            -1
-        ],
-        "new_stride": [
-            1,
-            1
-        ]
+      "new_size": [1, -1],
+      "new_stride": [1, 1]
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/70672"
-},
-{
+  },
+  {
     "mutation_type": "random",
     "mutated_api": "torch.broadcast_to",
     "input": [
-        {
-            "type": "Tensor",
-            "value": "random",
-            "size": 1
-        },
-        {
-            "type": "List[int]",
-            "value": "random_negative",
-            "size": 2
-        }
+      {
+        "type": "Tensor",
+        "value": "random",
+        "size": 1
+      },
+      {
+        "type": "List[int]",
+        "value": "random_negative",
+        "size": 2
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/70398"
-},
-{
+  },
+  {
     "api": "torch.empty_strided",
     "rule": "create a tensor with negative stride values and unequal product of dimensions and strides",
     "malformed_input": {
-        "size": [
-            2,
-            3
-        ],
-        "stride": [
-            -1,
-            4
-        ]
+      "size": [2, 3],
+      "stride": [-1, 4]
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/70397"
-},
-{
+  },
+  {
     "API": "torch.jit.script",
     "input_types": [
-        {
-            "type": "function",
-            "name": "func",
-            "parameters": [
-                {
-                    "name": "center",
-                    "type": [
-                        "list",
-                        "tuple"
-                    ],
-                    "required": true,
-                    "invalid_values": [
-                        "None",
-                        "torch.tensor(())"
-                    ]
-                }
-            ],
-            "return_type": "tensor"
-        }
+      {
+        "type": "function",
+        "name": "func",
+        "parameters": [
+          {
+            "name": "center",
+            "type": ["list", "tuple"],
+            "required": true,
+            "invalid_values": ["None", "torch.tensor(())"]
+          }
+        ],
+        "return_type": "tensor"
+      }
     ],
     "exceptions": [
-        {
-            "exception_type": "SegmentationFault",
-            "message": "Memory access violation while executing the script",
-            "trigger_value": null
-        }
+      {
+        "exception_type": "SegmentationFault",
+        "message": "Memory access violation while executing the script",
+        "trigger_value": null
+      }
     ],
     "malformed_input": [
-        {
-            "parameter": "center",
-            "invalid_value": "torch.tensor([[]])",
-            "message": "Input center tensor should have at least 1 non-zero dimension"
-        },
-        {
-            "parameter": "center",
-            "invalid_value": "torch.tensor([], dtype=torch.int64)",
-            "message": "Input center tensor should have at least 1 non-zero dimension"
-        },
-        {
-            "parameter": "center",
-            "invalid_value": "torch.tensor([[1,2],[3,4]], dtype=torch.int64)",
-            "message": "Input center tensor should be a 1D tensor or 2D tensor with shape (1,2) or (2,)"
-        }
+      {
+        "parameter": "center",
+        "invalid_value": "torch.tensor([[]])",
+        "message": "Input center tensor should have at least 1 non-zero dimension"
+      },
+      {
+        "parameter": "center",
+        "invalid_value": "torch.tensor([], dtype=torch.int64)",
+        "message": "Input center tensor should have at least 1 non-zero dimension"
+      },
+      {
+        "parameter": "center",
+        "invalid_value": "torch.tensor([[1,2],[3,4]], dtype=torch.int64)",
+        "message": "Input center tensor should be a 1D tensor or 2D tensor with shape (1,2) or (2,)"
+      }
     ],
     "valid_input": [
-        {
-            "parameter": "center",
-            "valid_value": "None",
-            "message": "Center set to None"
-        }
+      {
+        "parameter": "center",
+        "valid_value": "None",
+        "message": "Center set to None"
+      }
     ],
     "fuzzing_strategy": "Iterative Random Fuzzing",
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/70102"
-},
-{
+  },
+  {
     "api": "torch.transpose",
     "mutation": {
-        "input": {
-            "args": [
-                {
-                    "type": "Tensor",
-                    "value": {
-                        "dtype": "float32",
-                        "shape": {
-                            "value": "[]"
-                        },
-                        "values": []
-                    }
-                },
-                {
-                    "type": "int",
-                    "value": "0"
-                },
-                {
-                    "type": "int",
-                    "value": "0"
-                }
-            ]
-        },
-        "output": {
-            "exception": {
-                "type": "IndexError"
+      "input": {
+        "args": [
+          {
+            "type": "Tensor",
+            "value": {
+              "dtype": "float32",
+              "shape": {
+                "value": "[]"
+              },
+              "values": []
             }
-        },
-        "condition": {
-            "rules": [
-                {
-                    "type": "Indexing",
-                    "args": [
-                        {
-                            "name": "tensor",
-                            "value": {
-                                "dtype": "float32",
-                                "shape": {
-                                    "value": "[]"
-                                },
-                                "values": []
-                            }
-                        },
-                        {
-                            "value": "0"
-                        }
-                    ]
-                }
-            ]
+          },
+          {
+            "type": "int",
+            "value": "0"
+          },
+          {
+            "type": "int",
+            "value": "0"
+          }
+        ]
+      },
+      "output": {
+        "exception": {
+          "type": "IndexError"
         }
+      },
+      "condition": {
+        "rules": [
+          {
+            "type": "Indexing",
+            "args": [
+              {
+                "name": "tensor",
+                "value": {
+                  "dtype": "float32",
+                  "shape": {
+                    "value": "[]"
+                  },
+                  "values": []
+                }
+              },
+              {
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/69433"
-},
-{
+  },
+  {
     "target_function": "torch.hstack",
     "input_generation_rules": {
-        "tensor_0": {
-            "type": "torch.Tensor",
-            "options": {
-                "shape": "[]"
-            }
-        },
-        "tensor_1": {
-            "type": "torch.Tensor",
-            "options": {
-                "shape": "[<int>, <int>, <int>, ...]"
-            }
+      "tensor_0": {
+        "type": "torch.Tensor",
+        "options": {
+          "shape": "[]"
         }
+      },
+      "tensor_1": {
+        "type": "torch.Tensor",
+        "options": {
+          "shape": "[<int>, <int>, <int>, ...]"
+        }
+      }
     },
     "mutation_rules": {
-        "tensor_0": [
-            {
-                "operation": "delete_dimension",
-                "options": {
-                    "dimension": 0
-                }
-            }
-        ]
+      "tensor_0": [
+        {
+          "operation": "delete_dimension",
+          "options": {
+            "dimension": 0
+          }
+        }
+      ]
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/69408"
-},
-{
+  },
+  {
     "API": "torch.unique_consecutive",
-    "input_type": [
-        "tensor"
-    ],
+    "input_type": ["tensor"],
     "input_constraint": {
-        "size": [
-            ">= 1"
-        ],
-        "dtype": "float"
+      "size": [">= 1"],
+      "dtype": "float"
     },
     "optional_args": {
-        "return_inverse": [
-            "bool"
-        ],
-        "return_counts": [
-            "bool"
-        ]
+      "return_inverse": ["bool"],
+      "return_counts": ["bool"]
     },
     "malformed_input": [
-        {
-            "mutation": "position_swap",
-            "index1": "return_inverse",
-            "index2": "return_counts"
-        },
-        {
-            "mutation": "deleted_arg",
-            "index": "return_counts"
-        },
-        {
-            "mutation": "deleted_arg",
-            "index": "return_inverse"
-        },
-        {
-            "mutation": "added_arg",
-            "value": "True"
-        },
-        {
-            "mutation": "added_arg",
-            "value": "False"
-        }
+      {
+        "mutation": "position_swap",
+        "index1": "return_inverse",
+        "index2": "return_counts"
+      },
+      {
+        "mutation": "deleted_arg",
+        "index": "return_counts"
+      },
+      {
+        "mutation": "deleted_arg",
+        "index": "return_inverse"
+      },
+      {
+        "mutation": "added_arg",
+        "value": "True"
+      },
+      {
+        "mutation": "added_arg",
+        "value": "False"
+      }
     ],
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/68610"
-},
-{
+  },
+  {
     "function_name": "torch.utils.dlpack.to_dlpack",
     "input_type": "Boolean Tensor",
-    "input_value": [
-        "False",
-        "True"
-    ],
+    "input_value": ["False", "True"],
     "mutation": "Change input type to unsupported data type",
     "mutation_value": "String Tensor",
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/67081"
-},
-{
+  },
+  {
     "input_shape": "scalar",
     "input_type": "sparse",
     "input_value": 1,
     "params": {
-        "dim": -1
+      "dim": -1
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/65400"
-},
-{
+  },
+  {
     "API": "torch.cross",
     "input": {
-        "a": {
-            "type": "list",
-            "min_length": 3,
-            "max_length": 3,
-            "content": {
-                "type": "float",
-                "min_value": -200.0,
-                "max_value": 200.0
-            }
-        },
-        "b": {
-            "type": "list",
-            "min_length": 3,
-            "max_length": 3,
-            "content": {
-                "type": "float",
-                "min_value": -200.0,
-                "max_value": 200.0
-            }
+      "a": {
+        "type": "list",
+        "min_length": 3,
+        "max_length": 3,
+        "content": {
+          "type": "float",
+          "min_value": -200.0,
+          "max_value": 200.0
         }
+      },
+      "b": {
+        "type": "list",
+        "min_length": 3,
+        "max_length": 3,
+        "content": {
+          "type": "float",
+          "min_value": -200.0,
+          "max_value": 200.0
+        }
+      }
     },
     "probability": 0.5,
     "bug": {
-        "type": "precision_issue",
-        "description": "Same vector input to torch.cross can cause precision issues",
-        "examples": [
-            {
-                "a": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "b": [
-                    0.0,
-                    0.0,
-                    0.0
-                ]
-            },
-            {
-                "a": [
-                    1.0,
-                    2.0,
-                    3.0
-                ],
-                "b": [
-                    1.0,
-                    2.0,
-                    3.0
-                ]
-            }
-        ]
+      "type": "precision_issue",
+      "description": "Same vector input to torch.cross can cause precision issues",
+      "examples": [
+        {
+          "a": [0.0, 0.0, 0.0],
+          "b": [0.0, 0.0, 0.0]
+        },
+        {
+          "a": [1.0, 2.0, 3.0],
+          "b": [1.0, 2.0, 3.0]
+        }
+      ]
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/65050"
-},
-{
+  },
+  {
     "target_api": "torch.nn.functional.linear",
     "mutation": {
-        "inputs": {
-            "1": {
-                "value": [
-                    1,
-                    1,
-                    10
-                ],
-                "mutate_dimensions": true
-            },
-            "2": {
-                "value": [
-                    10
-                ],
-                "mutate_dimensions": true
-            }
+      "inputs": {
+        "1": {
+          "value": [1, 1, 10],
+          "mutate_dimensions": true
+        },
+        "2": {
+          "value": [10],
+          "mutate_dimensions": true
         }
+      }
     },
     "link": "https://api.github.com/repos/pytorch/pytorch/issues/64978"
-},
+  }
+]

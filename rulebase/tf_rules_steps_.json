@@ -1,0 +1,24 @@
+{
+    "rule": "Generate a rule to fuzz the TensorFlow Lite API by providing a parameter filter_input_channel of less than 1 when constructing a TFLite model. This can result in a Floating Point Exception (FPE).",
+    "link": "https://github.com//tensorflow/tensorflow/security/advisories/GHSA-5w96-866f-6rm8"
+},
+{
+    "rule": "Generate malformed input by setting the filter_input_channel parameter to less than or equal to 0 for the TensorFlow Lite Prepare API used in conv kernels. This can trigger a FPE as mentioned in the bug description.",
+    "link": "https://github.com//tensorflow/tensorflow/security/advisories/GHSA-5w96-866f-6rm8"
+},
+{
+    "rule": "Generate a malformed input for the tf.nn.fractional_avg_pool_v2 and tf.nn.fractional_max_pool_v2 APIs by setting the first and fourth elements of the pooling_ratio parameter to a value other than 1.0. This will cause a double-free bug as pooling on batch and channel dimensions is not currently supported.",
+    "link": "https://github.com//tensorflow/tensorflow/security/advisories/GHSA-f49c-87jh-g47q"
+},
+{
+    "rule": "Rule for Malformed Input Generation: For the TensorFlow API ```tf.raw_ops.ParallelConcat```, provide a parameter called ```shape``` with a value of 0 or less than 0.",
+    "link": "https://github.com//tensorflow/tensorflow/security/advisories/GHSA-6wfh-89q8-44jq"
+},
+{
+    "rule": "Generate malformed input for tf.raw_ops.Bincount by providing a parameter 'weights' that has a different shape than the parameter 'arr' or a length-0 tensor.",
+    "link": "https://github.com//tensorflow/tensorflow/security/advisories/GHSA-7x4v-9gxg-9hwj"
+},
+{
+    "rule": "Generate a malformed input by providing a seed value below -4294967296 for the TensorFlow API ```RandomShuffle``` with parameter values {'value': 1e+20, 'seed': <seed value>, 'seed2': -2147483649} when XLA is enabled. This can trigger a Null Pointer Exception (NPE) as explained in the Bug description.",
+    "link": "https://github.com//tensorflow/tensorflow/security/advisories/GHSA-gf97-q72m-7579"
+},
