@@ -11,13 +11,16 @@ from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 from csv import writer
 from pydriller import Repository
+from dotenv import load_dotenv
+load_dotenv()
+
 
 # (0, nimashiri2012@gmail.com, 1, cse19922021@gmail.com, 2, nshiri@yorku.ca, 3, nshiri@cse.yorku.ca)
-tokens = {0: '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', 1: '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',
-          2: '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', 3: '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'}
+tokens = {0: os.getenv("GIT_TOKEN0"), 1: os.getenv("GIT_TOKEN1"),
+          2: os.getenv("GIT_TOKEN2"), 3: os.getenv("GIT_TOKEN3")}
 
-tokens_status = {'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': True, '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': True,
-                 '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': True, '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': True}
+tokens_status = {os.getenv("GIT_TOKEN0"): True, os.getenv("GIT_TOKEN1"): True,
+                 os.getenv("GIT_TOKEN2"): True, os.getenv("GIT_TOKEN3"): True}
 
 
 def decompose_code_linens(splitted_lines):
