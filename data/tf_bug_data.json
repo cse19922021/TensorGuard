@@ -87,9 +87,7 @@
             "@@ -35,6 +35,16 @@ Status ValidatePaddingValues(absl::Span<const int64_t> input_dimensions,\n         input_dimensions.size(), window_dimensions.size(),\n         window_strides.size());\n   }\n+  for (size_t i = 0; i < input_dimensions.size(); ++i) {\n+    if (window_dimensions[i] <= 0) {\n+      return InvalidArgument(\"Window dimension %u has non-positive size %d\", i,\n+                             window_dimensions[i]);\n+    }\n+    if (window_strides[i] <= 0) {\n+      return InvalidArgument(\"Window dimension %u has non-positive stride %d\",\n+                             i, window_strides[i]);\n+    }\n+  }\n   return OkStatus();\n }\n \n"
         ],
         "Title": "\n          FPE in AvgPoolGrad with XLA\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "Attackers using Tensorflow can exploit the vulnerability. They can access heap memory which is not in the control of user, leading to a crash or RCE. \nWhen axis is larger than the dim of input, c->Dim(input,axis) goes out of bound. \nSame problem occurs in the QuantizeAndDequantizeV2/V3/V4/V4Grad operations too.",
         "Sample Code": "@\ndef test():\n    tf.raw_ops.QuantizeAndDequantizeV2(input=[2.5],\n    \t\t\t\t\t\t\t\t   input_min=[1.0],\n    \t\t\t\t\t\t\t\t   input_max=[10.0],\n    \t\t\t\t\t\t\t\t   signed_input=True,\n    \t\t\t\t\t\t\t\t   num_bits=1,\n    \t\t\t\t\t\t\t\t   range_given=True,\n    \t\t\t\t\t\t\t\t   round_mode='HALF_TO_EVEN',\n    \t\t\t\t\t\t\t\t   narrow_range=True,\n    \t\t\t\t\t\t\t\t   axis=0x7fffffff)\n)\ntest()",
@@ -262,9 +260,7 @@
             "@@ -6,8 +6,8 @@ def repo():\n     \"\"\"Imports TFRT.\"\"\"\n \n     # Attention: tools parse and update these lines.\n-    TFRT_COMMIT = \"c1248a015d23949afa2471bb21f6f52850aead7d\"\n-    TFRT_SHA256 = \"8cdd8ea905478ac4ffd36ffb39cebe288d3b840d71a02d418bc6a8a760f92af8\"\n+    TFRT_COMMIT = \"c653281a1a23c0c3d41536a983c7d10fcc5b1fbf\"\n+    TFRT_SHA256 = \"3d1edd27c4e36d9cfc9493aef7088489babb370d2a7955bab3545acfbb024ccf\"\n \n     tf_http_archive(\n         name = \"tf_runtime\",\n"
         ],
         "Title": "\n          OOB Read in GRUBlockCellGrad\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "A malicious invalid input crashes a tensorflow model (Check Failed) and can be used to trigger a denial of service attack. \nTo minimize the bug, we built a simple single-layer TensorFlow model containing a Convolution3DTranspose layer, which works well with expected inputs and can be deployed in real-world systems. However, if we call the model with a malicious input which has a zero dimension, it gives Check Failed failure and crashes.",
         "Sample Code": "class MyModel(tf.keras.Model):\n    def __init__(self):\n        super().__init__()\n        self.conv = tf.keras.layers.Convolution3DTranspose(2, [3,3,3], padding=\"same\")\n        \n    def call(self, input):\n        return self.conv(input)\nmodel = MyModel() # Defines a valid model.\n\nx = tf.random.uniform([1, 32, 32, 32, 3], minval=0, maxval=0, dtype=tf.float32) # This is a valid input.\noutput = model.predict(x)\nprint(output.shape) # (1, 32, 32, 32, 2)\n\nx = tf.random.uniform([1, 32, 32, 0, 3], dtype=tf.float32) # This is an invalid input.\n\noutput = model(x) # crash",
@@ -346,9 +342,7 @@
             "@@ -1313,6 +1313,16 @@ class CSRSparseMatrixOpsTest(test.TestCase):\n       self.assertLess(cholesky_with_amd_nnz_value,\n                       cholesky_without_ordering_nnz_value)\n \n+  @test_util.run_in_graph_and_eager_modes\n+  def testNoMatrixNoCrash(self):\n+    # Round-about way of creating an empty variant tensor that works in both\n+    # graph and eager modes.\n+    no_matrix = array_ops.reshape(dense_to_csr_sparse_matrix([[0.0]]), [1])[0:0]\n+    with self.assertRaisesRegex(\n+        (ValueError, errors.InvalidArgumentError),\n+        \"(Invalid input matrix)|(Shape must be rank 0)\"):\n+      sparse_csr_matrix_ops.sparse_matrix_nnz(no_matrix)\n+\n \n class CSRSparseMatrixOpsBenchmark(test.Benchmark):\n \n"
         ],
         "Title": "\n          `CHECK_EQ` fail via input in `SparseMatrixNNZ`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "An input  pooling_ratio  that is smaller than 1 will trigger a heap OOB in  tf.raw_ops.FractionalMaxPool  and  tf.raw_ops.FractionalAvgPool .",
         "Sample Code": "",
@@ -443,9 +437,7 @@
             "@@ -375,6 +375,13 @@ TEST(BCastTest, Basic_Tensor_Scalar) {\n             \"[11,7,5,3,2]\"\n             \"[11,7,5,3,2]\"\n             \"[0,1,2,3,4][]\");\n+\n+  // int32 edge-case:\n+  EXPECT_EQ(BCast({1, 2147483648}, {1}),\n+            \"[2147483648][1][1][2147483648]\"\n+            \"[2147483648]\"\n+            \"[1,2147483648]\"\n+            \"[0][0,1]\");\n }\n \n TEST(BCastTest, Basic_Tensor_With_DimSize_1_Scalar) {\n"
         ],
         "Title": "\n          `CHECK` fail in `BCast` overflow\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "If a list of quantized tensors is assigned to an attribute, the pywrap code fails to parse the tensor and returns a  nullptr , which is not caught. An example can be seen in  tf.compat.v1.extract_volume_patches  by passing in quantized tensors as input  ksizes .",
         "Sample Code": "import tensorflow as tf\n\na_input = np.array([1, -1], dtype= np.int32)\na_ksizes =  a_strides = tf.constant(dtype=tf.dtypes.qint16, value=[[1, 4], [5, 2]])\n\n\n]])\n\n\ntf.compat.v1.extract_volume_patches(input=a_input,ksizes=a_ksizes,strides=a_strides,padding='VALID')",
@@ -538,9 +530,7 @@
             "@@ -15,9 +15,11 @@\n \"\"\"Tests for tf.quantize ops.\"\"\"\n import numpy as np\n \n+from tensorflow.python.eager import context\n from tensorflow.python.framework import constant_op\n from tensorflow.python.framework import dtypes\n from tensorflow.python.framework import errors\n+from tensorflow.python.framework import ops\n from tensorflow.python.framework import test_util\n from tensorflow.python.ops import array_ops\n from tensorflow.python.ops import math_ops\n@@ -407,5 +409,59 @@ class QuantizeDownAndShrinkRangeOpTest(test_util.TensorFlowTestCase):\n               out_type=dtypes.quint8))\n \n \n+class QuantizeAndDequantizeV3OpTest(test_util.TensorFlowTestCase):\n+\n+  @test_util.run_in_graph_and_eager_modes\n+  def test_valid(self):\n+    with ops.Graph().as_default(), context.eager_mode():\n+      input_value = constant_op.constant([-0.8, -0.5, 0, 0.3, 0.8, -2.0],\n+                                         shape=(6,),\n+                                         dtype=dtypes.float32),\n+      input_min = constant_op.constant(-127, shape=(), dtype=dtypes.float32)\n+      input_max = constant_op.constant(127, shape=(), dtype=dtypes.float32)\n+      num_bits = constant_op.constant(8, shape=(), dtype=dtypes.int32)\n+\n+      quantized = array_ops.quantize_and_dequantize_v3(\n+          input_value,\n+          input_min,\n+          input_max,\n+          num_bits,\n+          signed_input=True,\n+          range_given=False)\n+      self.assertSequenceAlmostEqual(\n+          input_value[0].numpy(), quantized.numpy()[0], delta=0.05)\n+\n+  @test_util.run_in_graph_and_eager_modes\n+  def test_invalid_inputs(self):\n+    input_value = constant_op.constant([-0.8, -0.5, 0, 0.3, 0.8, -2.0],\n+                                       shape=(6,),\n+                                       dtype=dtypes.float32),\n+    input_min = constant_op.constant(-127, shape=(), dtype=dtypes.float32)\n+    input_max = constant_op.constant(127, shape=(), dtype=dtypes.float32)\n+    # Tensor with invalid shape and invalid number of elements.\n+    num_bits = constant_op.constant([], shape=(0,), dtype=dtypes.int32)\n+\n+    # Test that running the op raises error. It raises different errors\n+    # depending on whether the shape inference is run first or the op's\n+    # Compute() is run first.\n+    try:\n+      array_ops.quantize_and_dequantize_v3(\n+          input_value, input_min, input_max, num_bits, signed_input=True)\n+    except Exception as ex:  # pylint: disable=broad-except\n+      if isinstance(ex, errors.InvalidArgumentError):\n+        self.assertRegex(str(ex), \"The `num_bits` tensor should be a scalar.\")\n+      elif isinstance(ex, ValueError):\n+        self.assertRegex(str(ex), \"Shape must be rank 0\")\n+      else:\n+        self.fail(\n+            \"Raised exception other than expected: %s. \"\n+            \"Expected exceptions are errors.InvalidArgumentError or ValueError\",\n+            ex.__name__)\n+    else:\n+      self.fail(\n+          \"Did not raise an exception where it is expected to raise either \"\n+          \"a ValueError or errors.InvalidArgumentError.\")\n+\n+\n if __name__ == \"__main__\":\n   googletest.main()\n"
         ],
         "Title": "\n          `CHECK` fail in `QuantizeAndDequantizeV3`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "When  tensorflow::full_type::SubstituteFromAttrs  receives a  FullTypeDef& t  that is not exactly three args, it triggers a  CHECK -fail instead of returning a status.",
         "Sample Code": "",
@@ -630,9 +620,7 @@
             "@@ -236,6 +236,26 @@ class BatchOpsTest(test.TestCase):\n       self.assertEqual(thread_results[0], [2])\n       self.assertEqual(main_results[0], [3])\n \n+  def testUnbatchInvalidIdArg(self):\n+    \"\"\"Tests that unbatch work together.\"\"\"\n+    if context.executing_eagerly():\n+      batched_tensor = constant_op.constant(\n+          value=np.random.random(size=(3, 3, 1)), dtype=dtypes.float64)\n+      batched_index = constant_op.constant(\n+          value=np.random.randint(0, 100, size=(3, 3, 1)), dtype=dtypes.int64)\n+      arg_id = constant_op.constant(\n+          value=np.random.randint(0, 100, size=(3, 3, 1)), dtype=dtypes.int64)\n+\n+      with self.assertRaisesRegex(errors.InvalidArgumentError,\n+                                  \"Input id should be scalar;\"):\n+        batch_ops.unbatch(\n+            batched_tensor=batched_tensor,\n+            batch_index=batched_index,\n+            id=arg_id,\n+            timeout_micros=50,\n+            container=\"\",\n+            shared_name=\"\")\n+\n   def testBatchDecoratedWithCapturedInput(self):\n     \"\"\"Tests that the batch_function decorator works.\"\"\"\n     if context.executing_eagerly():\n"
         ],
         "Title": "\n          `CHECK` fail in `Unbatch`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "When  DrawBoundingBoxes  receives an input  boxes  that is not of dtype  float , it gives a  CHECK  fail that can trigger a denial of service attack.",
         "Sample Code": "import numpy as np\narg_0=tf.constant(value=np.random.random(size=(1, 3, 2, 3)), shape=(1, 3, 2, 3), dtype=tf.half)\narg_1=tf.constant(value=np.random.random(size=(1, 2, 4)), shape=(1, 2, 4), dtype=tf.float32)\narg_2=''\n\ntf.raw_ops.DrawBoundingBoxes(images=arg_0, boxes=arg_1, name=arg_2)",
@@ -722,9 +710,7 @@
             "@@ -584,6 +584,17 @@ class ListOpsTest(test_util.TensorFlowTestCase, parameterized.TestCase):\n     self.assertAllEqual(e, 1.0)\n     self.assertAllEqual(list_ops.tensor_list_length(l), 0)\n \n+  def testTensorListFromTensorFailsWhenElementShapeIsNotVector(self):\n+    t = constant_op.constant([1.0, 2.0])\n+    # In Eager mode, InvalidArgumentError is generated by the Compute function.\n+    # In graph mode, ValueError is generated by the shape function.\n+    with self.assertRaisesRegex(\n+        (errors.InvalidArgumentError, ValueError),\n+        \"must be at most rank 1\"):\n+      # Wrong element_shape. Should be at most rank 1.\n+      l = list_ops.tensor_list_from_tensor(t, element_shape=[[1]])\n+      self.evaluate(l)\n+\n   @test_util.run_gpu_only\n   def testFromTensorGPU(self):\n     with context.device(\"gpu:0\"):\n"
         ],
         "Title": "\n          `CHECK` fail in `TensorListFromTensor`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "When  TensorListScatter  and  TensorListScatterV2  receive an  element_shape  of a rank greater than one, they give a  CHECK  fail that can trigger a denial of service attack.",
         "Sample Code": "arg_0=tf.random.uniform(shape=(2, 2, 2), dtype=tf.float16, maxval=None)\narg_1=tf.random.uniform(shape=(2, 2, 2), dtype=tf.int32, maxval=65536)\narg_2=tf.random.uniform(shape=(2, 2, 2), dtype=tf.int32, maxval=65536)\narg_3=''\ntf.raw_ops.TensorListScatter(tensor=arg_0, indices=arg_1, \n, \nelement_shape=arg_2, name=arg_3)",
@@ -817,9 +803,7 @@
             "@@ -366,7 +366,7 @@ class SparseBincountOpTest(test_util.TensorFlowTestCase,\n     num_rows = 128\n     size = 1000\n     n_elems = 4096\n-    inp_indices = np.random.randint(0, num_rows, (n_elems,))\n+    inp_indices = np.random.randint(0, num_rows, (n_elems, 1))\n     inp_vals = np.random.randint(0, size, (n_elems,), dtype=dtype)\n \n     np_out = np.bincount(inp_vals, minlength=size)\n@@ -390,7 +390,7 @@ class SparseBincountOpTest(test_util.TensorFlowTestCase,\n     num_rows = 128\n     size = 1000\n     n_elems = 4096\n-    inp_indices = np.random.randint(0, num_rows, (n_elems,))\n+    inp_indices = np.random.randint(0, num_rows, (n_elems, 1))\n     inp_vals = np.random.randint(0, size, (n_elems,), dtype=dtype)\n     inp_weight = np.random.random((n_elems,))\n \n@@ -415,7 +415,7 @@ class SparseBincountOpTest(test_util.TensorFlowTestCase,\n     num_rows = 128\n     size = 10\n     n_elems = 4096\n-    inp_indices = np.random.randint(0, num_rows, (n_elems,))\n+    inp_indices = np.random.randint(0, num_rows, (n_elems, 1))\n     inp_vals = np.random.randint(0, size, (n_elems,), dtype=dtype)\n \n     np_out = np.ones((size,))\n@@ -440,7 +440,7 @@ class SparseBincountOpTest(test_util.TensorFlowTestCase,\n     num_rows = 128\n     size = 10\n     n_elems = 4096\n-    inp_indices = np.random.randint(0, num_rows, (n_elems,))\n+    inp_indices = np.random.randint(0, num_rows, (n_elems, 1))\n     inp_vals = np.random.randint(0, size, (n_elems,), dtype=dtype)\n     inp_weight = np.random.random((n_elems,))\n \n@@ -532,6 +532,27 @@ class SparseBincountOpTest(test_util.TensorFlowTestCase,\n               weights=[0, 0],\n               binary_output=False))\n \n+  def test_sparse_bincount_input_validation(self):\n+    np.random.seed(42)\n+    num_rows = 128\n+    size = 1000\n+    n_elems = 4096\n+    inp_indices = np.random.randint(0, num_rows, (n_elems, 1))\n+    inp_vals = np.random.randint(0, size, (n_elems,))\n+\n+    # Insert negative index.\n+    inp_indices[10, 0] = -2\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"out of bounds\"):\n+      self.evaluate(\n+          gen_math_ops.sparse_bincount(\n+              indices=inp_indices,\n+              values=inp_vals,\n+              dense_shape=[num_rows],\n+              size=size,\n+              weights=[]))\n+\n \n class RaggedBincountOpTest(test_util.TensorFlowTestCase,\n                            parameterized.TestCase):\n"
         ],
         "Title": "\n          Segfault in `SparseBincount`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "If  RaggedTensorToVariant  is given a  rt_nested_splits  list that contains tensors of ranks other than one, it results in a  CHECK  fail that can be used to trigger a denial of service attack.",
         "Sample Code": "batched_input = True\nrt_nested_splits = tf.constant([0,32,64], shape=[3], dtype=tf.int64)\nrt_dense_values = tf.constant([0,32,64], shape=[3], dtype=tf.int64)\n)\ntf.raw_ops.RaggedTensorToVariant(rt_nested_splits=rt_nested_splits, rt_dense_values=rt_dense_values, batched_input=batched_input)",
@@ -942,9 +926,7 @@
             "@@ -0,0 +1,210 @@\n+# Copyright 2015 The TensorFlow Authors. All Rights Reserved.\n+#\n+# Licensed under the Apache License, Version 2.0 (the \"License\");\n+# you may not use this file except in compliance with the License.\n+# You may obtain a copy of the License at\n+#\n+#     http://www.apache.org/licenses/LICENSE-2.0\n+#\n+# Unless required by applicable law or agreed to in writing, software\n+# distributed under the License is distributed on an \"AS IS\" BASIS,\n+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n+# See the License for the specific language governing permissions and\n+# limitations under the License.\n+# ==============================================================================\n+\"\"\"Tests for tf.quantize ops.\"\"\"\n+import numpy as np\n+\n+from tensorflow.python.framework import constant_op\n+from tensorflow.python.framework import dtypes\n+from tensorflow.python.framework import errors\n+from tensorflow.python.framework import test_util\n+from tensorflow.python.ops import array_ops\n+from tensorflow.python.ops import math_ops\n+from tensorflow.python.ops import nn_ops\n+from tensorflow.python.platform import googletest\n+\n+\n+class FakeQuantWithMinMaxVarsOpTest(test_util.TensorFlowTestCase):\n+\n+  @test_util.run_in_graph_and_eager_modes\n+  def test_invalid_inputs(self):\n+    inputs = constant_op.constant(\n+        value=[[1.0], [2.0], [4.0]], dtype=dtypes.float32)\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"must be rank 0\"):\n+      self.evaluate(\n+          array_ops.fake_quant_with_min_max_vars(\n+              inputs=inputs, min=0.0, max=[[1.0], [2.0], [4.0]]))\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"must be rank 0\"):\n+      self.evaluate(\n+          array_ops.fake_quant_with_min_max_vars(\n+              inputs=inputs, min=[[1.0], [2.0], [4.0]], max=1.0))\n+\n+\n+class FakeQuantWithMinMaxVarsPerChannelOpTest(test_util.TensorFlowTestCase):\n+\n+  @test_util.run_in_graph_and_eager_modes\n+  def test_invalid_inputs(self):\n+    inputs = constant_op.constant(\n+        value=[[1.0], [2.0], [4.0]], dtype=dtypes.float32)\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"must be rank 1\"):\n+      self.evaluate(\n+          array_ops.fake_quant_with_min_max_vars_per_channel(\n+              inputs=inputs, min=[[0.0]], max=[1.0]))\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"Dimensions must be equal|incorrect size\"):\n+      self.evaluate(\n+          array_ops.fake_quant_with_min_max_vars_per_channel(\n+              inputs=inputs, min=[0.0, 0.1], max=[1.0]))\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"must be rank 1\"):\n+      self.evaluate(\n+          array_ops.fake_quant_with_min_max_vars_per_channel(\n+              inputs=inputs, min=[1.0], max=[[1.0]]))\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"Dimensions must be equal|incorrect size\"):\n+      self.evaluate(\n+          array_ops.fake_quant_with_min_max_vars_per_channel(\n+              inputs=inputs, min=[0.0], max=[1.0, 1.1]))\n+\n+\n+class QuantizedBiasedAddTest(test_util.TensorFlowTestCase):\n+\n+  @test_util.run_in_graph_and_eager_modes\n+  def test_invalid_inputs(self):\n+    inputs = constant_op.constant(\n+        np.int8(0), shape=[3, 3, 3, 3], dtype=dtypes.qint8)\n+    bias = constant_op.constant(np.int8(0), shape=[3], dtype=dtypes.qint8)\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"must be rank 0\"):\n+      self.evaluate(\n+          nn_ops.quantized_bias_add(\n+              input=inputs,\n+              bias=bias,\n+              min_input=[],\n+              max_input=1.0,\n+              min_bias=0.0,\n+              max_bias=1.0,\n+              out_type=dtypes.qint32))\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"must be rank 0\"):\n+      self.evaluate(\n+          nn_ops.quantized_bias_add(\n+              input=inputs,\n+              bias=bias,\n+              min_input=0.0,\n+              max_input=[],\n+              min_bias=0.0,\n+              max_bias=1.0,\n+              out_type=dtypes.qint32))\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"must be rank 0\"):\n+      self.evaluate(\n+          nn_ops.quantized_bias_add(\n+              input=inputs,\n+              bias=bias,\n+              min_input=0.0,\n+              max_input=1.0,\n+              min_bias=[],\n+              max_bias=1.0,\n+              out_type=dtypes.qint32))\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"must be rank 0\"):\n+      self.evaluate(\n+          nn_ops.quantized_bias_add(\n+              input=inputs,\n+              bias=bias,\n+              min_input=0.0,\n+              max_input=1.0,\n+              min_bias=0.0,\n+              max_bias=[],\n+              out_type=dtypes.qint32))\n+\n+\n+class QuantizedInstanceNormOpTest(test_util.TensorFlowTestCase):\n+\n+  @test_util.run_in_graph_and_eager_modes\n+  def test_invalid_inputs(self):\n+    inputs = constant_op.constant(\n+        np.uint8(0), shape=[3, 3, 3, 3], dtype=dtypes.quint8)\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"must be rank 0\"):\n+      self.evaluate(\n+          array_ops.quantized_instance_norm(\n+              x=inputs, x_min=0.0, x_max=[[1.0], [2.0], [4.0]]))\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"must be rank 0\"):\n+      self.evaluate(\n+          array_ops.quantized_instance_norm(\n+              x=inputs, x_min=[[1.0], [2.0], [4.0]], x_max=1.0))\n+\n+\n+class RequantizeOpTest(test_util.TensorFlowTestCase):\n+\n+  @test_util.run_in_graph_and_eager_modes\n+  def test_invalid_inputs(self):\n+    inputs = constant_op.constant(\n+        np.int32(0), shape=[3, 3, 3, 3], dtype=dtypes.qint32)\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"must be rank 0\"):\n+      self.evaluate(\n+          math_ops.requantize(\n+              input=inputs,\n+              input_min=[],\n+              input_max=1.0,\n+              requested_output_min=0.0,\n+              requested_output_max=1.0,\n+              out_type=dtypes.qint8))\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"must be rank 0\"):\n+      self.evaluate(\n+          math_ops.requantize(\n+              input=inputs,\n+              input_min=0.0,\n+              input_max=[],\n+              requested_output_min=0.0,\n+              requested_output_max=1.0,\n+              out_type=dtypes.qint8))\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"must be rank 0\"):\n+      self.evaluate(\n+          math_ops.requantize(\n+              input=inputs,\n+              input_min=0.0,\n+              input_max=1.0,\n+              requested_output_min=[],\n+              requested_output_max=1.0,\n+              out_type=dtypes.qint8))\n+\n+    with self.assertRaisesRegex((ValueError, errors.InvalidArgumentError),\n+                                \"must be rank 0\"):\n+      self.evaluate(\n+          math_ops.requantize(\n+              input=inputs,\n+              input_min=0.0,\n+              input_max=1.0,\n+              requested_output_min=0.0,\n+              requested_output_max=[],\n+              out_type=dtypes.qint8))\n+\n+\n+if __name__ == \"__main__\":\n+  googletest.main()\n"
         ],
         "Title": "\n          Segfault in `QuantizedInstanceNorm`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "The implementation of  Conv2DBackpropInput  requires  input_sizes  to be 4-dimensional. Otherwise, it gives a  CHECK  failure which can be used to trigger a denial of service attack:",
         "Sample Code": "strides = [1, 1, 1, 1]\npadding = \"SAME\"\nuse_cudnn_on_gpu = True\nexplicit_paddings = []\ndata_format = \"NHWC\"\ndilations = [1, 1, 1, 1]\ninput_sizes = tf.constant([65534,65534], shape=[2], dtype=tf.int32)\nfilter = tf.constant(0.159749106, shape=[3,3,2,2], dtype=tf.float32)\nout_backprop = tf.constant(0, shape=[], dtype=tf.float32)\n)\ntf.raw_ops.Conv2DBackpropInput(input_sizes=input_sizes, filter=filter, out_backprop=out_backprop, strides=strides, padding=padding, use_cudnn_on_gpu=use_cudnn_on_gpu, explicit_paddings=explicit_paddings, data_format=data_format, dilations=dilations)",
@@ -1040,9 +1022,7 @@
             "@@ -2470,6 +2470,22 @@ class PoolingTest(test.TestCase, parameterized.TestCase):\n               inp, grad, argmax, ksize=[1, 1, 1, 1], strides=[1, 1, 1, 1],\n               padding=\"VALID\")\n \n+  def testAvgPoolGradInvalidInputShapeRaiseError(self):\n+    with self.assertRaises((ValueError, errors_impl.InvalidArgumentError)):\n+      with self.cached_session():\n+        orig_input_shape = constant_op.constant(\n+            -536870912, shape=[4], dtype=dtypes.int32)\n+        grad = constant_op.constant(\n+            .0890338004362538, shape=[1, 5, 7, 1], dtype=dtypes.float64)\n+        t = gen_nn_ops.AvgPoolGrad(\n+            orig_input_shape=orig_input_shape,\n+            grad=grad,\n+            ksize=[1, 2, 2, 1],\n+            strides=[1, 2, 2, 1],\n+            padding=\"VALID\",\n+            data_format=\"NHWC\")\n+        self.evaluate(t)\n+\n \n def GetMaxPoolFwdTest(input_size, filter_size, strides, padding):\n \n"
         ],
         "Title": "\n          `CHECK` failure in `AvgPoolOp`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "The  RaggedRangOp  function takes an argument  limits  that is eventually used to construct a  TensorShape  as an  int64 . If  limits  is a very large float, it can overflow when converted to an  int64 . This triggers an  InvalidArgument  but also throws an abort signal that crashes the program.",
         "Sample Code": " tensorflow as tf\ntf.raw_ops.RaggedRange(starts=[1.1,0.1],limits=[10.0,1e20],deltas=[1,1])",
@@ -1125,9 +1105,7 @@
         "Sample Code": "",
         "Bug fix": "",
         "Title": "\n          Incomplete validation in signal ops leads to crashes\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "Certain TFLite models that were created using TFLite model converter would crash when loaded in the TFLite interpreter. The culprit is that during quantization the scale of values could be greater than 1 but code was always assuming sub-unit scaling.",
         "Sample Code": "",
@@ -1223,9 +1201,7 @@
             "@@ -304,6 +304,9 @@ Status GetDeviceForInput(const EagerOperation& op, const EagerContext& ctx,\n     const Tensor* tensor;\n     // TODO(fishx): Avoid blocking here.\n     TF_RETURN_IF_ERROR(tensor_handle->Tensor(&tensor));\n+    if (tensor->NumElements() == 0) {\n+      return errors::InvalidArgument(\"Empty resource handle\");\n+    }\n     const ResourceHandle& handle = tensor->flat<ResourceHandle>()(0);\n     device_name = handle.device();\n \n"
         ],
         "Title": "\n          Undefined behavior when users supply invalid resource handles\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "The implementation of depthwise ops in TensorFlow is vulnerable to a denial of service via  CHECK -failure (assertion failure) caused by overflowing the number of elements in a tensor:",
         "Sample Code": "input = tf.constant(1, shape=[1, 4, 4, 3], dtype=tf.float32)\nfilter_sizes = tf.constant(1879048192, shape=[13], dtype=tf.int32)\nout_backprop = tf.constant(1, shape=[1, 4, 4, 3], dtype=tf.float32)\ntf.raw_ops.DepthwiseConv2dNativeBackpropFilter(\n    (\n    input=input, filter_sizes=filter_sizes, out_backprop=out_backprop, strides=[1, 1, 1, 1], padding=\"SAME\")",
@@ -1311,9 +1287,7 @@
             "@@ -174,13 +174,13 @@ class QuantizeAndDequantizeV4GradientOp : public OpKernel {\n     OP_REQUIRES(ctx,\n                 input_min_tensor.dims() == 0 || input_min_tensor.dims() == 1,\n                 errors::InvalidArgument(\n-                    \"Input min tensor must have dimension 1. Recieved \",\n+                    \"Input min tensor must have dimension 0 or 1. Received \",\n                     input_min_tensor.dims(), \".\"));\n     const Tensor& input_max_tensor = ctx->input(3);\n     OP_REQUIRES(ctx,\n                 input_max_tensor.dims() == 0 || input_max_tensor.dims() == 1,\n                 errors::InvalidArgument(\n-                    \"Input max tensor must have dimension 1. Recieved \",\n+                    \"Input max tensor must have dimension 0 or 1. Received \",\n                     input_max_tensor.dims(), \".\"));\n     if (axis_ != -1) {\n       OP_REQUIRES(\n@@ -203,6 +203,12 @@ class QuantizeAndDequantizeV4GradientOp : public OpKernel {\n                    ctx->allocate_output(2, min_max_shape, &input_max_backprop));\n \n     if (axis_ == -1) {\n+      OP_REQUIRES(ctx, TensorShapeUtils::IsScalar(input_min_tensor.shape()),\n+                  errors::InvalidArgument(\n+                      \"input_min must be a scalar if axis is unspecified\"));\n+      OP_REQUIRES(ctx, TensorShapeUtils::IsScalar(input_max_tensor.shape()),\n+                  errors::InvalidArgument(\n+                      \"input_max must be a scalar if axis is unspecified\"));\n       functor::QuantizeAndDequantizeOneScaleGradientFunctor<Device, T> f;\n       f(ctx->eigen_device<Device>(), gradient.template flat<T>(),\n         input.template flat<T>(), input_min_tensor.scalar<T>(),\n"
         ],
         "Title": "\n          Missing validation crashes `QuantizeAndDequantizeV4Grad`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "The implementation of  tf.raw_ops.TensorSummaryV2  does not fully validate the input arguments. This results in a  CHECK -failure which can be used to trigger a denial of service attack:",
         "Sample Code": "import tensorflow as tf\n\ntf.raw_ops.TensorSummaryV2(\n  tag=np.array('test'),\n  tensor=np.array(3),\n  ),\n  serialized_summary_metadata=tf.io.encode_base64(np.empty((0))))",
@@ -1391,9 +1365,7 @@
             "@@ -3505,6 +3505,9 @@ bool ConstantFolding::MulConvPushDown(GraphDef* optimized_graph, NodeDef* node,\n \n   NodeDef* mul_left_child = node_map_->GetNode(node->input(0));\n   NodeDef* mul_right_child = node_map_->GetNode(node->input(1));\n+  if (mul_left_child == nullptr || mul_right_child == nullptr) {\n+    return false;\n+  }\n   // One child must be constant, and the second must be Conv op.\n   const bool left_child_is_constant = IsReallyConstant(*mul_left_child);\n   const bool right_child_is_constant = IsReallyConstant(*mul_right_child);\n"
         ],
         "Title": "\n          Null pointer dereference in Grappler's `IsConstant`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "Under certain scenarios, Grappler component of TensorFlow is vulnerable to an integer overflow during  cost estimation for crop and resize . Since the cropping parameters are user controlled, a malicious person can trigger undefined behavior.",
         "Sample Code": "",
@@ -1468,9 +1440,7 @@
             "@@ -14,6 +14,8 @@ limitations under the License.\n ==============================================================================*/\n #include \"tensorflow/core/framework/shape_inference.h\"\n \n+#include <cstdint>\n+\n #include \"tensorflow/core/framework/bounds_check.h\"\n #include \"tensorflow/core/framework/full_type_util.h\"\n #include \"tensorflow/core/framework/node_def.pb.h\"\n@@ -789,6 +791,19 @@ Status InferenceContext::InternalMakeShapeFromTensor(\n       return ReturnUnknownShape(out);\n     }\n     const auto num_dims = Value(shape_dim);\n+    // TODO(mihaimaruseac): Should be `TensorShape::MaxDimensions()` as we are\n+    // not able to materialize shapes with more than this number of dimensions\n+    // but then shape inference would fail for operations such as\n+    // `tf.range`/`tf.ones`, etc. where the shape is not really materialized,\n+    // only used during the inference. Hence, just prevent doing a `reserve`\n+    // with a very large argument.\n+    const int64_t max_dimensions = 1 << 20;\n+    if (num_dims >= max_dimensions) {\n+      return errors::Internal(\n+          \"Cannot create a tensor with \", num_dims,\n+          \" dimensions, as these would be more than maximum of \",\n+          max_dimensions);\n+    }\n     std::vector<DimensionHandle> dims;\n     dims.reserve(num_dims);\n     for (int i = 0; i < num_dims; i++) dims.push_back(UnknownDim());\n"
         ],
         "Title": "\n          Abort caused by allocating a vector that is too large\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "If a graph node is invalid, TensorFlow can leak memory in the  implementation of  :",
         "Sample Code": "",
@@ -1549,9 +1519,7 @@
             "@@ -1134,7 +1134,12 @@ class SymbolicShapeRefiner {\n         GetUnknownOutputShape(node, output_port);\n     InferenceContext* ctx = GetContext(node);\n     if (ctx == nullptr) {\n-      return errors::InvalidArgument(\"Missing context\");\n+      return errors::InvalidArgument(\"SetUnknownShape: Missing context\");\n+    }\n+    if (output_port < 0 || output_port >= ctx->num_outputs()) {\n+      return errors::InvalidArgument(\n+          \"SetUnknownShape: output_port must be in [0, \", ctx->num_outputs(),\n+          \") but was \", output_port);\n     }\n     ctx->set_output(output_port, shape);\n     return Status::OK();\n"
         ],
         "Title": "\n          Heap OOB write in Grappler\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "An attacker can trigger denial of service via assertion failure by altering a  SavedModel  on disk such that  AttrDef s of some operation are duplicated.",
         "Sample Code": "",
@@ -1631,9 +1599,7 @@
             "@@ -115,6 +115,8 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {\n \n   TF_LITE_ENSURE_EQ(context, NumDimensions(input), 4);\n   TF_LITE_ENSURE_EQ(context, NumDimensions(filter), 4);\n+  TF_LITE_ENSURE(context, params->dilation_height_factor > 0);\n+  TF_LITE_ENSURE(context, params->dilation_width_factor > 0);\n \n   const TfLiteType data_type = input->type;\n \n"
         ],
         "Title": "\n          FPE in depthwise convolutions in TFLite\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "An attacker can craft a TFLite model that would trigger a division by zero in  BiasAndClamp :",
         "Sample Code": "",
@@ -1716,9 +1682,7 @@
             "@@ -231,16 +231,29 @@ class AddManySparseToTensorsMapOp : public SparseTensorAccessingOp {\n                 errors::InvalidArgument(\n                     \"Input indices should be a matrix but received shape \",\n                     input_indices->shape().DebugString()));\n-\n     OP_REQUIRES(context, TensorShapeUtils::IsVector(input_values->shape()),\n                 errors::InvalidArgument(\n                     \"Input values should be a vector but received shape \",\n                     input_values->shape().DebugString()));\n-\n     OP_REQUIRES(context, TensorShapeUtils::IsVector(input_shape->shape()),\n                 errors::InvalidArgument(\n                     \"Input shape should be a vector but received shape \",\n                     input_shape->shape().DebugString()));\n+    OP_REQUIRES(\n+        context,\n+        input_values->shape().dim_size(0) == input_indices->shape().dim_size(0),\n+        errors::InvalidArgument(\n+            \"Number of values must match first dimension of indices. \", \"Got \",\n+            input_values->shape().dim_size(0),\n+            \" values, indices shape: \", input_indices->shape().DebugString()));\n+    OP_REQUIRES(\n+        context,\n+        input_shape->shape().dim_size(0) == input_indices->shape().dim_size(1),\n+        errors::InvalidArgument(\n+            \"Number of dimensions must match second dimension of indices. \",\n+            \"Got \", input_shape->shape().dim_size(0),\n+            \" dimensions, indices shape: \",\n+            input_indices->shape().DebugString()));\n \n     int rank = input_shape->NumElements();\n \n"
         ],
         "Title": "\n          Integer overflows in `AddManySparseToTensorsMap`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "The  implementations of   are vulnerable to integer overflows. These can be used to trigger large allocations (so, OOM based denial of service) or  CHECK -fails when building new  TensorShape  objects (so, assert failures based denial of service):",
         "Sample Code": "import numpy as np\n\ntf.raw_ops.SparseDenseCwiseDiv(\n    sp_indices=np.array([[9]]),\n    sp_values=np.array([5]),\n    sp_shape=np.array([92233720368., 92233720368]),\n    ]),\n    dense=np.array([4]))",
@@ -1801,9 +1765,7 @@
             "@@ -1653,11 +1653,21 @@ REGISTER_OP(\"ReverseSequence\")\n         return errors::InvalidArgument(\n             \"batch_dim must be < input rank: \", batch_dim, \" vs. \", input_rank);\n       }\n+\n       if (seq_dim >= input_rank) {\n         return errors::InvalidArgument(\n             \"seq_dim must be < input rank: \", seq_dim, \" vs. \", input_rank);\n       }\n \n+      // To prevent out of bound access when calling c->Dim(input, batch_dim),\n+      // batch_dim range [-1 * input rank, input rank) is allowed. However,\n+      // the op implementation has a stricter bound for batch_dim requiring >= 0\n+      // value. Thus, perform strict check here.\n+      if (batch_dim < 0) {\n+        return errors::InvalidArgument(\"batch_dim must be >=0, got \",\n+                                       batch_dim);\n+      }\n+\n       DimensionHandle batch_dim_dim = c->Dim(input, batch_dim);\n       TF_RETURN_IF_ERROR(\n           c->Merge(batch_dim_dim, c->Dim(seq_lens_shape, 0), &batch_dim_dim));\n"
         ],
         "Title": "\n          Heap OOB read in shape inference for `ReverseSequence`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "The  estimator for the cost of some convolution operations  can be made to execute a division by 0:",
         "Sample Code": "@\ndef test():\n  y=tf.raw_ops.AvgPoolGrad(\n    orig_input_shape=[1,1,1,1],\n    grad=[[[[1.0],[1.0],[1.0]]],[[[2.0],[2.0],[2.0]]],[[[3.0],[3.0],[3.0]]]],\n    ksize=[1,1,1,1],\n    strides=[1,1,1,0],\n    padding='VALID',\n    data_format='NCHW')\n  return y\n\n\n\ntest()",
@@ -1894,9 +1856,7 @@
             "@@ -316,6 +316,10 @@ Status ImmutableExecutorState::BuildControlFlowInfo(const Graph* g,\n     } else if (IsExit(curr_node)) {\n       // Exit to the parent frame.\n       parent = parent_nodes[curr_id];\n+      if (!parent) {\n+        return errors::InvalidArgument(\n+            \"Invalid Exit op: Cannot find a corresponding Enter op.\");\n+      }\n       frame_name = cf_info->frame_names[parent->id()];\n       parent = parent_nodes[parent->id()];\n     } else {\n"
         ],
         "Title": "\n          Null pointer exception when `Exit` node is not preceded by `Enter` op\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "The  shape inference code for   can be made to execute a division by 0:",
         "Sample Code": "@\ndef func():\n  return tf.raw_ops.AllToAll(\n    input=[0.0, 0.1652, 0.6543],\n    group_assignment=[1, -1],\n    concat_dimension=0,\n    split_dimension=0,\n    split_count=0)\n\n)\n\nfunc()",
@@ -1984,9 +1944,7 @@
             "@@ -1374,6 +1374,8 @@ TEST(ArrayOpsTest, QuantizeAndDequantizeV2_ShapeFn) {\n   INFER_ERROR(\"Shapes must be equal rank, but are 1 and 0\", op,\n               \"[1,2,?,4,5];[];[1]\");\n   INFER_ERROR(\"Shape must be rank 0 but is rank 1\", op, \"[1,2,?,4,5];[1];[1]\");\n+  (*op.node_def.mutable_attr())[\"axis\"].set_i(-2);\n+  INFER_ERROR(\"axis should be at least -1, got -2\", op, \"?;?;?\");\n }\n \n TEST(ArrayOpsTest, SpaceToBatch_ShapeFn) {\n"
         ],
         "Title": "\n          Heap OOB read in all `tf.raw_ops.QuantizeAndDequantizeV*` ops\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "The  implementation of   misses some input validation and can produce a division by 0:",
         "Sample Code": "@\ndef test():\n  y = tf.raw_ops.ParallelConcat(values=[['tf']],shape=0)\n  return y\n\n\n\ntest()",
@@ -2068,9 +2026,7 @@
         "Sample Code": "import numpy as np\n\ntf.keras.layers.UpSampling2D(\n  size=1610637938,\n  data_format='channels_first',\n  ,\n  interpolation='bilinear')(np.ones((5,1,1,1)))",
         "Bug fix": "",
         "Title": "\n          Overflow/crash in `tf.image.resize` when size is large\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "If  tf.tile  is called with a large input argument then the TensorFlow process will crash due to a  CHECK -failure caused by an overflow.",
         "Sample Code": "import numpy as np\n\ntf.keras.backend.tile(x=np.ones((1,1,1)), n=[100000000,100000000, 100000000])",
@@ -2138,9 +2094,7 @@
             "@@ -265,7 +265,7 @@ inline void BinaryBroadcastFiveFold(const ArithmeticParams& unswitched_params,\n       // We have broadcast y2*y3*y4 of input2 data y1 times, and now move on.\n       input2_data_reset = input2_data_ptr;\n     }\n-  } else {\n+  } else if (input1_data_ptr != nullptr) {\n     // Special case of y4 == 1, in which the innermost loop is a single\n     // element and can be combined with the next (y3) as an inner broadcast.\n     //\n"
         ],
         "Title": "\n          Null pointer dereference in TFLite\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "TFLite's  GatherNd  does not support negative indices but there are no checks for this situation.",
         "Sample Code": "import numpy as np\ntf.compat.v1.disable_v2_behavior()\n\nparams = tf.compat.v1.placeholder(name=\"params\", dtype=tf.int64, shape=(1,))\nindices = tf.compat.v1.placeholder(name=\"indices\", dtype=tf.int64, shape=())\n\nout = tf.gather(params, indices, name='out')\n\nwith tf.compat.v1.Session() as sess:\n   converter = tf.compat.v1.lite.TFLiteConverter.from_session(sess, [params, indices], [out])\n   tflite_model = converter.convert()\n\ninterpreter = tf.lite.Interpreter(model_content=tflite_model)\ninterpreter.allocate_tensors()\n\ninput_details = interpreter.get_input_details()\noutput_details = interpreter.get_output_details()\n\nparams_data = np.reshape(np.array([1], dtype=np.int64), newshape=(1,))\nindices_data = np.reshape(np.array(-10, dtype=np.int64), newshape=())\ninterpreter.set_tensor(input_details[0]['index'], params_data)\ninterpreter.set_tensor(input_details[1]['index'], indices_data)\n\n)\n\ninterpreter.invoke()",
@@ -2240,9 +2194,7 @@
             "@@ -18,18 +18,11 @@\n from tensorflow.python.keras.saving.saved_model import json_utils\n from tensorflow.python.util.tf_export import keras_export\n \n-# pylint: disable=g-import-not-at-top\n-try:\n-  import yaml\n-except ImportError:\n-  yaml = None\n-# pylint: enable=g-import-not-at-top\n-\n \n @keras_export('keras.models.model_from_config')\n def model_from_config(config, custom_objects=None):\n   \"\"\"Instantiates a Keras model from its config.\n- \n+\n   Usage:\n   ```\n   # for a Functional API model\n@@ -63,17 +56,8 @@ def model_from_config(config, custom_objects=None):\n def model_from_yaml(yaml_string, custom_objects=None):\n   \"\"\"Parses a yaml model configuration file and returns a model instance.\n \n-  Usage:\n-\n-  >>> model = tf.keras.Sequential([\n-  ...     tf.keras.layers.Dense(5, input_shape=(3,)),\n-  ...     tf.keras.layers.Softmax()])\n-  >>> try:\n-  ...   import yaml\n-  ...   config = model.to_yaml()\n-  ...   loaded_model = tf.keras.models.model_from_yaml(config)\n-  ... except ImportError:\n-  ...   pass\n+  Note: Since TF 2.6, this method is no longer supported and will raise a\n+  RuntimeError.\n \n   Args:\n       yaml_string: YAML string or open file encoding a model configuration.\n@@ -85,19 +69,13 @@ def model_from_yaml(yaml_string, custom_objects=None):\n       A Keras model instance (uncompiled).\n \n   Raises:\n-      ImportError: if yaml module is not found.\n+      RuntimeError: announces that the method poses a security risk\n   \"\"\"\n-  if yaml is None:\n-    raise ImportError('Requires yaml module installed (`pip install pyyaml`).')\n-  # The method unsafe_load only exists in PyYAML 5.x+, so which branch of the\n-  # try block is covered by tests depends on the installed version of PyYAML.\n-  try:\n-    # PyYAML 5.x+\n-    config = yaml.unsafe_load(yaml_string)\n-  except AttributeError:\n-    config = yaml.load(yaml_string)\n-  from tensorflow.python.keras.layers import deserialize  # pylint: disable=g-import-not-at-top\n-  return deserialize(config, custom_objects=custom_objects)\n+  raise RuntimeError(\n+      'Method `model_from_yaml()` has been removed due to security risk of '\n+      'arbitrary code execution. Please use `Model.to_json()` and '\n+      '`model_from_json()` instead.'\n+  )\n \n \n @keras_export('keras.models.model_from_json')\n"
         ],
         "Title": "\n          Arbitrary code execution due to YAML deserialization\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "The shape inference code for  tf.raw_ops.Dequantize  has a vulnerability that could trigger a denial of service via a segfault if an attacker provides invalid arguments:",
         "Sample Code": "tf.compat.v1.disable_v2_behavior()\ntf.raw_ops.Dequantize(\n  input_tensor = tf.constant(-10.0, dtype=tf.float32),\n  input_tensor = tf.cast(input_tensor, dtype=tf.quint8),\n  min_range = tf.constant([], shape=[0], dtype=tf.float32),\n  max_range = tf.constant([], shape=[0], dtype=tf.float32),\n  mode  = 'MIN_COMBINED',\n  narrow_range=False,\n  axis=-10,\n  ,\n  dtype=tf.dtypes.float32)",
@@ -2324,9 +2276,7 @@
             "@@ -1575,7 +1575,7 @@ class UnravelIndexTest(test_util.TensorFlowTestCase):\n     with self.cached_session():\n       for dtype in [dtypes.int32, dtypes.int64]:\n         with self.assertRaisesRegex(errors.InvalidArgumentError,\n-                                    \"index is out of bound as with dims\"):\n+                                    \"dims cannot contain a dim of zero\"):\n           indices = constant_op.constant([2, 5, 7], dtype=dtype)\n           dims = constant_op.constant([3, 0], dtype=dtype)\n           self.evaluate(array_ops.unravel_index(indices=indices, dims=dims))\n"
         ],
         "Title": "\n          FPE in `tf.raw_ops.UnravelIndex`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "An attacker can cause undefined behavior via binding a reference to null pointer in  tf.raw_ops.UnicodeEncode :",
         "Sample Code": "from tensorflow.python.ops import gen_string_ops\n\ngen_string_ops.unicode_encode(\n  input_values=[],\n  input_splits=[],\n  output_encoding='UTF-8',\n  errors='ignore',\n  ,\n  replacement_char='a')",
@@ -2406,9 +2356,7 @@
             "@@ -70,6 +70,9 @@ class MatrixSetDiagOp : public OpKernel {\n                   errors::InvalidArgument(\n                       \"diag_index must be a scalar or vector, received shape: \",\n                       diag_index.shape().DebugString()));\n+      OP_REQUIRES(\n+          context, diag_index.NumElements() > 0,\n+          errors::InvalidArgument(\"diag_index must have at least one element\"));\n       lower_diag_index = diag_index.flat<int32>()(0);\n       upper_diag_index = lower_diag_index;\n       if (TensorShapeUtils::IsVector(diag_index.shape())) {\n"
         ],
         "Title": "\n          Reference binding to nullptr in `MatrixSetDiagV*` ops\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "An attacker can cause undefined behavior via binding a reference to null pointer in all operations of type  tf.raw_ops.MatrixDiagV* :",
         "Sample Code": "tf.raw_ops.MatrixDiagV3(\n  diagonal=[1,0],\n  k=[],\n  num_rows=[1,2,3],\n  num_cols=[4,5],\n  padding_value=[],\n  [],\n  align='RIGHT_RIGHT')",
@@ -2488,9 +2436,7 @@
             "@@ -98,6 +98,7 @@ class SaveV2 : public OpKernel {\n     const Tensor& shape_and_slices = context->input(2);\n     ValidateInputs(true /* is save op */, context, prefix, tensor_names,\n                    shape_and_slices);\n+    if (!context->status().ok()) return;\n \n     const int kFixedInputs = 3;  // Prefix, tensor names, shape_and_slices.\n     const int num_tensors = static_cast<int>(tensor_names.NumElements());\n@@ -177,6 +178,7 @@ class RestoreV2 : public OpKernel {\n                                         \" expected dtypes.\"));\n     ValidateInputs(false /* not save op */, context, prefix, tensor_names,\n                    shape_and_slices);\n+    if (!context->status().ok()) return;\n \n     const string& prefix_string = prefix.scalar<tstring>()();\n \n"
         ],
         "Title": "\n          Incorrect validation of `SaveV2` inputs\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "When a user does not supply arguments that determine a valid sparse tensor,  tf.raw_ops.SparseTensorSliceDataset  implementation can be made to dereference a null pointer:",
         "Sample Code": "tf.raw_ops.SparseTensorSliceDataset(\n  indices=[[],[],[]],\n  values=[1,2,3],\n  ],\n  dense_shape=[3,3])",
@@ -2572,9 +2518,7 @@
             "@@ -348,6 +348,9 @@ class RaggedTensorToTensorBaseOp : public OpKernel {\n   Status GetFirstDimensionSize(OpKernelContext* context, INDEX_TYPE* result) {\n     const Tensor first_partition_tensor =\n         context->input(kFirstPartitionInputIndex);\n+    if (row_partition_types_.empty()) {\n+      return errors::InvalidArgument(\"No row_partition_types given.\");\n+    }\n     const RowPartitionType first_partition_type = row_partition_types_[0];\n     switch (first_partition_type) {\n       case RowPartitionType::FIRST_DIM_SIZE:\n"
         ],
         "Title": "\n          Null pointer dereference in `RaggedTensorToTensor`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "It is possible to trigger a null pointer dereference in TensorFlow by passing an invalid input to  tf.raw_ops.CompressElement :",
         "Sample Code": " tensorflow as tf\n\ntf.raw_ops.CompressElement(components=[[]])",
@@ -2652,9 +2596,7 @@
             "@@ -109,6 +109,9 @@ class CTCLossOp : public OpKernel {\n \n     const TensorShape& inputs_shape = inputs->shape();\n     const int64 max_time = inputs_shape.dim_size(0);\n+    OP_REQUIRES(ctx, max_time != 0,\n+                errors::InvalidArgument(\n+                    \"Max time or first dimension of input cannot be 0.\"));\n     const int64 batch_size = inputs_shape.dim_size(1);\n     const int64 num_classes_raw = inputs_shape.dim_size(2);\n     OP_REQUIRES(\n"
         ],
         "Title": "\n          Incomplete validation in `tf.raw_ops.CTCLoss`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "An attacker can trigger a heap buffer overflow in Eigen implementation of  tf.raw_ops.BandedTriangularSolve :",
         "Sample Code": "import numpy as np\n  \nmatrix_array = np.array([])\nmatrix_tensor = tf.convert_to_tensor(np.reshape(matrix_array,(0,1)),dtype=tf.float32)\nrhs_array = np.array([1,1])\nrhs_tensor = tf.convert_to_tensor(np.reshape(rhs_array,(1,2)),dtype=tf.float32)\n)\ntf.raw_ops.BandedTriangularSolve(matrix=matrix_tensor,rhs=rhs_tensor)",
@@ -2735,9 +2677,7 @@
             "@@ -16,6 +16,8 @@ limitations under the License.\n \n #include <stdint.h>\n \n+#include <limits>\n+\n #include \"tensorflow/lite/c/builtin_op_data.h\"\n #include \"tensorflow/lite/c/common.h\"\n #include \"tensorflow/lite/kernels/internal/compatibility.h\"\n@@ -69,6 +71,10 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {\n     TF_LITE_ENSURE_EQ(context, t->type, input_type);\n     for (int d = 0; d < t0->dims->size; ++d) {\n       if (d == axis) {\n+        // Avoid integer overflow in sum_axis below\n+        TF_LITE_ENSURE(context, t->dims->data[axis] >= 0);\n+        TF_LITE_ENSURE(context, t->dims->data[axis] <=\n+                                    std::numeric_limits<int>::max() - sum_axis);\n         sum_axis += t->dims->data[axis];\n       } else {\n         TF_LITE_ENSURE_EQ(context, t->dims->data[d], t0->dims->data[d]);\n"
         ],
         "Title": "\n          Integer overflow in TFLite concatentation\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "The TFLite implementation of hashtable lookup is  vulnerable to a division by zero error :",
         "Sample Code": "",
@@ -2819,9 +2759,7 @@
             "@@ -54,6 +54,7 @@ TfLiteStatus CalculateOpData(TfLiteContext* context, TfLiteNode* node) {\n   TF_LITE_ENSURE_TYPES_EQ(context, input->type, output->type);\n \n   const int block_size = params->block_size;\n+  TF_LITE_ENSURE(context, block_size > 0);\n   const int input_height = input->dims->data[kHeightRank];\n   const int input_width = input->dims->data[kWidthRank];\n   const int input_channels = input->dims->data[kDepthRank];\n"
         ],
         "Title": "\n          Division by zero in TFLite's implementation of `DepthToSpace`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "TFlite graphs must not have loops between nodes. However, this condition was not checked and an attacker could craft models that would result in infinite loop during evaluation. In certain cases, the infinite loop would be replaced by stack overflow due to too many recursive calls.",
         "Sample Code": "",
@@ -2900,9 +2838,7 @@
             "@@ -63,11 +63,18 @@ class SparseSplitOp : public OpKernel {\n                                         input_shape.vec<int64>()(axis),\n                                         \"), got \", num_split_));\n \n+    // Prevent overflow by constructing the dense shape separately\n+    TensorShape dense_shape;\n+    const auto input_shape_flat = input_shape.flat<int64>();\n+    for (int i = 0; i < input_shape.NumElements(); i++) {\n+      OP_REQUIRES_OK(context,\n+                     dense_shape.AddDimWithStatus(input_shape_flat(i)));\n+    }\n+\n     sparse::SparseTensor sparse_tensor;\n     OP_REQUIRES_OK(context,\n-                   sparse::SparseTensor::Create(\n-                       input_indices, input_values,\n-                       TensorShape(input_shape.vec<int64>()), &sparse_tensor));\n+                   sparse::SparseTensor::Create(input_indices, input_values,\n+                                                dense_shape, &sparse_tensor));\n \n     std::vector<sparse::SparseTensor> outputs;\n     OP_REQUIRES_OK(context, sparse::SparseTensor::Split<T>(\n"
         ],
         "Title": "\n          `CHECK`-fail due to integer overflow\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "Due to lack of validation in  tf.raw_ops.Dequantize , an attacker can trigger a read from outside of bounds of heap allocated data:",
         "Sample Code": "input_tensor=tf.constant(\n  [75, 75, 75, 75, -6, -9, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10,\\\n  -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10,\\\n  -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10,\\\n  -10, -10, -10, -10], shape=[5, 10], dtype=tf.int32)\ninput_tensor=tf.cast(input_tensor, dtype=tf.quint8)\nmin_range = tf.constant([-10], shape=[1], dtype=tf.float32)\nmax_range = tf.constant([24, 758, 758, 758, 758], shape=[5], dtype=tf.float32)\n  \ntf.raw_ops.Dequantize( \n  input=input_tensor, min_range=min_range, max_range=max_range, mode='SCALED',\n  ,\n  narrow_range=True, axis=0, dtype=tf.dtypes.float32)",
@@ -2982,9 +2918,7 @@
             "@@ -115,6 +115,10 @@ class ReverseSequenceOp : public OpKernel {\n       : OpKernel(context) {\n     OP_REQUIRES_OK(context, context->GetAttr(\"batch_dim\", &batch_dim_));\n     OP_REQUIRES_OK(context, context->GetAttr(\"seq_dim\", &seq_dim_));\n+    OP_REQUIRES(context, batch_dim_ >= 0,\n+                errors::InvalidArgument(\"Invalid batch_dim \", batch_dim_));\n+    OP_REQUIRES(context, seq_dim_ >= 0,\n+                errors::InvalidArgument(\"Invalid seq_dim \", seq_dim_));\n   }\n \n   void Compute(OpKernelContext* context) override {\n"
         ],
         "Title": "\n          Overflow/denial of service in `tf.raw_ops.ReverseSequence`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "The implementation of  tf.raw_ops.SdcaOptimizer  triggers undefined behavior due to dereferencing a null pointer:",
         "Sample Code": "sparse_example_indices = [tf.constant((0), dtype=tf.int64), tf.constant((0), dtype=tf.int64)]\nsparse_feature_indices = [tf.constant([], shape=[0, 0, 0, 0], dtype=tf.int64), tf.constant((0), dtype=tf.int64)]\nsparse_feature_values = []\n\ndense_features = []\ndense_weights = []\n\nexample_weights = tf.constant((0.0), dtype=tf.float32)\nexample_labels = tf.constant((0.0), dtype=tf.float32)\n\nsparse_indices = [tf.constant((0), dtype=tf.int64), tf.constant((0), dtype=tf.int64)]\nsparse_weights = [tf.constant((0.0), dtype=tf.float32), tf.constant((0.0), dtype=tf.float32)]\n  \nexample_state_data = tf.constant([0.0, 0.0, 0.0, 0.0], shape=[1, 4], dtype=tf.float32)\n  \ntf.raw_ops.SdcaOptimizer(\n  sparse_example_indices=sparse_example_indices,\n  sparse_feature_indices=sparse_feature_indices,\n  sparse_feature_values=sparse_feature_values, dense_features=dense_features,\n  example_weights=example_weights, example_labels=example_labels, \n  sparse_indices=sparse_indices, sparse_weights=sparse_weights, \n  dense_weights=dense_weights, example_state_data=example_state_data,\n  loss_type=\"logistic_loss\", l1=0.0, l2=0.0, num_loss_partitions=1,\n  ,\n  num_inner_iterations=1, adaptative=False)",
@@ -3064,9 +2998,7 @@
             "@@ -222,6 +222,9 @@ class FFTCPU : public FFTBase {\n       input_slice_sizes[i] = fft_shape[i - 1];\n       temp_shape.AddDim(fft_shape[i - 1]);\n     }\n+    OP_REQUIRES(ctx, temp_shape.num_elements() > 0,\n+                errors::InvalidArgument(\"Obtained a FFT shape of 0 elements: \",\n+                                        temp_shape.DebugString()));\n \n     auto output = out->flat_inner_dims<ComplexT, FFTRank + 1>();\n     const Eigen::DSizes<Eigen::DenseIndex, FFTRank + 1> zero_start_indices;\n"
         ],
         "Title": "\n          `CHECK`-fail in `tf.raw_ops.RFFT`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "An attacker can cause a denial of service by exploiting a  CHECK -failure coming from the implementation of  tf.raw_ops.IRFFT :",
         "Sample Code": "values = [-10.0] * 130\nvalues[0] = -9.999999999999995\ninputs = tf.constant(values, shape=[10, 13], dtype=tf.float32)\ninputs = tf.cast(inputs, dtype=tf.complex64)\nfft_length = tf.constant([0], shape=[1], dtype=tf.int32)\n\n)\n\ntf.raw_ops.IRFFT(input=inputs, fft_length=fft_length)",
@@ -3146,9 +3078,7 @@
             "@@ -90,6 +90,8 @@ class UnsortedSegmentJoinOp : public OpKernel {\n     const int32 segment_dims = segment_id_shape.dims();\n \n     const Tensor& num_segments_tensor = context->input(2);\n+    OP_REQUIRES(context, num_segments_tensor.NumElements() != 0,\n+                errors::InvalidArgument(\"Number of segments cannot be empty.\"));\n     auto num_segments = num_segments_tensor.scalar<NUM_SEGMENTS_TYPE>()();\n \n     OP_REQUIRES(context, segment_dims != 0,\n"
         ],
         "Title": "\n          `CHECK`-failure in `UnsortedSegmentJoin`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "An attacker can read data outside of bounds of heap allocated buffer in  tf.raw_ops.QuantizeAndDequantizeV3 :",
         "Sample Code": "tf.raw_ops.QuantizeAndDequantizeV3(\n  input=[2.5,2.5], input_min=[0,0], input_max=[1,1], num_bits=[30],\n  ],\n  signed_input=False, range_given=False, narrow_range=False, axis=3)",
@@ -3228,9 +3158,7 @@
             "@@ -160,7 +160,17 @@ class QuantizeAndDequantizeV4GradientOp : public OpKernel {\n         errors::InvalidArgument(\"gradient and input must be the same size\"));\n     const int depth = (axis_ == -1) ? 1 : input.dim_size(axis_);\n     const Tensor& input_min_tensor = ctx->input(2);\n+    OP_REQUIRES(ctx,\n+                input_min_tensor.dims() == 0 || input_min_tensor.dims() == 1,\n+                errors::InvalidArgument(\n+                    \"Input min tensor must have dimension 1. Recieved \",\n+                    input_min_tensor.dims(), \".\"));\n     const Tensor& input_max_tensor = ctx->input(3);\n+    OP_REQUIRES(ctx,\n+                input_max_tensor.dims() == 0 || input_max_tensor.dims() == 1,\n+                errors::InvalidArgument(\n+                    \"Input max tensor must have dimension 1. Recieved \",\n+                    input_max_tensor.dims(), \".\"));\n     if (axis_ != -1) {\n       OP_REQUIRES(\n           ctx, input_min_tensor.dim_size(0) == depth,\n"
         ],
         "Title": "\n          `CHECK`-fail in `QuantizeAndDequantizeV4Grad`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "An attacker can trigger a dereference of a null pointer in  tf.raw_ops.StringNGrams :",
         "Sample Code": "data=tf.constant([''] * 11, shape=[11], dtype=tf.string)\n\nsplits = [0]*115\nsplits.append(3)\ndata_splits=tf.constant(splits, shape=[116], dtype=tf.int64)\n\ntf.raw_ops.StringNGrams(data=data, data_splits=data_splits, separator=b'Ss',\n                        ngram_widths=[7,6,11],\n                        left_pad='ABCDE', right_pad=b'ZYXWVU',\n                        ,\n                        pad_width=50, preserve_short_sequences=True)",
@@ -3312,9 +3240,7 @@
             "@@ -21,6 +21,7 @@ limitations under the License.\n #include \"tensorflow/core/framework/register_types.h\"\n #include \"tensorflow/core/framework/tensor.h\"\n #include \"tensorflow/core/framework/tensor_shape.h\"\n+#include \"tensorflow/core/platform/errors.h\"\n #include \"tensorflow/core/platform/fingerprint.h\"\n #include \"tensorflow/core/util/util.h\"\n #include \"tensorflow/core/util/work_sharder.h\"\n@@ -466,16 +467,45 @@ class RaggedCrossOp : public OpKernel {\n     int next_dense = 0;\n     for (char c : input_order_) {\n       if (c == 'R') {\n+        if (next_ragged >= ragged_values_list.size())\n+          return errors::InvalidArgument(\n+              \"input_order \\\"\", input_order_,\n+              \"\\\" specifies reading a ragged tensor value at index \",\n+              next_ragged, \" from a list of \", ragged_values_list.size(),\n+              \" values.\");\n+        if (next_ragged >= ragged_splits_list.size())\n+          return errors::InvalidArgument(\n+              \"input_order \\\"\", input_order_,\n+              \"\\\" specifies reading a ragged tensor split at index \",\n+              next_ragged, \" from a list of \", ragged_splits_list.size(),\n+              \" splits.\");\n         TF_RETURN_IF_ERROR(BuildRaggedFeatureReader(\n             ragged_values_list[next_ragged], ragged_splits_list[next_ragged],\n             features));\n         next_ragged++;\n       } else if (c == 'S') {\n+        if (next_sparse >= sparse_values_list.size())\n+          return errors::InvalidArgument(\n+              \"input_order \\\"\", input_order_,\n+              \"\\\" specifies reading a sparse tensor value at index \",\n+              next_sparse, \" from a list of \", sparse_values_list.size(),\n+              \" values.\");\n+        if (next_sparse >= sparse_indices_list.size())\n+          return errors::InvalidArgument(\n+              \"input_order \\\"\", input_order_,\n+              \"\\\" specifies reading a sparse tensor index at index \",\n+              next_sparse, \" from a list of \", sparse_indices_list.size(),\n+              \" indices.\");\n         TF_RETURN_IF_ERROR(BuildSparseFeatureReader(\n             sparse_indices_list[next_sparse], sparse_values_list[next_sparse],\n             batch_size, features));\n         next_sparse++;\n       } else if (c == 'D') {\n+        if (next_dense >= dense_list.size())\n+          return errors::InvalidArgument(\n+              \"input_order \\\"\", input_order_,\n+              \"\\\" specifies reading a dense tensor at index \", next_dense,\n+              \" from a list of \", dense_list.size(), \" tensors.\");\n         TF_RETURN_IF_ERROR(\n             BuildDenseFeatureReader(dense_list[next_dense++], features));\n       } else {\n"
         ],
         "Title": "\n          Heap out of bounds read in `RaggedCross`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "An attacker can trigger a  CHECK  fail in PNG encoding by providing an empty input tensor as the pixel data:",
         "Sample Code": "image = tf.zeros([0, 0, 3])\nimage = tf.cast(image, dtype=tf.uint8) \n) \ntf.raw_ops.EncodePng(image=image) ",
@@ -3394,9 +3320,7 @@
             "@@ -239,6 +239,14 @@ class Conv3DBackpropInputOp : public OpKernel {\n       input_shape = context->input(0).shape();\n     }\n \n+    OP_REQUIRES(context, input_shape.dims() == 5,\n+                errors::InvalidArgument(\"input tensor must have 5 dimensions\"));\n+    OP_REQUIRES(\n+        context, filter_shape.dims() == 5,\n+        errors::InvalidArgument(\"filter_sizes tensor must have 5 dimensions\"));\n+    OP_REQUIRES(\n+        context, out_backprop_shape.dims() == 5,\n+        errors::InvalidArgument(\"out_backprop tensor must have 5 dimensions\"));\n     OP_REQUIRES(\n         context, input_shape.dim_size(4) == filter_shape.dim_size(3),\n         errors::InvalidArgument(\"input and filter_sizes must have the same \"\n@@ -360,6 +368,14 @@ class Conv3DCustomBackpropInputOp : public OpKernel {\n       input_shape = context->input(0).shape();\n     }\n \n+    OP_REQUIRES(context, input_shape.dims() == 5,\n+                errors::InvalidArgument(\"input tensor must have 5 dimensions\"));\n+    OP_REQUIRES(\n+        context, filter_shape.dims() == 5,\n+        errors::InvalidArgument(\"filter_sizes tensor must have 5 dimensions\"));\n+    OP_REQUIRES(\n+        context, out_backprop_shape.dims() == 5,\n+        errors::InvalidArgument(\"out_backprop tensor must have 5 dimensions\"));\n     OP_REQUIRES(\n         context, input_shape.dim_size(4) == filter_shape.dim_size(3),\n         errors::InvalidArgument(\"input and filter_sizes must have the same \"\n@@ -444,6 +460,11 @@ class Conv3DCustomBackpropInputOp : public OpKernel {\n     // contraction compared to sharding and matmuls.\n     const bool use_parallel_contraction = dims.batch_size == 1;\n \n+    OP_REQUIRES(\n+        context, work_unit_size > 0,\n+        errors::InvalidArgument(\"input, filter_sizes and out_backprop tensors \"\n+                                \"must all have at least 1 element\"));\n+\n     const size_t shard_size =\n         use_parallel_contraction\n             ? 1\n@@ -724,6 +745,14 @@ class Conv3DBackpropFilterOp : public OpKernel {\n       filter_shape = context->input(1).shape();\n     }\n \n+    OP_REQUIRES(context, input_shape.dims() == 5,\n+                errors::InvalidArgument(\"input tensor must have 5 dimensions\"));\n+    OP_REQUIRES(\n+        context, filter_shape.dims() == 5,\n+        errors::InvalidArgument(\"filter_sizes tensor must have 5 dimensions\"));\n+    OP_REQUIRES(\n+        context, out_backprop_shape.dims() == 5,\n+        errors::InvalidArgument(\"out_backprop tensor must have 5 dimensions\"));\n     OP_REQUIRES(\n         context, input_shape.dim_size(4) == filter_shape.dim_size(3),\n         errors::InvalidArgument(\"input and filter_sizes must have the same \"\n@@ -850,6 +879,14 @@ class Conv3DCustomBackpropFilterOp : public OpKernel {\n       filter_shape = context->input(1).shape();\n     }\n \n+    OP_REQUIRES(context, input_shape.dims() == 5,\n+                errors::InvalidArgument(\"input tensor must have 5 dimensions\"));\n+    OP_REQUIRES(\n+        context, filter_shape.dims() == 5,\n+        errors::InvalidArgument(\"filter_sizes tensor must have 5 dimensions\"));\n+    OP_REQUIRES(\n+        context, out_backprop_shape.dims() == 5,\n+        errors::InvalidArgument(\"out_backprop tensor must have 5 dimensions\"));\n     OP_REQUIRES(\n         context, input_shape.dim_size(4) == filter_shape.dim_size(3),\n         errors::InvalidArgument(\"input and filter_sizes must have the same \"\n@@ -936,6 +973,11 @@ class Conv3DCustomBackpropFilterOp : public OpKernel {\n \n     const int64 work_unit_size = size_A + size_B + size_C;\n \n+    OP_REQUIRES(\n+        context, work_unit_size > 0,\n+        errors::InvalidArgument(\"input, filter_sizes and out_backprop tensors \"\n+                                \"must all have at least 1 element\"));\n+\n     const size_t shard_size =\n         (target_working_set_size + work_unit_size - 1) / work_unit_size;\n \n"
         ],
         "Title": "\n          Division by 0 in `Conv3DBackprop*`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "Missing validation between arguments to  tf.raw_ops.Conv3DBackprop*  operations can result in heap buffer overflows:",
         "Sample Code": "input_values = [-10.0] * (7 * 7 * 7 * 7 * 7)\ninput_values[0] = 429.6491056791816\ninput_sizes = tf.constant(input_values, shape=[7, 7, 7, 7, 7], dtype=tf.float32)\nfilter_tensor = tf.constant([7, 7, 7, 1, 1], shape=[5], dtype=tf.int32)\nout_backprop = tf.constant([-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0], shape=[7, 1, 1, 1, 1], dtype=tf.float32)\n  \n)\n  \ntf.raw_ops.Conv3DBackpropFilterV2(input=input_sizes, filter_sizes=filter_tensor, out_backprop=out_backprop, strides=[1, 37, 65, 93, 1], padding='VALID', data_format='NDHWC', dilations=[1, 1, 1, 1, 1])",
@@ -3476,9 +3400,7 @@
             "@@ -420,6 +420,15 @@ class RaggedBincountOp : public OpKernel {\n     int num_values = values.size();\n     int batch_idx = 0;\n \n+    OP_REQUIRES(ctx, splits(0) == 0,\n+                errors::InvalidArgument(\"Splits must start with 0, not with \",\n+                                        splits(0)));\n+\n+    OP_REQUIRES(ctx, splits(num_rows) == num_values,\n+                errors::InvalidArgument(\n+                    \"Splits must end with the number of values, got \",\n+                    splits(num_rows), \" instead of \", num_values));\n+\n     Tensor* out_t;\n     OP_REQUIRES_OK(\n         ctx, ctx->allocate_output(0, TensorShape({num_rows, size}), &out_t));\n"
         ],
         "Title": "\n          Heap buffer overflow in `RaggedBinCount`\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "Calling  tf.raw_ops.ImmutableConst  with a  dtype  of  tf.resource  or  tf.variant  results in a segfault in the implementation as code assumes that the tensor contents are pure scalars.",
         "Sample Code": ">>> tf.raw_ops.ImmutableConst(dtype=tf.resource, shape=[], memory_region_name=\"/tmp/test.txt\")\n...\n)\n...\nSegmentation fault",
@@ -3538,9 +3460,7 @@
         "Sample Code": "",
         "Bug fix": "",
         "Title": "\n          Segfault in tf.raw_ops.Switch in eager mode\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "If a user passes an invalid argument to  dlpack.to_dlpack  the expected validations will cause variables to bind to  nullptr  while setting a  status  variable to the error condition.",
         "Sample Code": "",
@@ -3600,9 +3520,7 @@
         "Sample Code": "",
         "Bug fix": "",
         "Title": "\n          Segfault due to invalid splits in RaggedCountSparseOutput\n        "
-    }
-]
-[
+    },
     {
         "Bug description": "The  RaggedCountSparseOutput  implementation does not validate that the input arguments form a valid ragged tensor. In particular, there is no validation that the values in the  splits  tensor generate a valid partitioning of the  values  tensor. Hence, this code is prone to heap buffer overflow: \n",
         "Sample Code": "",

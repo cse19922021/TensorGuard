@@ -182,6 +182,7 @@ def scrape_security_page(link):
 
 def scrape_tensorflow_security():
 
+    data_list = []
     for page_num in range(1, 43):
         sub_content = requests.get(
             f"https://github.com/tensorflow/tensorflow/security/advisories?page={page_num}")
@@ -190,8 +191,6 @@ def scrape_tensorflow_security():
         box_content = app_main_.contents[1].contents[3].contents[
             1].contents[3].contents[1].contents[3].contents[1].contents[5]
         records = box_content.contents[1].contents[1]
-
-        data_list = []
 
         for record in records.contents:
             if not isinstance(record, str):
@@ -205,9 +204,9 @@ def scrape_tensorflow_security():
                 data_list.append(data_)
                 print(data_)
 
-        with open("data/tf_bug_data.json", "a") as json_file:
-            json.dump(data_list, json_file, indent=4)
-            json_file.write('\n')
+    with open("data/tf_bug_data.json", "a") as json_file:
+        json.dump(data_list, json_file, indent=4)
+        json_file.write('\n')
 
 
 def ckeckList(lst):
