@@ -1,7 +1,7 @@
 {
-    "rule_id": "FPE_in_TFLite_conv_kernel",
-    "api_name": "Prepare",
-    "parameters": [
+    "API": "TFLite",
+    "function": "Prepare",
+    "params": [
         {
             "name": "kernel_type",
             "type": "KernelType"
@@ -12,15 +12,684 @@
         },
         {
             "name": "input",
-            "type": "TfLiteTensor*"
+            "type": "const TfLiteTensor*"
         },
         {
             "name": "filter",
+            "type": "const TfLiteTensor*"
+        },
+        {
+            "name": "bias",
+            "type": "const TfLiteTensor*"
+        },
+        {
+            "name": "output",
             "type": "TfLiteTensor*"
         }
     ],
     "malformed_input": {
-        "filter_input_channel": "less_than_one"
+        "filter_input_channel": "0"
     },
+    "description": "Constructing a tflite model with a paramater  filter_input_channel  of less than 1 gives a FPE.",
+    "minimum_reproducible_example": "",
+    "bug_type": "FPE",
     "link": "Constructing a tflite model with a paramater  filter_input_channel  of less than 1 gives a FPE."
+},
+{
+    "api": "nn_ops.fractional_avg_pool_v2",
+    "input_generation_rule": {
+        "type": "random",
+        "inputs": [
+            {
+                "type": "float_array",
+                "min": 0,
+                "max": 1,
+                "shape": [
+                    null,
+                    null,
+                    null,
+                    null
+                ]
+            },
+            {
+                "type": "int_array",
+                "length": 4,
+                "min": 1,
+                "max": 5
+            },
+            {
+                "type": "bool"
+            },
+            {
+                "type": "bool"
+            },
+            {
+                "type": "int",
+                "min": 0,
+                "max": 1000000
+            }
+        ],
+        "mutate_prob": 0.3,
+        "mutate_min_change": -1,
+        "mutate_max_change": 1,
+        "mutate_change_prob": 0.7
+    },
+    "link": "nn_ops.fractional_avg_pool_v2  and  nn_ops.fractional_max_pool_v2  require the first and fourth elements of their parameter  pooling_ratio  to be equal to 1.0, as pooling on batch and channel dimensions is not supported."
+},
+{
+    "API": "tf.raw_ops.ParallelConcat",
+    "inputs": [
+        {
+            "name": "shape",
+            "type": "int",
+            "required": true,
+            "malformed_values": [
+                "-1",
+                "0",
+                ""
+            ]
+        },
+        {
+            "name": "values",
+            "type": "list",
+            "required": true,
+            "malformed_values": [
+                "[]",
+                "['']",
+                "['a', '']"
+            ]
+        }
+    ],
+    "link": "When running with XLA,  tf.raw_ops.ParallelConcat  segfaults with a nullptr dereference when given a parameter  shape  with rank that is not greater than zero."
+},
+{
+    "api": "tf.raw_ops.Bincount",
+    "vulnerability": "Segfault with XLA when weights parameter is not the same shape as arr parameter nor a length-0 tensor",
+    "input_type": {
+        "arr": "int32",
+        "size": "int32",
+        "weights": "List[int32]"
+    },
+    "input_generation_rule": {
+        "arr": {
+            "type": "random",
+            "min": 0,
+            "max": 2147483647
+        },
+        "size": {
+            "type": "random",
+            "min": 0,
+            "max": 2147483647
+        },
+        "weights": [
+            {
+                "type": "random",
+                "min": 0,
+                "max": 2147483647
+            },
+            {
+                "type": "random",
+                "min": 0,
+                "max": 2147483647
+            },
+            {
+                "type": "random",
+                "min": -2147483648,
+                "max": -1
+            },
+            {
+                "type": "random",
+                "min": 2147483648,
+                "max": 9223372036854775807
+            },
+            {
+                "type": "fixed",
+                "value": []
+            }
+        ]
+    },
+    "link": "When running with XLA,  tf.raw_ops.Bincount  segfaults when given a parameter  weights  that is neither the same shape as parameter  arr  nor a length-0 tensor."
+},
+{
+    "API": "tf.raw_ops.RandomShuffle",
+    "malformed_input_rule": {
+        "func": "tf.raw_ops.RandomShuffle",
+        "para": {
+            "value": [
+                "1e+20",
+                "0.0",
+                "-1",
+                "' '"
+            ],
+            "seed": [
+                "-4294967297"
+            ],
+            "seed2": [
+                "-2147483649"
+            ]
+        },
+        "test_case": [
+            {
+                "para": {
+                    "value": "$value",
+                    "seed": "$seed",
+                    "seed2": "$seed2"
+                },
+                "expected_output": "NPE"
+            }
+        ]
+    },
+    "link": "NPE in RandomShuffle with XLA enable"
+},
+{
+    "api": "tf.raw_ops.LookupTableImportV2",
+    "input_type": [
+        "scalar",
+        "scalar"
+    ],
+    "input_constraints": [
+        {
+            "parameter": "keys",
+            "type": "float",
+            "min": 0,
+            "max": 100
+        },
+        {
+            "parameter": "values",
+            "type": "float",
+            "malformed_values": [
+                -919
+            ]
+        }
+    ],
+    "output_type": "tensor",
+    "output_constraints": {
+        "type": "float",
+        "min": 0,
+        "max": 100
+    },
+    "link": "The function  tf.raw_ops.LookupTableImportV2  cannot handle scalars in the  values  parameter and gives an NPE."
+},
+{
+    "title": "Segmentation fault in tfg-translate",
+    "bug_description": "Out-of-bounds access due to mismatched integer type sizes in ValueMap::Manager::GetValueOrCreatePlaceholder. Bug with tfg-translate call to InitMlir. The problem happens with generic functions, as it is already handled for non-generic functions. This is because they, unlike non-generic functions, are using the \"old importer\". A better long-term solution may be to have the \"new importer\" handle generic functions.",
+    "minimum_reproduceable_example": "[INSERT MALFORMED INPUT EXAMPLE HERE]",
+    "bug_pattern": {
+        "API": "tfg-translate",
+        "input_generation_rule": "[INSERT MALFORMED INPUT GENERATION RULE HERE IN FORMAT THAT CAN BE USED FOR FUZZING]"
+    },
+    "link": "Out-of-bounds access due to mismatched integer type sizes in ValueMap::Manager::GetValueOrCreatePlaceholder. Bug with tfg-translate call to InitMlir. The problem happens with generic functions, as it is already handled for non-generic functions. This is because they, unlike non-generic functions, are using the \"old importer\". A better long-term solution may be to have the \"new importer\" handle generic functions."
+},
+{
+    "api": "tf.raw_ops.QuantizedMatMulWithBiasAndDequantize",
+    "input_generation_rule": {
+        "a": {
+            "type": "quint8",
+            "shape": [
+                2,
+                3
+            ]
+        },
+        "b": {
+            "type": "qint8",
+            "shape": [
+                3,
+                2
+            ]
+        },
+        "bias": {
+            "type": "float32",
+            "shape": [
+                2,
+                2
+            ]
+        },
+        "min_a": {
+            "type": "float32"
+        },
+        "max_a": {
+            "type": "float32",
+            "shape": [
+                2
+            ]
+        },
+        "min_b": {
+            "type": "float32"
+        },
+        "max_b": {
+            "type": "float32",
+            "shape": [
+                1,
+                2
+            ]
+        },
+        "min_freezed_output": {
+            "type": "float32"
+        },
+        "max_freezed_output": {
+            "type": "float32",
+            "shape": [
+                2
+            ]
+        },
+        "Toutput": {
+            "type": "float32"
+        },
+        "transpose_a": {
+            "type": "bool"
+        },
+        "transpose_b": {
+            "type": "bool"
+        },
+        "input_quant_mode": {
+            "type": "string",
+            "enum": [
+                "MIN_FIRST",
+                "SCALED"
+            ]
+        },
+        "malformed_parameter": {
+            "type": "choice",
+            "options": [
+                {
+                    "name": "a",
+                    "type": "quint8",
+                    "shape": [
+                        2,
+                        2
+                    ]
+                },
+                {
+                    "name": "b",
+                    "type": "qint8",
+                    "shape": [
+                        2,
+                        2
+                    ]
+                },
+                {
+                    "name": "bias",
+                    "type": "float32",
+                    "shape": [
+                        2
+                    ]
+                },
+                {
+                    "name": "min_a",
+                    "type": "int32"
+                },
+                {
+                    "name": "min_b",
+                    "type": "int32"
+                },
+                {
+                    "name": "min_freezed_output",
+                    "type": "int32"
+                },
+                {
+                    "name": "max_freezed_output",
+                    "type": "int32"
+                },
+                {
+                    "name": "Toutput",
+                    "type": "float64"
+                },
+                {
+                    "name": "transpose_a",
+                    "type": "int32"
+                },
+                {
+                    "name": "transpose_b",
+                    "type": "int32"
+                },
+                {
+                    "name": "input_quant_mode",
+                    "type": "string"
+                },
+                {
+                    "name": "unknown_parameter",
+                    "type": "string"
+                }
+            ]
+        }
+    },
+    "link": "NPE in QuantizedMatMulWithBiasAndDequantize with MKL enable"
+},
+{
+    "bug_type": "Floating Point Exception (FPE)",
+    "function_name": "tf.raw_ops.AvgPoolGrad",
+    "input_parameters": {
+        "orig_input_shape": "array with at least 4 elements where at least one of them is 0",
+        "grad": "4D tensor with at least one element",
+        "ksize": "array with at least 4 elements where at least one of them is 0",
+        "strides": "array with at least 4 elements where at least one of them is 0",
+        "padding": "string with value \"SAME\" or \"VALID\"",
+        "data_format": "string with value \"NHWC\" or \"NCHW\""
+    },
+    "input_generation_rules": {
+        "orig_input_shape": "generate array with random values where at least one of them is 0",
+        "grad": "generate 4D tensor with random values with at least one element",
+        "ksize": "generate array with random values where at least one of them is 0",
+        "strides": "generate array with random values where at least one of them is 0",
+        "padding": "generate string with value \"SAME\" or \"VALID\"",
+        "data_format": "generate string with value \"NHWC\" or \"NCHW\""
+    },
+    "bug_description": "If the stride and window size are not positive, it can result in a floating point exception.",
+    "minimum_reproducible_example": "import numpy as np\n\n@\ndef test():\n   y = tf.raw_ops.AvgPoolGrad(orig_input_shape=[1,0,0,0], grad=[[[[0.39117979]]]], ksize=[1,0,0,0], strides=[1,0,0,0], padding=\"SAME\", data_format=\"NCHW\")\n   return y\n\n\nprint(test())",
+    "suggested_fix": "",
+    "weakness": "",
+    "link": "If the stride and window size are not positive for  tf.raw_ops.AvgPoolGrad , it can give an FPE."
+},
+{
+    "operation": "QuantizeAndDequantizeV2",
+    "inputs": [
+        {
+            "type": "float",
+            "min": 0,
+            "max": 1
+        },
+        {
+            "type": "float",
+            "min": 0,
+            "max": 1
+        },
+        {
+            "type": "float",
+            "min": 0,
+            "max": 1
+        }
+    ],
+    "optional_inputs": [
+        {
+            "name": "signed_input",
+            "type": "bool"
+        },
+        {
+            "name": "num_bits",
+            "type": "int",
+            "min": 1,
+            "max": 8
+        },
+        {
+            "name": "range_given",
+            "type": "bool"
+        },
+        {
+            "name": "round_mode",
+            "type": "string",
+            "values": [
+                "HALF_UP",
+                "HALF_EVEN"
+            ]
+        },
+        {
+            "name": "narrow_range",
+            "type": "bool"
+        },
+        {
+            "name": "axis",
+            "type": "int",
+            "min": 0,
+            "max": 2147483646
+        }
+    ],
+    "outputs": [
+        {
+            "type": "float"
+        }
+    ],
+    "link": "Attackers using Tensorflow can exploit the vulnerability. They can access heap memory which is not in the control of user, leading to a crash or RCE. \nWhen axis is larger than the dim of input, c->Dim(input,axis) goes out of bound. \nSame problem occurs in the QuantizeAndDequantizeV2/V3/V4/V4Grad operations too."
+},
+{
+    "api": "tf.io.decode_gif",
+    "description": "Malformed multiframe GIF causing integer overflow",
+    "bug_pattern": {
+        "input_type": "bytes",
+        "input_value": "Generate a multiframe GIF where 2^31 <= num_frames * height * width * channels < 2^32, for example Full HD screencast of at least 346 frames.",
+        "output": "Crash: Segfault or other integer overflow error",
+        "reproduce_example": "dat = <malformed_gif>\nimport tensorflow as tf\n\ntry:\n    tf.io.decode_gif(dat)\nexcept Exception as e:\n    print(e)"
+    },
+    "reference": "https://github.com/tensorflow/tensorflow/issues/<issue_number>",
+    "link": "Integer overflow occurs when 2^31 <= num_frames * height * width * channels < 2^32, for example Full HD screencast of at least 346 frames."
+},
+{
+    "api": "tf.raw_ops.SparseSparseMaximum",
+    "malformed_input": {
+        "a_indices": [
+            {
+                "invalid_type": "string"
+            }
+        ],
+        "a_values": [
+            0.1
+        ],
+        "a_shape": [
+            2
+        ],
+        "b_indices": [
+            []
+        ],
+        "b_values": [
+            2
+        ],
+        "b_shape": [
+            2
+        ]
+    },
+    "link": "When  SparseSparseMaximum  is given invalid sparse tensors as inputs, it can give an NPE."
+},
+{
+    "API": "AudioSpectrogram",
+    "version": "2.11.0",
+    "parameter": {
+        "input": {
+            "dtype": "tf.float32"
+        },
+        "window_size": {
+            "type": "int",
+            "min": 1,
+            "max": 2147483647
+        },
+        "stride": {
+            "type": "int",
+            "min": -2147483647,
+            "max": 2147483647
+        },
+        "magnitude_squared": {
+            "type": "bool"
+        }
+    },
+    "malformed_input": [
+        {
+            "input": {
+                "input": [
+                    [
+                        14.0,
+                        24.0
+                    ],
+                    [
+                        14.0,
+                        24.0
+                    ]
+                ],
+                "dtype": "tf.float32"
+            },
+            "window_size": 0,
+            "stride": -1,
+            "magnitude_squared": true
+        }
+    ],
+    "link": "version:2.11.0 //core/ops/audio_ops.cc:70"
+},
+{
+    "name": "Heap-buffer-overflow in AvgPoolGrad",
+    "target_api": "tensorflow.raw_ops.AvgPoolGrad",
+    "vulnerability_type": "heap buffer overflow",
+    "malformed_input_rule": {
+        "input_config": [
+            {
+                "name": "ksize",
+                "type": "list[int]",
+                "min_length": 4,
+                "max_length": 4,
+                "min_val": 1,
+                "max_val": 100
+            },
+            {
+                "name": "strides",
+                "type": "list[int]",
+                "min_length": 4,
+                "max_length": 4,
+                "min_val": 1,
+                "max_val": 100
+            },
+            {
+                "name": "padding",
+                "type": "str",
+                "allowed_values": [
+                    "SAME",
+                    "VALID"
+                ]
+            },
+            {
+                "name": "data_format",
+                "type": "str",
+                "allowed_values": [
+                    "NHWC",
+                    "NCHW"
+                ]
+            },
+            {
+                "name": "orig_input_shape",
+                "type": "list[int]",
+                "min_length": 4,
+                "max_length": 4,
+                "min_val": 1,
+                "max_val": 100
+            },
+            {
+                "name": "grad",
+                "type": "list[int]",
+                "min_length": 4,
+                "max_length": 4,
+                "min_val": -128,
+                "max_val": 129
+            }
+        ],
+        "malformed_config": {
+            "slice_grad": {
+                "name": "grad",
+                "start_index": [
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "end_index": [
+                    15,
+                    15,
+                    15,
+                    15
+                ]
+            },
+            "invalid_stride": {
+                "name": "strides",
+                "value": [
+                    1,
+                    1,
+                    1,
+                    1
+                ]
+            }
+        }
+    },
+    "link": "import"
+},
+{
+    "API": "tensorflow.raw_ops.TensorArrayConcatV2",
+    "parameters": [
+        {
+            "handle": "string",
+            "flow_in": "float",
+            "dtype": "data type",
+            "element_shape_except0": "integer"
+        }
+    ],
+    "malformed_input": [
+        {
+            "parameter": "flow_in",
+            "value": "null"
+        },
+        {
+            "parameter": "handle",
+            "value": "null"
+        },
+        {
+            "parameter": "flow_in",
+            "value": "string"
+        },
+        {
+            "parameter": "element_shape_except0",
+            "value": "null"
+        },
+        {
+            "parameter": "dtype",
+            "value": "null"
+        },
+        {
+            "parameter": "element_shape_except0",
+            "value": "string"
+        },
+        {
+            "parameter": "handle",
+            "value": "integer"
+        }
+    ],
+    "link": "When ctx->step_containter() is a null ptr, the Lookup function will be executed with a null pointer."
+},
+{
+    "API": "tf.raw_ops.Print",
+    "description": "Seg fault when parameter 'summarize' is zero",
+    "malformed_input_rule": {
+        "input_data": {
+            "input": {
+                "type": "Tensor",
+                "value": "randomized_data(dtype=tf.int32, shape=[4])"
+            },
+            "data": {
+                "type": "List",
+                "value": [
+                    {
+                        "type": "List",
+                        "value": "randomized_data(dtype=bool, length=4)"
+                    },
+                    {
+                        "type": "List",
+                        "value": "randomized_data(dtype=bool, length=1)"
+                    },
+                    {
+                        "type": "List",
+                        "value": "randomized_data(dtype=bool, length=3)"
+                    }
+                ]
+            },
+            "message": {
+                "type": "String",
+                "value": "tmp/I"
+            },
+            "first_n": {
+                "type": "Int",
+                "value": "randomized_value(max=100)"
+            },
+            "summarize": {
+                "type": "Int",
+                "value": "0"
+            }
+        },
+        "trigger": {
+            "parameter": "summarize",
+            "malformed_value": "0"
+        }
+    },
+    "link": "When the parameter  summarize  of  tf.raw_ops.Print  is zero, the new method  SummarizeArray<bool>  will reference to a nullptr, leading to a seg fault."
 },

@@ -72,10 +72,10 @@ def create_prompt(item, model='tf'):
                     Bug fix: {bug_fix}
                 
                 Generate a malformed input generation rule for the mentioned API in the issue. The rule should be usable for fuzzing. \
+                Generate the rule based on the malicious inputs explained in the title and bug description.
                 Do not suggest any fix.\
                 Do not explain what is the weakness in the backend.\
-                Just create a bug pattern.  \ 
-                Generate the rule as a json format.
+                Don't generate any example.
                 """
     return _prompt
 
@@ -83,9 +83,9 @@ def create_prompt(item, model='tf'):
 def run():
 
     lib_name = 'tf'
-    model_name = 'gpt-3.5-turbo-16k'
+    model_name = 'gpt-3.5-turbo-0301'
 
-    rules_path = f"rulebase/{lib_name}_rules.json"
+    rules_path = f"rulebase/{lib_name}_rules_textual.json"
 
     with open(f'data/{lib_name}_bug_data.json') as json_file:
         data = json.load(json_file)
@@ -94,10 +94,13 @@ def run():
             conversations = gpt_conversation(prompt, model=model_name)
 
             try:
-                rule_ = json.loads(conversations.choices[0].message.content)
+                # rule_ = json.loads(conversations.choices[0].message.content)
 
-                first_key = next(iter(item))
-                rule_.update({'link': item[first_key]})
+                # first_key = next(iter(item))
+                # rule_.update({'link': item[first_key]})
+
+                rule_ = {'rule': conversations.choices[0].message.content}
+                rule_.update({'link': item['Link']})
                 print(rule_)
 
                 with open(rules_path, "a") as json_file:

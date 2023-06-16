@@ -201,6 +201,8 @@ def scrape_tensorflow_security():
                 full_link = f"https://github.com/{partial_link}"
                 data_ = scrape_security_page(full_link)
                 data_.update({'Title': record_title})
+                data_.update({'Link': full_link})
+
                 data_list.append(data_)
                 print(data_)
 
