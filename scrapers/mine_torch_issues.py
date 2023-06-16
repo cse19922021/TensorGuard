@@ -275,9 +275,10 @@ def miner():
                 issue_code = re.findall(
                     r'To Reproduce((.|\n)*?)Additional context', data_['body'])[0][0]
 
-            data_ = {'Issue title': issue_title_,
+            data_ = {'Issue link': branchLink,
+                     'Issue title': issue_title_,
                      'Bug description': issue_description,
-                     'Sample Code': changes,
+                     'Sample Code': issue_code,
                      'Bug fix': ''}
 
             issue_flag = False
@@ -295,7 +296,8 @@ def miner():
             except Exception as e:
                 print(e)
 
-            data_ = {'Bug description': commit.msg,
+            data_ = {'Commit link': branchLink,
+                     'Bug description': commit.msg,
                      'Sample Code': '',
                      'Bug fix': changes}
 
