@@ -1,0 +1,26 @@
+{
+    "rule_id": "FPE_in_TFLite_conv_kernel",
+    "api_name": "Prepare",
+    "parameters": [
+        {
+            "name": "kernel_type",
+            "type": "KernelType"
+        },
+        {
+            "name": "context",
+            "type": "TfLiteContext*"
+        },
+        {
+            "name": "input",
+            "type": "TfLiteTensor*"
+        },
+        {
+            "name": "filter",
+            "type": "TfLiteTensor*"
+        }
+    ],
+    "malformed_input": {
+        "filter_input_channel": "less_than_one"
+    },
+    "link": "Constructing a tflite model with a paramater  filter_input_channel  of less than 1 gives a FPE."
+},
