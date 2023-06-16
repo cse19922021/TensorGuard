@@ -13,10 +13,10 @@ from csv import writer
 from pydriller import Repository
 
 # (0, nimashiri2012@gmail.com, 1, cse19922021@gmail.com, 2, nshiri@yorku.ca, 3, nshiri@cse.yorku.ca)
-tokens = {0: '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', 1: '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',
+tokens = {0: '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', 1: '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',
           2: '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', 3: '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'}
 
-tokens_status = {'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': True, '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': True,
+tokens_status = {'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': True, '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': True,
                  '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': True, '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': True}
 
 
@@ -116,29 +116,25 @@ def select_access_token(current_token):
     return current_token
 
 
-def main():
+def miner():
 
     current_token = tokens[0]
     torch_issues = read_txt('data/torch_issues.txt')
 
     issue_flag = False
-    commit_flag = False
-    pull_flag = False
+
+    data_list = []
 
     for item in torch_issues:
+        print(item)
         sha_str = item.split('/')[-1]
         if 'commit' in item:
             commit_base_str = "https://api.github.com/repos/pytorch/pytorch"
             branchLink = f"{commit_base_str}/commits/{sha_str}"
-            commit_flag = True
-        else:
+        if 'issue' in item:
             issue_base_str = "https://api.github.com/repos/pytorch/pytorch"
             branchLink = f"{issue_base_str}/issues/{sha_str}"
             issue_flag = True
-
-        x = []
-
-        potential_commits = []
 
         response = requests_retry_session().get(
             branchLink, headers={'Authorization': 'token {}'.format(current_token)})
@@ -276,9 +272,13 @@ def main():
                 issue_code = re.findall(
                     r'To Reproduce((.|\n)*?)Additional context', data_['body'])[0][0]
 
-            data = {'Bug description': commit.msg,
-                    'Sample Code': issue_code,
-                    'Bug fix': changes}
+            data_ = {'Issue title': issue_title_,
+                     'Bug description': issue_description,
+                     'Sample Code': changes,
+                     'Bug fix': ''}
+
+            issue_flag = False
+
         else:
             if not os.path.exists('repos/pytorch'):
                 subprocess.call(
@@ -292,13 +292,16 @@ def main():
             except Exception as e:
                 print(e)
 
-            data = {'Issue title': issue_title_,
-                    'Bug description': issue_description,
-                    'Sample Code': changes,
-                    'Bug fix': ''}
+            data_ = {'Bug description': commit.msg,
+                     'Sample Code': '',
+                     'Bug fix': changes}
 
-            return data
+        data_list.append(data_)
+
+    with open("data/torch_bug_data.json", "a") as json_file:
+        json.dump(data_list, json_file, indent=4)
+        json_file.write('\n')
 
 
 if __name__ == "__main__":
-    main()
+    data = miner()
