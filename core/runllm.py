@@ -158,7 +158,49 @@ def run():
         data = json.load(json_file)
         for item in data:
             prompt = create_prompt(item, lib_name)
-            conversations = gpt_conversation(prompt, model=model_name)
+
+            Title = item["Title"]
+            bug_description = item["Bug description"]
+            sample_code = item["Sample Code"]
+            api_sig = item["API Signature"]
+
+            input_parition_prompt_level1 = f"""
+            Perform input space paritionining given the following API signature:
+            API Signature: {api_sig}
+            
+            Please consider the following constraints:
+            1 - Do not explain anything
+            2 - Just give paritions in an structured format
+            """
+            _parition_response_level1 = gpt_conversation(
+                input_parition_prompt_level1, model=model_name)
+
+            print()
+
+            input_parition_prompt_level2 = f"""
+            Given the following input space partitioning:\
+            {_parition_response_level1.choices[0].message.content}\
+            Performed on the following API:\
+            API: {api_sig}\
+            
+            Redo the input space partitioning of the API {api_sig} based on the following bug title and bug description:\
+            Bug description: {bug_description}\
+            Title: {Title}\
+            
+            Please note that the bug description is collected from TensorFlow Security Advisory and explaining \
+                a security vulnerability based on malformed inputs. \
+            Rewrite the input space paritioning in such a way that it detect bug via fuzzing. \
+            
+            Please consider the following constraints:
+            1 - Do not explain anything
+            2 - Just give paritions in an structured format
+            """
+
+            _parition_response_level2 = gpt_conversation(
+                input_parition_prompt_level2, model=model_name)
+
+            print(_parition_response_level2.choices[0].message.content)
+            print('')
 
             try:
                 # rule_ = json.loads(conversations.choices[0].message.content)
@@ -166,7 +208,8 @@ def run():
                 # first_key = next(iter(item))
                 # rule_.update({'link': item[first_key]})
 
-                rule_ = {'rule': conversations.choices[0].message.content}
+                rule_ = {
+                    'rule': _parition_response_level2.choices[0].message.content}
                 rule_.update({'link': item['Link']})
                 print(rule_)
 
