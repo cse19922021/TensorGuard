@@ -168,14 +168,18 @@ def run():
             Perform input space paritionining given the following API signature:
             API Signature: {api_sig}
             
-            Please consider the following constraints:
-            1 - Do not explain anything
-            2 - Just give paritions in an structured format
+            Please consider the following constraints: \
+            1 - Do partitioning based on argument types \
+            2 - Your task is to parition based on types, e.g., Tensors, Booleans, Integers, Strings, Positional Arguments.\
+            3 - Your task is not mix argument types together, e.g., Tensor and Boolean arguments should not be in one parition. \
+            3 - Paritions should be disjoint. \
+            4 - The union of paritions should form the original input space. \
+            5 - Give paritions in an structured format, e.g., JSON \
             """
             _parition_response_level1 = gpt_conversation(
                 input_parition_prompt_level1, model=model_name)
 
-            print()
+            print(_parition_response_level1.choices[0].message.content)
 
             input_parition_prompt_level2 = f"""
             Given the following input space partitioning:\
@@ -183,17 +187,16 @@ def run():
             Performed on the following API:\
             API: {api_sig}\
             
-            Redo the input space partitioning of the API {api_sig} based on the following bug title and bug description:\
+            Based on the following information:\
             Bug description: {bug_description}\
             Title: {Title}\
             
-            Please note that the bug description is collected from TensorFlow Security Advisory and explaining \
-                a security vulnerability based on malformed inputs. \
-            Rewrite the input space paritioning in such a way that it detect bug via fuzzing. \
+            Your task is to generate all possible malformed inputs for the suitable parition based on the above description.\
+            The malformed inputs are going to be used for fuzz testing of the corresponding API.\
+
             
-            Please consider the following constraints:
-            1 - Do not explain anything
-            2 - Just give paritions in an structured format
+            Your task is to consider the following constraints:
+            1 - Just give paritions in an structured format
             """
 
             _parition_response_level2 = gpt_conversation(
