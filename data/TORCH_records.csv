@@ -1,0 +1,142 @@
+Library,Advisory Link,Commit,Parent Module,API,Anomaly
+Pytorch,N.A,https://github.com/pytorch/pytorch/commit/b6b1c01adfdadf93a4a1d30c3661ff177412a876,torch,torch.view_as_complex,Zero argument
+Pytorch,https://github.com/pytorch/pytorch/commit/c010ef7f0c6d837809a7e973048afac76373e3de,https://github.com/pytorch/pytorch/issues/43476,torch.nn,torch.nn.Conv3d,N.A
+Pytorch,https://github.com/pytorch/pytorch/commit/42b4a7132e7c6f1df963b473d1583e4791fb1808,https://github.com/pytorch/pytorch/issues/41780,torch,torch.nn.functional.embedding,scalar input
+Pytorch,https://github.com/pytorch/pytorch/issues/42281,https://github.com/pytorch/pytorch/issues/42281,torch,torch.Generator,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/24137,https://github.com/pytorch/pytorch/commit/366c014a7799f0b7bbc258fd6c271dadb99d1de0,torch,torch.distributed.broadcast,Boolean dtype
+Pytorch,https://github.com/pytorch/pytorch/issues/327,https://github.com/PyTorch/PyTorch/commit/7773a45c0d2cba1cd53d7f50b00baa7ae95ec6e4,torch,torch.IntTensor,Integer tensors
+Pytorch,https://github.com/pytorch/pytorch/issues/327,https://github.com/PyTorch/PyTorch/commit/7773a45c0d2cba1cd53d7f50b00baa7ae95ec6e4,torch,torch.FloatTensor,Integer tensors
+Pytorch,https://github.com/pytorch/pytorch/pull/38970,https://github.com/pytorch/pytorch/commit/5702a28b2612a104204dd31e800faaaa09bdd458,torch.nn,torch.nn.ConvTranspose3d,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/38764,https://github.com/PyTorch/PyTorch/commit/e4a3c584d51662d4c14060fc8517464fe3c12142,torch,torch.nn.functional.max_pool1d,Very large input argument
+Pytorch,N.A,https://github.com/pytorch/pytorch/commit/63b1ae69831cd21bc4d6059a5854bc1155a152c9,torch,torch.remainder,Very large input argument
+Pytorch,N.A,https://github.com/pytorch/pytorch/commit/7aec364bdf9ed7297b77e8445a6a6d4116265dde,torch,torch.gather,ind.dim != output.dim
+Pytorch,https://github.com/pytorch/pytorch/issues/33300,https://github.com/pytorch/pytorch/commit/8291e06f8fb14a09e6c3b7a740a182250069242c,torch,torch.zeros().numpy,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/33001,https://github.com/pytorch/pytorch/commit/60339a38eded68eeef91f84734b4d665ddf4e080,torch,torch.FloatTensor,Single element list
+Pytorch,N.A,https://github.com/pytorch/pytorch/commit/a64d0ffe81b250889a3e6670daa9c7d07d946e32,torch.nn.functional,torch.nn.functional.pdist,batch sizes >= 46342
+Pytorch,N.A,https://github.com/pytorch/pytorch/commit/ddff014b79303e5239d5cb876ba97143cad6405a,torch.utils.tensorboard,torch.utils.tensorboard.SummaryWriter.add_images,uint8 NCHW tensor
+Pytorch,N.A,https://github.com/pytorch/pytorch/commit/136bb07a93b779acbc84ff341bc397551a8cfcc2,torch,torch.histc,inf
+Pytorch,N.A,https://github.com/pytorch/pytorch/commit/ec8e75ea92ae2b5ea73b4aeb3ec7cb39e9f95db9,torch,torch.sum,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/24309,https://github.com/pytorch/pytorch/commit/c845984271a551ac1c61b9eb06a17fb57aafbd7e,torch.nn,nn.AvgPool2d,Invalid argument
+Pytorch,N.A,https://github.com/pytorch/pytorch/commit/74828be4a7d0d2dba3f0ec3f6e79265cdfae5329,torch,torch.cat,Very large input argument
+Pytorch,N.A,https://github.com/pytorch/pytorch/commit/071971476d7431a24e527bdc181981678055a95d,torch.distributions.binomial,torch.distributions.binomial.Binomial,Very large input argument
+Pytorch,N.A,https://github.com/pytorch/pytorch/commit/071971476d7431a24e527bdc181981678055a95d,torch.distributions.binomial,torch.distributions.binomial.Binomial,Very large input argument
+Pytorch,N.A,https://github.com/pytorch/pytorch/commit/d4712ee218cd6af3c2096ca7a76fef350173b703,torch,torch.isinf,Integer tensors
+Pytorch,https://github.com/pytorch/pytorch/issues/13324,https://github.com/pytorch/pytorch/commit/e4bb56570c7d6c7e17a85cbface4828c62a33564,torch.nn.utils.rnn,torch.nn.utils.rnn.pack_padded_sequence,input in increasing order
+Pytorch,https://github.com/pytorch/pytorch/issues/9264,https://github.com/pytorch/pytorch/commit/1597fc594d36a18d1d4aee16d09ea49ae7065610,torch.nn,torch.nn.Conv3d,Specific tensor size
+Pytorch,https://github.com/pytorch/pytorch/pull/3470,https://github.com/pytorch/pytorch/commit/f7a459b28b184dedf265ed8718f85cb483e8284e,torch,torch.svd,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/3498,https://github.com/pytorch/pytorch/commit/6fde0cb507d59d2a9168f3051feba6865e9d1048,torch,N.A,NaN input
+Pytorch,https://github.com/pytorch/pytorch/issues/86326,N.A,torch,torch.round,Integer tensors
+Pytorch,https://github.com/pytorch/pytorch/issues/86279,N.A,torch,torch.multinomial,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/86162,N.A,torch.nn.functional,torch.nn.functional.one_hot,int32 and int16 tensor
+Pytorch,https://github.com/pytorch/pytorch/issues/86074,N.A,torch,torch.remainder,Integer input
+Pytorch,https://github.com/pytorch/pytorch/pull/86064,N.A,torch,torch.fmod,Integer input
+Pytorch,https://github.com/pytorch/pytorch/issues/85852,N.A,torch,torch.mm,Same input and output 
+Pytorch,https://github.com/pytorch/pytorch/issues/85217,N.A,torch,torch.native_batch_norm,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/85216,N.A,torch,torch._mkldnn_transpose,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/85214,N.A,torch._C._nn,torch._C._nn.mkldnn_reorder_conv2d_weight,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/85213,N.A,torch._C._nn,torch._C._nn.mkldnn_reorder_conv3d_weight,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/85072,N.A,torch.jit,torch.jit.wait,None
+Pytorch,https://github.com/pytorch/pytorch/issues/84990,N.A,torch.futures,torch.futures.collect_all,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/84979,N.A,torch.nn.functional,torch.nn.functional.pad generates,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/83585,N.A,torch.profiler,torch.profiler.profile,Optional parameter
+Pytorch,https://github.com/pytorch/pytorch/issues/83494,N.A,torch,torch.pinverse,3*3 tensor
+Pytorch,https://github.com/pytorch/pytorch/issues/83328,N.A,torch.nn,torch.nn.Conv2d,Unsupported dtype
+Pytorch,https://github.com/pytorch/pytorch/issues/83229,N.A,torch.nn,torch.nn.MaxUnpool2d,Negative argument
+Pytorch,https://github.com/pytorch/pytorch/issues/83221,N.A,torch.nn,torch.nn.MaxUnpool3d,Negative argument
+Pytorch,https://github.com/pytorch/pytorch/issues/83175,N.A,torch.nn,torch.nn.GRU,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/83152,N.A,torch.nn,torch.nn.functional.fold,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/82635,N.A,torch,torch.min,equal input
+Pytorch,https://github.com/pytorch/pytorch/issues/82282,N.A,torch,torch.matrix_exp,NaN input
+Pytorch,https://github.com/pytorch/pytorch/issues/81409,N.A,torch._C._nn,torch._C._nn.adaptive_avg_pool2d,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/81195,N.A,torch,torch._weight_norm,Dimension mismatch
+Pytorch,https://github.com/pytorch/pytorch/issues/80946,N.A,torch.nn.functional,torch.nn.functional.linear,Multi-dimensional bias
+Pytorch,https://github.com/pytorch/pytorch/issues/80805,N.A,torch,torch.einsum,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/80804,N.A,torch,torch.renorm,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/80588,N.A,torch,torch.baddbmm,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/80488,N.A,torch.nn.functional,torch.nn.functional.kl_div,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/78153,N.A,torch.nn.utils.rnn,torch.nn.utils.rnn.pack_sequence,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/78131,N.A,torch,torch._pad_packed_sequence,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/78130,N.A,torch,torch._grid_sampler_2d_cpu_fallback,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/78129,N.A,torch,torch._embedding_bag_forward_only,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/78128,N.A,torch,torch._C._nn.thnn_conv2d,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/78127,N.A,torch,torch._C._nn.reflection_pad2d,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/78126,N.A,torch,torch._C._nn.max_unpool3d,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/78125,N.A,torch,torch.grid_sampler_3d,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/78123,N.A,torch,torch.choose_qparams_optimized,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/78122,N.A,torch,torch.bincount,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/77893,N.A,torch,torch._remove_batch_dim,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/77493,N.A,torch,torch.pow,Same dtype
+Pytorch,https://github.com/pytorch/pytorch/issues/77231,N.A,torch,torch.scatter_add,Complex tensor
+Pytorch,https://github.com/pytorch/pytorch/issues/76778,N.A,torch,torch.addmv,Type confusion
+Pytorch,https://github.com/pytorch/pytorch/issues/76571,N.A,torch,torch.unique,NaN input
+Pytorch,https://github.com/pytorch/pytorch/issues/75171,N.A,torch,torch.jit.load,ASCII character input
+Pytorch,https://github.com/pytorch/pytorch/issues/74809,N.A,torch.distributed,torch.distributed.gather,Non-contiguous NumPy array
+Pytorch,https://github.com/pytorch/pytorch/issues/73196,N.A,torch,torch.pow,Negative argument
+Pytorch,https://github.com/pytorch/pytorch/issues/73191,N.A,torch,torch.max_pool3d,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/73190,N.A,torch,torch.max_pool1d,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/73186,N.A,torch,torch._C._nn.fractional_max_pool3d,Zero element 
+Pytorch,https://github.com/pytorch/pytorch/issues/73185,N.A,torch,torch._C._nn.fractional_max_pool2d,Zero element 
+Pytorch,https://github.com/pytorch/pytorch/issues/73182,N.A,torch,torch._sobol_engine_scramble_,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/73181,N.A,torch,torch._sobol_engine_initialize_state_,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/73180,N.A,torch,torch._sobol_engine_ff_,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/71689,N.A,torch.distributions.categorical,torch.distributions.categorical.Categorical,Zero argument
+Pytorch,https://github.com/pytorch/pytorch/issues/71678,N.A,torch,torch.bmm,Sparse tensor
+Pytorch,https://github.com/pytorch/pytorch/issues/71636,N.A,torch,torch.median,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/71477,N.A,torch,torch.cummin,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/71477,N.A,torch,torch.cummax,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/71477,N.A,torch,torch.sort,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/71477,N.A,torch,torch.argsort,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/71470,N.A,torch.jit,torch.jit.script,N.A
+Pytorch,https://github.com/pytorch/pytorch/issues/71204,N.A,torch,torch.diag,Dimension mismatch
+Pytorch,https://github.com/pytorch/pytorch/issues/71204,N.A,torch,torch.diagonal,Dimension mismatch
+Pytorch,https://github.com/pytorch/pytorch/issues/71082,N.A,torch,torch.combinations,Dimension mismatch
+Pytorch,https://github.com/pytorch/pytorch/issues/71078,N.A,torch,torch.nn.ConstantPad2d,Zero dimensional tensor
+Pytorch,https://github.com/pytorch/pytorch/issues/71078,N.A,torch,torch.nn.ZeroPad2d,Zero dimensional tensor
+Pytorch,https://github.com/pytorch/pytorch/issues/71059,N.A,torch,torch.scatter,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/71058,N.A,torch,torch.where,Float dtype
+Pytorch,https://github.com/pytorch/pytorch/issues/70901,N.A,torch,torch.batch_norm_gather_stats_with_counts,Half dtype
+Pytorch,https://github.com/pytorch/pytorch/issues/70672,N.A,torch,torch.as_strided,N.A
+,https://github.com/pytorch/pytorch/issues/70398,N.A,torch,tensor.expand,Negative argument
+Pytorch,https://github.com/pytorch/pytorch/issues/70398,N.A,torch,torch.broadcast_to,Negative argument
+Pytorch,https://github.com/pytorch/pytorch/issues/70397,N.A,torch,torch.empty_strided,Negative argument
+Pytorch,https://github.com/pytorch/pytorch/issues/69433,N.A,torch,torch.transpose,Zero dimensional tensor
+Pytorch,https://github.com/pytorch/pytorch/issues/69408,N.A,torch,torch.hstack,Zero dimensional tensor
+Pytorch,https://github.com/pytorch/pytorch/issues/68610,N.A,torch,torch.unique_consecutive,Positional argument
+Pytorch,https://github.com/pytorch/pytorch/issues/67081,N.A,torch.utils,torch.utils.dlpack.to_dlpack,Boolean dtype
+Pytorch,https://github.com/pytorch/pytorch/issues/65683,N.A,torch.nn,torch.nn.functional.l1_loss,Complex dtype
+Pytorch,https://github.com/pytorch/pytorch/issues/65400,N.A,torch.sparse,torch.sparse.sum,Positional argument specified
+Pytorch,https://github.com/pytorch/pytorch/issues/65050,N.A,torch,torch.cross,Equal input
+Pytorch,https://github.com/pytorch/pytorch/issues/64978,N.A,torch,torch.nn.functional.linear,Rank other than 2
+Pytorch,https://github.com/pytorch/pytorch/issues/64079,N.A,torch,torch.equal,Sparse tensor
+Pytorch,https://github.com/pytorch/pytorch/issues/59439,N.A,torch.nn.functional,torch.nn.functional.conv2d,NaN input
+Pytorch,https://github.com/pytorch/pytorch/issues/54638,N.A,torch.jit,torch.jit.trace,Sparse tensor
+Pytorch,https://github.com/pytorch/pytorch/issues/54620,N.A,torch,torch.pow,Boolean dtype
+Pytorch,https://github.com/pytorch/pytorch/issues/54499,N.A,torch.nn,torch.nn.MaxPool1d,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/53407,N.A,torch,torch.matmul,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/53391,N.A,torch,torch.empty_strided,Negative argument
+Pytorch,https://github.com/pytorch/pytorch/issues/53358,N.A,torch,torch.cumsum,Boolean dtype
+Pytorch,https://github.com/pytorch/pytorch/issues/51911,N.A,torch.nn.functional,torch.nn.functional.grid_sample,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/51906,N.A,torch.nn.functional,torch.nn.functional.binary_cross_entropy_with_logits,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/51906,N.A,torch.nn.functional,torch.nn.functional.binary_cross_entropy_with_logits,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/51803,N.A,torch.nn.functional,torch.nn.functional.binary_cross_entropy,Empty input
+Pytorch,https://github.com/pytorch/pytorch/issues/51732,N.A,torch.nn.functional,torch.nn.functional.ctc_loss,Large negative number
+Pytorch,https://github.com/pytorch/pytorch/issues/51134,N.A,torch.nn,torch.nn.ReplicationPad3d,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/49520,N.A,torch.nn,torch.nn.ReplicationPad2d,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/47610,N.A,torch,torch.gather,Dimension mismatch
+Pytorch,https://github.com/pytorch/pytorch/issues/46225,N.A,torch,torch.mode,NaN input
+Pytorch,https://github.com/pytorch/pytorch/issues/43567,N.A,torch,torch.svd,NaN input
+Pytorch,https://github.com/pytorch/pytorch/issues/43115,N.A,torch,torch.multinomial,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/37556,N.A,torch,torch.cartesian_prod,Rank other than 1
+Pytorch,https://github.com/pytorch/pytorch/issues/29372,N.A,torch,torch.std,Scalar tensor
+Pytorch,https://github.com/pytorch/pytorch/issues/25648,N.A,torch,torch.cat,Negative argument
+Pytorch,https://github.com/pytorch/pytorch/issues/24823,N.A,torch.nn.functional,torch.nn.functional.grid_sample,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/24823,N.A,torch.nn.functional,torch.nn.functional.grid_sample,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/23159,N.A,torch,torch.sum,dim >= 64
+Pytorch,https://github.com/pytorch/pytorch/issues/23061,N.A,torch,torch.einsum,Float16 dtype
+Pytorch,https://github.com/pytorch/pytorch/issues/22788,N.A,torch,torch.matmul,Float16 dtype
+Pytorch,https://github.com/pytorch/pytorch/issues/22105,N.A,torch,torch.zeros,Pandas indice
+Pytorch,https://github.com/pytorch/pytorch/issues/17897,N.A,torch,torch.mv,Very large input argument
+Pytorch,https://github.com/pytorch/pytorch/issues/17350,N.A,torch.nn,torch.nn.CrossEntropyLoss,mean input
+Pytorch,https://github.com/pytorch/pytorch/issues/15728,N.A,torch.nn,torch.nn.CrossEntropyLoss,sum input
+Pytorch,https://github.com/pytorch/pytorch/issues/7343,N.A,torch.autograd,torch.autograd.grad,Invalid argument
+Pytorch,https://github.com/pytorch/pytorch/issues/7343,N.A,torch.autograd,torch.autograd.grad,Invalid argument

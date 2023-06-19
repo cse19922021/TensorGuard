@@ -64,7 +64,7 @@ def create_prompt(item, model='tf'):
         sample_code = item["Sample Code"]
         bug_fix = item["Bug fix"]
 
-        _prompt_steps = f"""
+        _prompt_specific = f"""
                 Given following pieces of information:\
                     Title: {Title} \
                     Bug description: {bug_description} \
@@ -101,7 +101,7 @@ def create_prompt(item, model='tf'):
                 To better understand how to generate the rule, please consider the following steps:\
                     
                 1 - Figure out which TensorFlow API is mentioned in the ```Title``` or ```Bug description```\
-                2 - Understand input specification for the API
+                2 - Understand input specification for the API\
                 3 - Understand what input is causing bug, i.e., it should be explain in the ```Title``` or ```Bug description```\
                 4 - Understand the impact of the bug explained in the ```Bug description```\
                 5 - Understand the minimum reproduceable example that cause the bug \
@@ -120,6 +120,7 @@ def create_prompt(item, model='tf'):
                 4 - Do not explain the input specification.\
                 5 - Concisely generate the rule for fuzzing.
                 """
+
     return _prompt_general
 
 

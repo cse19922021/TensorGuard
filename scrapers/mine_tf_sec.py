@@ -90,6 +90,16 @@ def recursive_parse_api_description(data):
     return g
 
 
+def search(data, target_api):
+    try:
+        for element in data:
+            for key, value in element.items():
+                if key == target_api:
+                    return value
+    except Exception as e:
+        return 'Could not find your target API from the database!'
+
+
 def recursive_parse_api_sequence(data):
     if isinstance(data.contents[0], str):
         return data.contents[0]
@@ -180,6 +190,13 @@ def scrape_security_page(link):
     return data
 
 
+def scrape_tensorflow_security_from_list(hash_table):
+    data = pd.read_csv('data/TF_records.csv', encoding='utf-8', delimiter=',')
+    for idx, row in data.iterrows():
+        _target_api = search(hash_table, target_api=row['API'])
+        print(_target_api)
+
+
 def scrape_tensorflow_security():
 
     data_list = []
@@ -224,11 +241,16 @@ def search_dict(d, q):
 
 def main():
 
+    lib_name = 'tf'
+
+    with open(f'API signatures/{lib_name}_API_table.json') as json_file:
+        hash_table = json.load(json_file)
+
     if not os.path.exists('repos/tensorflow'):
         subprocess.call(
             f'git clone https://github.com/tensorflow/tensorflow.git repos/tensorflow', shell=True)
 
-    scrape_tensorflow_security()
+    scrape_tensorflow_security_from_list(hash_table)
 
 
 if __name__ == '__main__':
