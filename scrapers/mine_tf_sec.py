@@ -136,6 +136,10 @@ def scrape_security_page(link):
     sub_content = requests.get(link)
     page_soup_home = soup(sub_content.text, "html.parser")
     app_main_ = page_soup_home.contents[3].contents[3].contents[1].contents[9]
+
+    title_ = app_main_.contents[1].contents[3].contents[1].contents[
+        1].contents[1].contents[1].contents[1].contents[1].contents[0]
+
     main_elements = app_main_.contents[1].contents[3].contents[1].contents[1].contents[
         3].contents[1].contents[1].contents[1].contents[3].contents[3].contents[1].contents
 
@@ -170,21 +174,21 @@ def scrape_security_page(link):
                 code_flag = True
 
     if code_flag and change_flag:
-        data = {'Bug description': description_,
-                'Sample Code': code_formated,
-                'Bug fix': changes}
+        data = {'Title': title_,
+                'Bug description': description_,
+                'Sample Code': code_formated}
     elif code_flag == True and change_flag == False:
-        data = {'Bug description': description_,
-                'Sample Code': code_formated,
-                'Bug fix': ''}
+        data = {'Title': title_,
+                'Bug description': description_,
+                'Sample Code': code_formated}
     elif code_flag == False and change_flag == True:
-        data = {'Bug description': description_,
-                'Sample Code': '',
-                'Bug fix': changes}
+        data = {'Title': title_,
+                'Bug description': description_,
+                'Sample Code': ''}
     else:
-        data = {'Bug description': description_,
-                'Sample Code': '',
-                'Bug fix': ''
+        data = {'Title': title_,
+                'Bug description': description_,
+                'Sample Code': ''
                 }
 
     return data
@@ -192,9 +196,22 @@ def scrape_security_page(link):
 
 def scrape_tensorflow_security_from_list(hash_table):
     data = pd.read_csv('data/TF_records.csv', encoding='utf-8', delimiter=',')
+    data_list = []
     for idx, row in data.iterrows():
+        print(row['API'])
         _target_api = search(hash_table, target_api=row['API'])
-        print(_target_api)
+        full_link = row['Advisory Link']
+        data_ = scrape_security_page(full_link)
+        data_.update({'Link': full_link})
+        data_.update({'API Signature': _target_api})
+
+        # data_list.append(data_)
+        print(data_)
+
+        with open("data/tf_bug_data.json", "a") as json_file:
+            json.dump(data_, json_file, indent=4)
+            json_file.write(',')
+            json_file.write('\n')
 
 
 def scrape_tensorflow_security():

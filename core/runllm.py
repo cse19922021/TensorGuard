@@ -62,14 +62,13 @@ def create_prompt(item, model='tf'):
         Title = item["Title"]
         bug_description = item["Bug description"]
         sample_code = item["Sample Code"]
-        bug_fix = item["Bug fix"]
+        api_sig = item["API Signature"]
 
         _prompt_specific = f"""
                 Given following pieces of information:\
                     Title: {Title} \
                     Bug description: {bug_description} \
                     Minimum reproduceable example: {sample_code} \
-                    Bug fix: {bug_fix}
                 
                 Your task is to generate a malformed input generation rule. The rule should be usable for fuzzing. \
                 To better understand how to generate the rule, please consider the following steps:\
@@ -95,7 +94,7 @@ def create_prompt(item, model='tf'):
                     Title: {Title} \
                     Bug description: {bug_description} \
                     Minimum reproduceable example: {sample_code} \
-                    Bug fix: {bug_fix}
+
                 
                 Your task is to generate a malformed input generation rule. The rule should be usable for fuzzing. \
                 To better understand how to generate the rule, please consider the following steps:\
@@ -121,7 +120,31 @@ def create_prompt(item, model='tf'):
                 5 - Concisely generate the rule for fuzzing.
                 """
 
-    return _prompt_general
+        _prompt_space_partioning = f"""
+                Given following pieces of information:\
+                    Title: {Title} \
+                    Bug description: {bug_description} \
+                    Minimum reproduceable example: {sample_code} \
+                    API Signature: {api_sig}
+                    
+                Your task is to perform input space paritioning, for each parition generate a set of malformed inputs based on malicious inputs that are explained in the bug \
+                    description and title.
+                To better understand how to generate the rule, please consider the following steps:\
+                    
+                1 - Understand input specification for the API\
+                2 - Understand what input is causing bug, i.e., it should be explain in the ```Title``` or ```Bug description```\
+                3 - Understand the impact of the bug explained in the ```Bug description```\
+                4 - Understand the minimum reproduceable example that cause the bug \ 
+                5 - Give output as JSON structure. 
+                
+                Consider the following constraints: \
+                1 - Do not suggest any fix.\
+                2 - Do not explain what is the weakness in the backend.\
+                3 - Do not generate any example. \
+                4 - Do not explain the input specification.\
+                """
+
+    return _prompt_space_partioning
 
 
 def run():
