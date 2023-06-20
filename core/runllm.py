@@ -1,6 +1,7 @@
 from json.decoder import JSONDecodeError
 import os
 import openai
+import backoff
 import json
 from dotenv import load_dotenv
 load_dotenv()
@@ -10,6 +11,8 @@ openai.api_key = os.getenv("API_KEY")
 
 # import dotenv
 
+def completions_with_backoff(**kwargs):
+    return openai.Completion.create(**kwargs)
 
 def gpt_conversation(prompt, model="gpt-3.5-turbo"):
 
@@ -29,34 +32,67 @@ def create_prompt(item, model='tf'):
             issue_title = item["Issue title"]
             bug_description = item["Bug description"]
             sample_code = item["Sample Code"]
+            api_sig = item["API Signature"]
 
-            _prompt = f"""
+            _prompt_specific = f"""
                 Given following pieces of information:\
-                    Issue title: {issue_title} \
+                    Title: {issue_title} \
                     Bug description: {bug_description} \
                     Minimum reproduceable example: {sample_code} \
+                    API Siganture: {api_sig} \
                 
-                Generate a malformed input generation rule for the mentioned API in the issue. The rule should be usable for fuzzing. \
-                Do not suggest any fix.\
-                Do not explain what is the weakness in the backend.\
-                Just create a bug pattern.  \ 
-                Generate the rule as a json format.
+                The above information are artifacts collected from security-related PyTorch issues collected from Github.\
+                In all issues, there is one API that is vulnerable to due the fact that attackers can feed malicious inputs.\
+                Based on the information, your tasks are as follows: \
+                1 - Explain the root cause of bug using the following structure:\
+                    Bug due to ```explain the root cause here```, e.g., ```Bug due to feeding very large integer variable```\
+                2 - Do not explain root cause in detail. The purpose is to understand the malicious arguments to DL APIs. \
+                3 - Determine the type of the buggy argument \
+                
+                Your task is to structure the response as a JSON with the following key-value pairs:\
+                
+                Root Cause: Root cause explanation\
+                Argument Type: Type of argument\
+                    
+                Note: Please note that the root causes are going to be used for building fuzzer to fuzz the backend implementation of PyTorch.\
+                    
+                You also need to consider the following constraints:\
+                1 - Do not suggest any fix.\
+                2 - Do not explain what is the weakness in the backend.\
+                3 - Do not generate any example. \
                 """
 
         if "Commit link" in item.keys():
             bug_description = item["Bug description"]
             sample_code = item["Bug fix"]
+            api_sig = item["API Signature"]
 
-            _prompt = f"""
+            _prompt_specific = f"""
                 Given following pieces of information:\
-                    Commit title: {bug_description} \
-                    Code change: {sample_code} \
+                    Title: {issue_title} \
+                    Bug description: {bug_description} \
+                    Minimum reproduceable example: {sample_code} \
+                    API Siganture: {api_sig} \
                 
-                Generate a malformed input generation rule for the mentioned API in the issue. The rule should be usable for fuzzing. \
-                Do not suggest any fix.\
-                Do not explain what is the weakness in the backend.\
-                Just create a bug pattern. \ 
-                Generate the rule as a json format.          
+                The above information are artifacts collected from security-related PyTorch issues collected from Github.\
+                In all issues, there is one API that is vulnerable to due the fact that attackers can feed malicious inputs.\
+                Based on the information, your tasks are as follows: \
+                1 - Explain the root cause of bug using the following structure:\
+                    Bug due to ```explain the root cause here```, e.g., ```Bug due to feeding very large integer variable```\
+                2 - Do not explain root cause in detail. The purpose is to understand the malicious arguments to DL APIs. \
+                3 - Determine the type of the buggy argument \
+                
+                Your task is to structure the response as a JSON with the following key-value pairs:\
+                
+                Root Cause: Root cause explanation\
+                Argument Type: Type of argument\
+                    
+                Note: Please note that the root causes are going to be used for building fuzzer to fuzz the backend implementation of PyTorch.\
+                    
+                You also need to consider the following constraints:\
+                1 - Do not suggest any fix.\
+                2 - Do not explain what is the weakness in the backend.\
+                3 - Do not generate any example. \
                 """
     else:
         Title = item["Title"]
@@ -69,82 +105,30 @@ def create_prompt(item, model='tf'):
                     Title: {Title} \
                     Bug description: {bug_description} \
                     Minimum reproduceable example: {sample_code} \
+                    API Siganture: {api_sig} \
                 
-                Your task is to generate a malformed input generation rule. The rule should be usable for fuzzing. \
-                To better understand how to generate the rule, please consider the following steps:\
-                    
-                1 - Figure out which TensorFlow API is mentioned in the ```Title``` or ```Bug description```\
-                2 - Understand input specification for the API
-                3 - Understand what input is causing bug, i.e., it should be explain in the ```Title``` or ```Bug description```\
-                4 - Understand the impact of the bug explained in the ```Bug description```\
-                5 - Understand the minimum reproduceable example that cause the bug \
-                    
-                Based on above steps, generate the rule based on the malicious inputs explained in the title and bug description. \
+                The above information are artifacts collected from security-related PyTorch issues collected from Github.\
+                In all issues, there is one API that is vulnerable to due the fact that attackers can feed malicious inputs.\
+                Based on the information, your tasks are as follows: \
+                1 - Explain the root cause of bug using the following structure:\
+                    Bug due to ```explain the root cause here```, e.g., ```Bug due to feeding very large integer variable```\
+                2 - Do not explain root cause in detail. The purpose is to understand the malicious arguments to DL APIs. \
+                3 - Determine the type of the buggy argument \
                 
-                Perform the rule generation based on the following constraints:
+                Your task is to structure the response as a JSON with the following key-value pairs:\
+                
+                Root Cause: Root cause explanation\
+                Argument Type: Type of argument\
+                    
+                Note: Please note that the root causes are going to be used for building fuzzer to fuzz the backend implementation of PyTorch.\
+                    
+                You also need to consider the following constraints:\
                 1 - Do not suggest any fix.\
                 2 - Do not explain what is the weakness in the backend.\
                 3 - Do not generate any example. \
-                4 - Do not explain the input specification.\
-                5 - Concisely generate the rule for fuzzing.
                 """
 
-        _prompt_general = f"""
-                Given following pieces of information:\
-                    Title: {Title} \
-                    Bug description: {bug_description} \
-                    Minimum reproduceable example: {sample_code} \
-
-                
-                Your task is to generate a malformed input generation rule. The rule should be usable for fuzzing. \
-                To better understand how to generate the rule, please consider the following steps:\
-                    
-                1 - Figure out which TensorFlow API is mentioned in the ```Title``` or ```Bug description```\
-                2 - Understand input specification for the API\
-                3 - Understand what input is causing bug, i.e., it should be explain in the ```Title``` or ```Bug description```\
-                4 - Understand the impact of the bug explained in the ```Bug description```\
-                5 - Understand the minimum reproduceable example that cause the bug \
-                    
-                Based on above steps, generate the rule based on the malicious inputs explained in the title and bug description. \
-                ```Your task is to generate a general rule that is applicable for other APIs as well```
-                ```For example, if the bug description says the bug is due to feeding very large integer value for \
-                    the paramer ```dim```, this means that we can use ```A Very Large Integer Value``` as a general\
-                        rule for all APIs that have integer argument. \
-                
-                
-                Perform the rule generation based on the following constraints:
-                1 - Do not suggest any fix.\
-                2 - Do not explain what is the weakness in the backend.\
-                3 - Do not generate any example. \
-                4 - Do not explain the input specification.\
-                5 - Concisely generate the rule for fuzzing.
-                """
-
-        _prompt_space_partioning = f"""
-                Given following pieces of information:\
-                    Title: {Title} \
-                    Bug description: {bug_description} \
-                    Minimum reproduceable example: {sample_code} \
-                    API Signature: {api_sig}
-                    
-                Your task is to perform input space paritioning, for each parition generate a set of malformed inputs based on malicious inputs that are explained in the bug \
-                    description and title.
-                To better understand how to generate the rule, please consider the following steps:\
-                    
-                1 - Understand input specification for the API\
-                2 - Understand what input is causing bug, i.e., it should be explain in the ```Title``` or ```Bug description```\
-                3 - Understand the impact of the bug explained in the ```Bug description```\
-                4 - Understand the minimum reproduceable example that cause the bug \ 
-                5 - Give output as JSON structure. 
-                
-                Consider the following constraints: \
-                1 - Do not suggest any fix.\
-                2 - Do not explain what is the weakness in the backend.\
-                3 - Do not generate any example. \
-                4 - Do not explain the input specification.\
-                """
-
-    return _prompt_space_partioning
+    return _prompt_specific
 
 
 def run():
@@ -159,61 +143,22 @@ def run():
         for item in data:
             prompt = create_prompt(item, lib_name)
 
-            Title = item["Title"]
-            bug_description = item["Bug description"]
-            sample_code = item["Sample Code"]
-            api_sig = item["API Signature"]
-
-            input_parition_prompt_level1 = f"""
-            Perform input space paritionining given the following API signature:
-            API Signature: {api_sig}
-            
-            Please consider the following constraints: \
-            1 - Do partitioning based on argument types \
-            2 - Your task is to parition based on types, e.g., Tensors, Booleans, Integers, Strings, Positional Arguments.\
-            3 - Your task is not mix argument types together, e.g., Tensor and Boolean arguments should not be in one parition. \
-            3 - Paritions should be disjoint. \
-            4 - The union of paritions should form the original input space. \
-            5 - Give paritions in an structured format, e.g., JSON \
-            """
-            _parition_response_level1 = gpt_conversation(
-                input_parition_prompt_level1, model=model_name)
-
-            print(_parition_response_level1.choices[0].message.content)
-
-            input_parition_prompt_level2 = f"""
-            Given the following input space partitioning:\
-            {_parition_response_level1.choices[0].message.content}\
-            Performed on the following API:\
-            API: {api_sig}\
-            
-            Based on the following information:\
-            Bug description: {bug_description}\
-            Title: {Title}\
-            
-            Your task is to generate all possible malformed inputs for the suitable parition based on the above description.\
-            The malformed inputs are going to be used for fuzz testing of the corresponding API.\
-
-            
-            Your task is to consider the following constraints:
-            1 - Just give paritions in an structured format
-            """
-
-            _parition_response_level2 = gpt_conversation(
-                input_parition_prompt_level2, model=model_name)
+            # _parition_response_level2 = gpt_conversation(
+            #     prompt, model=model_name)
+        
+        
+            _parition_response_level2 = completions_with_backoff(model=model_name, prompt)
 
             print(_parition_response_level2.choices[0].message.content)
-            print('')
 
             try:
                 # rule_ = json.loads(conversations.choices[0].message.content)
 
-                # first_key = next(iter(item))
-                # rule_.update({'link': item[first_key]})
-
                 rule_ = {
                     'rule': _parition_response_level2.choices[0].message.content}
-                rule_.update({'link': item['Link']})
+                _key = next(iter(item))
+                rule_.update({'link': item[_key]})
+
                 print(rule_)
 
                 with open(rules_path, "a") as json_file:

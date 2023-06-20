@@ -1,24 +1,144 @@
 {
-    "rule": "1 - Input space partitioning: \n\nA. Valid input partition: input should be a valid tensor with appropriate shape and dtype.\n\nB. Invalid input partition (Scalar num_bits): num_bits input tensor should be a scalar, and its value should not be 0. If it's not scalar, then it results in a CHECK fail that can be used to trigger a denial of service attack.\n\nC. Invalid input partition (Non-scalar num_bits): if num_bits tensor is a non-scalar tensor, then it results in a CHECK fail that can be used to trigger a denial of service attack.\n\nD. Invalid input partition (Unsigned input): if signed_input is set to False, it results in a CHECK fail that can be used to trigger a denial of service attack.\n\n2 - Input causing bug: \n\nIn the minimum reproducible example provided, if the num_bits tensor is not a scalar, it results in a CHECK fail that can be used to trigger a denial of service attack.\n\n3 - Impact of bug: \n\nThe bug can be used to trigger a denial of service attack, as it results in a failure that terminates the program.\n\n4 - Minimum reproduceable example: \n\nIn the given minimum reproducible example, if num_bits tensor is not a scalar, then it results in a CHECK fail that can be used to trigger a denial of service attack.\n\n5 - Malformed inputs based on malicious inputs: \n\nA. For invalid input partition (Scalar num_bits): \n\n1. Set num_bits tensor to 0.\n\n2. Set num_bits tensor to a negative value.\n\nB. For invalid input partition (Non-scalar num_bits): \n\n1. Set num_bits tensor to a higher dimensional tensor.\n\n2. Set a different data type for the num_bits tensor.\n\nC. For invalid input partition (Unsigned input):\n\n1. Set signed_input tensor to False.\n\n2. Provide a negative input tensor.\n\n3. Provide an input tensor with a higher bit depth than what num_bits specifies.",
-    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-9cr2-8pwr-fhfq"
+    "rule": "{\n    \"Root Cause\": \"Bug due to nonscalar num_bits input tensor\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        `CHECK` fail in `QuantizeAndDequantizeV3`\n      "
 },
 {
-    "rule": "1 - Input Space Partitioning:\n\nPartition 1: \n    Inputs with scalar values for min and max.\n    \nPartition 2: \n    Inputs with nonscalar values for min and max, with shape (n,).\n\nPartition 3: \n    Inputs with nonscalar values for min and max, with shape (n, m) where (n > 1) and (m > 1).\n\nPartition 4: \n    Inputs with nonscalar values for min and max, with shape (n, 1) or (1, m).\n    \n2 - Malicious Inputs:\n \nPartition 1:\n    No malicious input required, as this partition contains valid inputs.\n\nPartition 2:\n    Malicious input: provide input for min or max as a non-scalar array, where the number of elements in the array is greater than the total number of elements in the input tensor. \n    Example: np.random.random(size=(10,)) where the input tensor is of shape (2, 2).\n    \nPartition 3:\n    Malicious input: provide input for min or max as a multidimensional array with different dimensions than the input tensor.\n    Example: np.random.random(size=(3, 3)) where the input tensor is of shape (2, 2).\n\nPartition 4:\n    Malicious input: provide input for min or max as a 1-dimensional or 2-dimensional array with one of the dimensions having a size greater than 1.\n    Example: np.random.random(size=(2, 3)) where the input tensor is of shape (2, 2).\n\n3 - Impact of the bug:\n    The bug can trigger a CHECK fail that can lead to a denial of service attack.\n\n4 - Minimum Reproducible Example:\n    The following input to the API can reproduce the bug:\n    \n    import numpy as np \n    arg_0=tf.constant(value=np.random.random(size=(2, 2)), shape=(2, 2), dtype=tf.float32)\n    arg_1=tf.constant(value=np.random.random(size=(2, 2)), shape=(2, 2), dtype=tf.float32)\n    arg_2=tf.constant(value=np.random.random(size=(2,)), shape=(2,), dtype=tf.float32)\n    arg_3=tf.constant(value=np.random.random(size=(2,)), shape=(2,), dtype=tf.float32)\n    arg_4=8\n    arg_5=False\n   \n    tf.quantization.fake_quant_with_min_max_vars_gradient(\n                gradients=arg_0, inputs=arg_1,\n                min=arg_2, max=arg_3, num_bits=arg_4, \n                narrow_range=arg_5, name=None)",
-    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-r26c-679w-mrjm"
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding non-scalar inputs for min or max variables\",\n    \"Argument Type\": \"Tensor with rank greater than 0\"\n}",
+    "link": "\n        `CHECK` fail in `FakeQuantWithMinMaxVarsGradient`\n      "
 },
 {
-    "rule": "Input Space Partitioning:\n    1. Partition based on shape of inputs:\n        a. Small input shape\n            i. shape=[1]\n            ii. shape=[1,1]\n            iii. shape=[2,2]\n        b. Large input shape\n            i. shape=[500]\n            ii. shape=[500,500]\n            iii. shape=[1000,1000]\n    2. Partition based on magnitude of rates:\n        a. Small rates\n            i. alpha=0.01, beta=0.01\n        b. Large rates\n            i. alpha=100.0, beta=100.0\n    3. Partition based on data type:\n        a. Different data types (e.g., tf.float16, tf.bfloat16, tf.float32, tf.float64)\n    4. Partition based on seed value:\n        a. seed=0\n        b. seed=np.nan\n    5. Partition based on name parameter:\n        a. name=None\n        b. name=\"test\"\n\nMalicious Input Examples:\n    1. Large input shape\n        a. shape=[500]: can cause a CHECK fail and result in a denial of service attack\n        b. shape=[1000,1000]: can cause a CHECK fail and result in a denial of service attack\n    2. Large rates\n        a. alpha=100.0, beta=100.0: can cause a CHECK fail and result in a denial of service attack\n    3. Float16 and bfloat16 data types: can cause numeric overflow/underflow and result in incorrect results\n    4. Invalid seed: \n        a. seed=np.nan: can cause NaN output, which may have undesirable effects on downstream computations\n    5. Invalid name parameter:\n        a. name=\"test\": can cause issues with naming conventions and disrupt downstream computations",
-    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-mv8m-8x97-937q"
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding large input shape and rates into tf.random.gamma API, causing a CHECK fail that can trigger a denial of service attack\",\n    \"Argument Type\": \"Shape and rates\"\n}",
+    "link": "\n        `CHECK` fail in `tf.random.gamma`\n      "
 },
 {
-    "rule": "Input Space Partitioning:\n1. Partition: Small shape and rate\n    - Low values for shape and rate (e.g., shape=(1,), rate=np.array([0.1]).astype(np.float32))\n2. Partition: Large shape and rate\n    - High values for shape and rate (e.g., shape=(1000,), rate=np.array([100000]).astype(np.float32))\n3. Partition: Negative values for shape and rate\n    - Negative values for shape and rate (e.g., shape=(-1,), rate=np.array([-0.1]).astype(np.float32))\n4. Partition: Invalid shape and rate\n    - Non-integer or non-float values for shape and rate (e.g., shape=(\"a\",), rate=\"b\")\n5. Partition: High seed value\n    - High value for the seed argument (e.g., seed=4294967295 for 32-bit signed integers)\n6. Partition: Low seed value\n    - Low value for the seed argument (e.g., seed=-4294967296 for 32-bit signed integers)\n7. Partition: Large dtype\n    - Large integer value for the dtype argument (e.g., dtype=tf.int64)\n8. Partition: Invalid dtype\n    - Invalid value for the dtype argument (e.g., dtype=\"str\")\n9. Partition: Missing arguments\n    - Missing required arguments (e.g., tf.raw_ops.RandomPoissonV2())",
-    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-cv2p-32v3-vhwq"
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding large input shape and rates that trigger CHECK fail and denial of service attack\",\n    \"Argument Type\": \"TensorFlow tensor\"\n}",
+    "link": "\n        `CHECK` fail in `RandomPoissonV2`\n      "
 },
 {
-    "rule": "Input Space Partitioning Rules:\n\n1. `num_bits` input tensor is a scalar with value 0.\n2. `num_bits` input tensor is a nonscalar with any value.\n3. `input_min` and `input_max` have different values.\n4. `input_min` and `input_max` have the same value.\n5. `signed_input` is set to `False`.\n6. `range_given` is set to `False`.\n7. `narrow_range` is set to `True`.\n8. `axis` input is out of the range of valid values for the given input tensor.\n\n\nImpact of the Bug:\nThe `CHECK` fail in `QuantizeAndDequantizeV3` caused by a nonscalar `num_bits`input tensor can trigger a denial of service attack.\n\nMinimum Reproducible Example:\n```\nsigned_input = True\nrange_given = False\nnarrow_range = False\naxis = -1\ninput = tf.constant(-3.5, shape=[1], dtype=tf.float32)\ninput_min = tf.constant(-3.5, shape=[1], dtype=tf.float32)\ninput_max = tf.constant(-3.5, shape=[1], dtype=tf.float32)\nnum_bits = tf.constant([], shape=[0], dtype=tf.int32)\n\ntf.raw_ops.QuantizeAndDequantizeV3(\n    input=input, \n    input_min=input_min, \n    input_max=input_max, \n    num_bits=num_bits, \n    signed_input=signed_input, \n    range_given=range_given, \n    narrow_range=narrow_range, \n    axis=axis\n)\n```\n\nJSON Output:\n```\n{\n    \"partitions\": [\n        {\n            \"input\": {\n                \"num_bits\": {\n                    \"type\": \"int32\",\n                    \"shape\": \"[0]\",\n                    \"value\": \"0\"\n                }\n            },\n            \"description\": \"num_bits input tensor is a scalar with value 0\"\n        },\n        {\n            \"input\": {\n                \"num_bits\": {\n                    \"type\": \"int32\",\n                    \"shape\": \"[n]\",\n                    \"value\": \"[<malicious_input>]\"\n                }\n            },\n            \"description\": \"num_bits input tensor is a nonscalar with any value\"\n        },\n        {\n            \"input\": {\n                \"input_min\": {\n                    \"type\": \"float32\",\n                    \"shape\": \"[1]\",\n                    \"value\": \"<different_value>\"\n                },\n                \"input_max\": {\n                    \"type\": \"float32\",\n                    \"shape\": \"[1]\",\n                    \"value\": \"<different_value>\"\n                }\n            },\n            \"description\": \"input_min and input_max have different values\"\n        },\n        {\n            \"input\": {\n                \"input_min\": {\n                    \"type\": \"float32\",\n                    \"shape\": \"[1]\",\n                    \"value\": \"<same_value>\"\n                },\n                \"input_max\": {\n                    \"type\": \"float32\",\n                    \"shape\": \"[1]\",\n                    \"value\": \"<same_value>\"\n                }\n            },\n            \"description\": \"input_min and input_max have the same value\"\n        },\n        {\n            \"input\": {\n                \"signed_input\": {\n                    \"type\": \"bool\",\n                    \"value\": \"False\"\n                }\n            },\n            \"description\": \"signed_input is set to False\"\n        },\n        {\n            \"input\": {\n                \"range_given\": {\n                    \"type\": \"bool\",\n                    \"value\": \"False\"\n                }\n            },\n            \"description\": \"range_given is set to False\"\n        },\n        {\n            \"input\": {\n                \"narrow_range\": {\n                    \"type\": \"bool\",\n                    \"value\": \"True\"\n                }\n            },\n            \"description\": \"narrow_range is set to True\"\n        },\n        {\n            \"input\": {\n                \"axis\": {\n                    \"type\": \"int32\",\n                    \"value\": \"<out_of_range_value>\"\n                }\n            },\n            \"description\": \"axis input is out of the range of valid values for the given input tensor\"\n        }\n    ]\n}\n```",
-    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-9cr2-8pwr-fhfq"
+    "rule": "{\n  \"Root Cause\": \"Bug due to not validating the input 'id' of type int64, which can trigger a CHECK fail and lead to a denial of service attack.\",\n  \"Argument Type\": \"int64\"\n}",
+    "link": "\n        `CHECK` fail in `Unbatch`\n      "
 },
 {
-    "rule": "Input Space Partitioning:\n1. Valid Input Partition: inputs as 2D tensor with shape (n, m), where n and m can take any positive integer values.\n2. Invalid Input Partition: min or max input as a tensor with a shape other than scalar. \n3. Invalid Input Partition: num_bits as a value less than or equal to 0.\n4. Invalid Input Partition: narrow_range as a non-boolean value.\n5. Invalid Input Partition: name as a non-string value.\n\nMalicious Inputs:\n1. A 2D tensor input with all NaN or Inf values.\n2. A scalar input as min or max with a value of NaN or Inf.\n3. A float value as num_bits instead of an integer.\n4. A non-boolean value as narrow_range.\n5. A non-string value as name.\n\nImpact of the Bug:\nThe invalid input partition with min or max input as a tensor with a shape other than scalar can cause a CHECK fail that allows a denial of service attack, which can cause the program to crash or hang indefinitely.\n\nJSON Output:\n{\n  \"input_partitions\": [\n    {\n      \"partition_name\": \"Valid Input Partition\",\n      \"partition_description\": \"Inputs as 2D tensor with shape (n, m), where n and m can take any positive integer values.\"\n    },\n    {\n      \"partition_name\": \"Invalid Input Partition\",\n      \"partition_description\": \"Min or max input as a tensor with shape other than scalar.\"\n    },\n    {\n      \"partition_name\": \"Invalid Input Partition\",\n      \"partition_description\": \"Num_bits as a value less than or equal to 0.\"\n    },\n    {\n      \"partition_name\": \"Invalid Input Partition\",\n      \"partition_description\": \"Narrow_range as a non-boolean value.\"\n    },\n    {\n      \"partition_name\": \"Invalid Input Partition\",\n      \"partition_description\": \"Name as a non-string value.\"\n    }\n  ],\n  \"malicious_inputs\": [\n    {\n      \"malicious_input_name\": \"All NaN or Inf values in input tensor\",\n      \"malicious_input_description\": \"A 2D tensor input with all NaN or Inf values.\"\n    },\n    {\n      \"malicious_input_name\": \"Scalar input as min or max with NaN or Inf\",\n      \"malicious_input_description\": \"A scalar input as min or max with a value of NaN or Inf.\"\n    },\n    {\n      \"malicious_input_name\": \"Float value as num_bits\",\n      \"malicious_input_description\": \"A float value as num_bits instead of an integer.\"\n    },\n    {\n      \"malicious_input_name\": \"Non-boolean value as narrow_range\",\n      \"malicious_input_description\": \"A non-boolean value as narrow_range.\"\n    },\n    {\n      \"malicious_input_name\": \"Non-string value as name\",\n      \"malicious_input_description\": \"A non-string value as name.\"\n    }\n  ]\n}",
-    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-r26c-679w-mrjm"
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing an input to DrawBoundingBoxes that is not of dtype float.\",\n    \"Argument Type\": \"Numpy array\"\n}",
+    "link": "\n        `CHECK` fail in `DrawBoundingBoxes`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding incorrect Tout input to the Eig API\",\n    \"Argument Type\": \"Type of argument: Tout\"\n}",
+    "link": "\n        `CHECK` fail in `Eig`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding empty tensor inputs to the Conv2DBackpropInput API\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        `CHECK` fail in `Conv2DBackpropInput`\n      "
+},
+{
+    "rule": "{\n  \"Root Cause\": \"Bug due to passing input element_shape with more than one dimension to EmptyTensorList API\",\n  \"Argument Type\": \"Shape Tensor\"\n}",
+    "link": "\n        `CHECK` fail in `EmptyTensorList`\n      "
+},
+{
+    "rule": "{\n  \"Root Cause\": \"Bug due to feeding non-scalar input separator to tf.sparse.cross function.\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        `CHECK` fail in `tf.sparse.cross`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to providing empty input to Conv2D API which causes division-by-zero floating point exceptions\",\n    \"Argument Type\": \"Input\"\n}",
+    "link": "\n        Floating point exception in `Conv2D`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding a multi-dimensional tensor to 'sample_rate' argument whereas it only accepts a scalar value\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        `CHECK` fail in `AudioSummaryV2`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing a scalar input `input` to `CollectiveGather` API, which is not supported and triggers a CHECK fails that can be used to trigger a denial of service attack.\", \n    \"Argument Type\": \"Scalar\"\n}",
+    "link": "\n        `CHECK` fail in `CollectiveGather`\n      "
+},
+{
+    "rule": "{\n\"Root Cause\": \"Bug due to feeding non 1D tensor input to set_shape parameter in SetSize API\",\n\"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        `CHECK` fail in `SetSize`\n      "
+},
+{
+    "rule": "{\n  \"Root Cause\": \"Bug due to receiving an element_shape of a rank greater than one, which triggers a CHECK fail and can lead to a denial of service attack.\",\n  \"Argument Type\": \"Tensor element shape\"\n}",
+    "link": "\n        `CHECK` fail in `TensorListFromTensor`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing a tensor of rank greater than one as element_shape argument to TensorListScatter and TensorListScatterV2 APIs\",\n    \"Argument Type\": \"Tensor with rank greater than one\"\n}",
+    "link": "\n        `CHECK` fail in `TensorListScatter` and `TensorListScatterV2`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing element_shape of a rank greater than one to TensorListScatter and TensorListScatterV2.\",\n    \"Argument Type\": \"TensorShape\"\n}",
+    "link": "\n        `CHECK` fail in `TensorListScatter` and `TensorListScatterV2`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to using input min or max of rank other than 1\",\n    \"Argument Type\": \"Tensor of rank other than 1\"\n}",
+    "link": "\n        `CHECK` fail in `FakeQuantWithMinMaxVarsPerChannelGradient`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding a window size input array ksize with dimensions greater than the input tensor input\",\n    \"Argument Type\": \"Input array\"\n}",
+    "link": "\n        `CHECK` fail in `MaxPool`\n      "
+},
+{
+    "rule": "{\n  \"Root Cause\": \"Bug due to feeding empty input to tf.linalg.matrix_rank API\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        `CHECK` fail in `tf.linalg.matrix_rank`\n      "
+},
+{
+    "rule": "{\n\"Root Cause\": \"Assuming input tensor weights to either have the same shape as its input tensor input or to be length-0, causing a CHECK fail that can be used to trigger a denial of service attack.\",\n\"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        `CHECK` fail in `DenseBincount`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding an empty tensor splits causing a segfault\",\n    \"Argument Type\": \"Tensor (splits)\"\n}",
+    "link": "\n        Segfault in `RaggedBincount`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to LRNGrad API accepting an output_image input tensor that is not 4-D\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        `CHECK` fail in `LRNGrad`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing an int64 type as the argument instead of int32 type, resulting in a type mismatch error and a potential denial of service attack.\",\n    \"Argument Type\": \"int64\"\n}",
+    "link": "\n        `CHECK` fail in `ParameterizedTruncatedNormal`\n      "
+},
+{
+    "rule": "{\n  \"Root Cause\": \"Bug due to running Save or SaveSlices operations over tensors of an unsupported dtype, which triggers a CHECK fail and consequently can be used to trigger a denial of service attack.\",\n  \"Argument Type\": \"Unsupported Data Type\"\n}",
+    "link": "\n        `CHECK` fail in `Save` and `SaveSlices`\n      "
+},
+{
+    "rule": "{\n  \"Root Cause\": \"Bug due to passing tensors of an unsupported dtype to Save or SaveSlices API\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        `CHECK` fail in `Save` and `SaveSlices`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to providing inputs for indices, values and dense_shape that do not make a valid sparse tensor\",\n    \"Argument Type\": \"SparseTensor\"\n}",
+    "link": "\n        Segfault in `SparseBincount`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding rt_nested_splits list that contains tensors of ranks other than one to the RaggedTensorToVariant API.\",\n    \"Argument Type\": \"List of Tensors\"\n}",
+    "link": "\n        `CHECK` fail in `RaggedTensorToVariant`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to incorrectly sized inputs triggering CHECK failure instead of returning errors\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        `CHECK` fail in `FractionalMaxPoolGrad`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to providing non-scalar input for min_features or max_features\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        Segfault in `QuantizedRelu` and `QuantizedRelu6`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding nonscalar inputs for min_features or max_features\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        Segfault in `QuantizedRelu` and `QuantizedRelu6`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding empty tensor to the input_min argument of QuantizeDownAndShrinkRange API\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        Segfault in `QuantizeDownAndShrinkRange`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding nonscalar input to QuantizedMatMul API.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        Segfault in `QuantizedMatMul`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to providing min or max tensors of a rank other than one, resulting in a CHECK fail and enabling a denial of service attack.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        `CHECK` fail in `FakeQuantWithMinMaxVarsPerChannel`\n      "
+},
+{
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing empty tensor as input to `min_input` and uninitialized tensors as `max_input` and `max_bias`.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        Segfault in `QuantizedBiasAdd`\n      "
+},
+{
+    "rule": "{\n  \"Root Cause\": \"Bug due to providing empty tensor as input_min argument\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "\n        Segfault in `Requantize`\n      "
 },

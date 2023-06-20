@@ -9,6 +9,7 @@ import datetime
 import time
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
+import pandas as pd
 from csv import writer
 from pydriller import Repository
 from dotenv import load_dotenv
@@ -21,6 +22,18 @@ tokens = {0: os.getenv("GIT_TOKEN0"), 1: os.getenv("GIT_TOKEN1"),
 
 tokens_status = {os.getenv("GIT_TOKEN0"): True, os.getenv("GIT_TOKEN1"): True,
                  os.getenv("GIT_TOKEN2"): True, os.getenv("GIT_TOKEN3"): True}
+
+
+def search(data, target_api):
+    try:
+        for element in data:
+            for key, value in element.items():
+                key = key.replace('\n', '')
+                key = key.replace(' ', '')
+                if key == target_api:
+                    return value
+    except Exception as e:
+        return 'Could not find your target API from the database!'
 
 
 def decompose_code_linens(splitted_lines):
@@ -119,22 +132,25 @@ def select_access_token(current_token):
     return current_token
 
 
-def miner():
+def miner(hash_table):
 
     current_token = tokens[0]
-    torch_issues = read_txt('data/torch_issues.txt')
+    # torch_issues = read_txt('data/torch_issues.txt')
+
+    torch_issues = pd.read_csv(
+        'data/TORCH_records.csv', sep=',', encoding='utf-8')
 
     issue_flag = False
 
     data_list = []
 
-    for item in torch_issues:
-        print(item)
-        sha_str = item.split('/')[-1]
-        if 'commit' in item:
+    for idx, item in torch_issues.iterrows():
+        print(item['Advisory Link'])
+        sha_str = item['Advisory Link'].split('/')[-1]
+        if 'commit' in item['Advisory Link']:
             commit_base_str = "https://api.github.com/repos/pytorch/pytorch"
             branchLink = f"{commit_base_str}/commits/{sha_str}"
-        if 'issue' in item:
+        if 'issue' in item['Advisory Link']:
             issue_base_str = "https://api.github.com/repos/pytorch/pytorch"
             branchLink = f"{issue_base_str}/issues/{sha_str}"
             issue_flag = True
@@ -275,10 +291,12 @@ def miner():
                 issue_code = re.findall(
                     r'To Reproduce((.|\n)*?)Additional context', data_['body'])[0][0]
 
+            target_api = search(hash_table, target_api=item['API'])
             data_ = {'Issue link': branchLink,
                      'Issue title': issue_title_,
                      'Bug description': issue_description,
                      'Sample Code': issue_code,
+                     'API Signature': target_api,
                      'Bug fix': ''}
 
             issue_flag = False
@@ -296,9 +314,12 @@ def miner():
             except Exception as e:
                 print(e)
 
+            target_api = search(hash_table, target_api=item['API'])
+
             data_ = {'Commit link': branchLink,
                      'Bug description': commit.msg,
                      'Sample Code': '',
+                     'API Signature': target_api,
                      'Bug fix': changes}
 
         data_list.append(data_)
@@ -309,4 +330,8 @@ def miner():
 
 
 if __name__ == "__main__":
-    data = miner()
+    lib_name = 'torch'
+    with open(f'API signatures/{lib_name}_API_table.json') as json_file:
+        hash_table = json.load(json_file)
+
+    data = miner(hash_table)
