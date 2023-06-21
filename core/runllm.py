@@ -2,6 +2,7 @@ from json.decoder import JSONDecodeError
 import os
 import openai
 import backoff
+import tiktoken
 import json
 from langchain.prompts import ChatPromptTemplate
 from langchain.chat_models import ChatOpenAI
@@ -52,6 +53,15 @@ template_string = """
 chat_ = ChatOpenAI(temperature=0.0, openai_api_key=os.getenv("API_KEY"))
 
 _prompt_template = ChatPromptTemplate.from_template(template=template_string)
+
+
+def get_token_count(string):
+
+    encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+
+    num_tokens = len(encoding.encode(string))
+
+    return num_tokens
 
 
 @backoff.on_exception(backoff.expo, openai.error.RateLimitError)
@@ -108,8 +118,12 @@ def run_llm(item, formatted_response, model='tf'):
                 formatted_response=formatted_response
             )
 
-            response_ = chat_(torch_issue_message)
-            print(response_.content)
+            t_count = get_token_count(torch_issue_message[0].content)
+            if t_count <= 4097:
+                response_ = chat_(torch_issue_message)
+                return response_
+            else:
+                return False
 
         if "Commit link" in item.keys():
             bug_description = item["Bug description"]
@@ -125,8 +139,12 @@ def run_llm(item, formatted_response, model='tf'):
                 formatted_response=formatted_response
             )
 
-            response_ = chat_(torch_commit_message)
-            print(response_.content)
+            t_count = get_token_count(torch_commit_message[0].content)
+            if t_count <= 4097:
+                response_ = chat_(torch_commit_message)
+                return response_
+            else:
+                return False
 
     else:
         Title = item["Title"]
@@ -143,15 +161,17 @@ def run_llm(item, formatted_response, model='tf'):
             formatted_response=formatted_response
         )
 
-        response_ = chat_(tf_message)
-        print(response_.content)
-
-    return response_
+        t_count = get_token_count(tf_message[0].content)
+        if t_count <= 4097:
+            response_ = chat_(tf_message)
+            return response_
+        else:
+            return False
 
 
 def run():
 
-    lib_name = 'torch'
+    lib_name = 'tf'
     model_name = 'gpt-3.5-turbo'
 
     rules_path = f"rulebase/{lib_name}_rules_general.json"
@@ -163,18 +183,21 @@ def run():
             formatted_response, output_parser = _formatOutput()
             response_ = run_llm(item, formatted_response, lib_name)
 
-            output_dict = output_parser.parse(response_.content)
-            try:
-                _key = next(iter(item))
-                output_dict.update({'link': item[_key]})
+            if response_:
+                output_dict = output_parser.parse(response_.content)
+                try:
+                    # _key = next(iter(item))
+                    output_dict.update({'link': item['Link']})
 
-                with open(rules_path, "a") as json_file:
-                    json.dump(output_dict, json_file, indent=4)
-                    json_file.write(',')
-                    json_file.write('\n')
+                    with open(rules_path, "a") as json_file:
+                        json.dump(output_dict, json_file, indent=4)
+                        json_file.write(',')
+                        json_file.write('\n')
 
-            except JSONDecodeError as e:
-                print(e)
+                except JSONDecodeError as e:
+                    print(e)
+            else:
+                print("Your messages exceeded the limit.")
 
 
 if __name__ == '__main__':

@@ -1,0 +1,685 @@
+{
+    "Root Cause": "Bug due to feeding a zero dimensional tensor to torch.view_as_complex API",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/commits/b6b1c01adfdadf93a4a1d30c3661ff177412a876"
+},
+{
+    "Root Cause": "Bug due to using integer division that can cause overflow",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/commits/c010ef7f0c6d837809a7e973048afac76373e3de"
+},
+{
+    "Root Cause": "Bug due to feeding 0-D tensor to `at::native::embedding` API, which previously assumed that the `weight` argument would be 1-D or greater and would segfault when given a 0-D tensor. This change makes it throw a RuntimeError instead.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/commits/42b4a7132e7c6f1df963b473d1583e4791fb1808"
+},
+{
+    "Root Cause": "Bug due to attempting to create a CUDA generator on a machine that is not CUDA-enabled",
+    "Argument Type": "String",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/42281"
+},
+{
+    "Root Cause": "Bug due to unsupported data type for NCCL process group",
+    "Argument Type": "Bool",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/24137"
+},
+{
+    "Root Cause": "Bug due to broadcasting a tensor of unsupported data type for NCCL process group",
+    "Argument Type": "Bool",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/327"
+},
+{
+    "Root Cause": "Bug due to broadcasting a tensor of unsupported data type for NCCL process group",
+    "Argument Type": "Bool",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/327"
+},
+{
+    "Root Cause": "Bug due to unsupported data type for NCCL process group",
+    "Argument Type": "Bool",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/38764"
+},
+{
+    "Root Cause": "Bug due to feeding very large dividend to torch.remainder API",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/commits/63b1ae69831cd21bc4d6059a5854bc1155a152c9"
+},
+{
+    "Root Cause": "Bug due to incorrect input shape validation in the gather_shape_check function.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/commits/7aec364bdf9ed7297b77e8445a6a6d4116265dde"
+},
+{
+    "Root Cause": "Bug due to attempting to convert a CUDA tensor to a NumPy array without first moving it to CPU memory.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/33300"
+},
+{
+    "Root Cause": "Bug due to indexing with a single element array, which is not supported by PyTorch and leads to a segmentation fault.",
+    "Argument Type": "List",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/33001"
+},
+{
+    "Root Cause": "Bug due to using int32 instead of int64 for indexing, causing overflow for large batch sizes",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/commits/a64d0ffe81b250889a3e6670daa9c7d07d946e32"
+},
+{
+    "Root Cause": "Bug due to incorrect scaling of uint8 tensor when calling the add_images() method on the tensorboard SummaryWriter, resulting in overflow behavior and incorrect images being displayed in tensorboard.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/commits/ddff014b79303e5239d5cb876ba97143cad6405a"
+},
+{
+    "Root Cause": "Bug due to feeding infinite or NaN values to the 'min' and 'max' arguments of the torch.histc() API.",
+    "Argument Type": "Float",
+    "link": "https://api.github.com/repos/pytorch/pytorch/commits/136bb07a93b779acbc84ff341bc397551a8cfcc2"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/commits/ec8e75ea92ae2b5ea73b4aeb3ec7cb39e9f95db9"
+},
+{
+    "Root Cause": "Bug due to indexing a tensor using a single element array",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/24309"
+},
+{
+    "Root Cause": "Bug due to using 32-bit integer variable to index tensors that cannot be indexed with 32-bit integers.",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/commits/74828be4a7d0d2dba3f0ec3f6e79265cdfae5329"
+},
+{
+    "Root Cause": "Bug due to feeding very large logits variable",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/commits/071971476d7431a24e527bdc181981678055a95d"
+},
+{
+    "Root Cause": "Bug due to feeding very large logits variable",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/commits/071971476d7431a24e527bdc181981678055a95d"
+},
+{
+    "Root Cause": "Bug due to calling torch.isinf on integral tensor which raises RuntimeError: value cannot be converted to type int16_t without overflow: inf. The fix suppresses the error and returns false(0) for all integral tensors, making the behavior consistent with np.isinf.",
+    "Argument Type": "Integral Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/commits/d4712ee218cd6af3c2096ca7a76fef350173b703"
+},
+{
+    "Root Cause": "Bug due to feeding input that is not in decreasing order, which violates the expected input format of the function.",
+    "Argument Type": "List",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/13324"
+},
+{
+    "Root Cause": "Bug due to feeding input that is not in decreasing order to pack_padded_sequence function",
+    "Argument Type": "List",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/9264"
+},
+{
+    "Root Cause": "Bug due to feeding input in non-decreasing order instead of decreasing order",
+    "Argument Type": "List",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/3498"
+},
+{
+    "Root Cause": "Bug due to passing a dtype that is not supported by the function.",
+    "Argument Type": "TORCH_DTYPE",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/86326"
+},
+{
+    "Root Cause": "Bug due to total bytes of NDArray > 2**32, which causes a non-recoverable error.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/86279"
+},
+{
+    "Root Cause": "Bug due to feeding non-decreasing sequence of lengths to pack_padded_sequence function",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/86162"
+},
+{
+    "Root Cause": "Bug due to type promotion",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/86074"
+},
+{
+    "Root Cause": "Bug due to using in-place computation with `out` argument, which causes the output tensor to be modified in-place and leads to incorrect results.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/85852"
+},
+{
+    "Root Cause": "Bug due to feeding empty tensor to running_mean and running_var parameters in native_batch_norm function.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/85217"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/85216"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/85214"
+},
+{
+    "Root Cause": "Bug due to feeding empty tensors to the embedding_bag API, which causes a segmentation fault.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/85213"
+},
+{
+    "Root Cause": "Bug due to passing None to torch.jit.wait API",
+    "Argument Type": "Null",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/85072"
+},
+{
+    "Root Cause": "Bug due to feeding invalid input to `torch.futures.collect_all` API",
+    "Argument Type": "Tuple",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/84990"
+},
+{
+    "Root Cause": "Bug due to invalid input to the function, which causes a segmentation fault.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/84979"
+},
+{
+    "Root Cause": "Bug due to invalid input passed to `torch.futures.collect_all` function.",
+    "Argument Type": "List",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/83585"
+},
+{
+    "Root Cause": "Bug due to feeding singular matrix as input to torch.pinverse() function, which causes the function to produce incorrect output.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/83494"
+},
+{
+    "Root Cause": "Bug due to feeding input tensor with dtype float16 which is not supported by the Conv2d API.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/83328"
+},
+{
+    "Root Cause": "Bug due to feeding negative integer variable as kernel_size argument",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/83229"
+},
+{
+    "Root Cause": "Bug due to not verifying the value type of parameter num_features, allowing it to be set to negative integral / string / list and other type value.",
+    "Argument Type": "Integer, String, List, or other type",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/83221"
+},
+{
+    "Root Cause": "Bug due to setting num_features to a non-integer value, which is not verified by torch.nn.InstanceNorm1d",
+    "Argument Type": "String",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/83175"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/83152"
+},
+{
+    "Root Cause": "Bug due to torchscript not handling element-wise operations with equal inputs correctly",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/82635"
+},
+{
+    "Root Cause": "Bug due to feeding NaN values as input to torch.matrix_exp",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/82282"
+},
+{
+    "Root Cause": "Bug due to calling `torch._C._nn.adaptive_avg_pool2d` with some combinations of input and output shapes that cause segmentation fault.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/81409"
+},
+{
+    "Root Cause": "Bug due to incorrect implementation of the `_weight_norm` API in torch 1.12",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/81195"
+},
+{
+    "Root Cause": "Bug due to passing multi-dimensional bias to `torch.nn.functional.linear` API which is not supported in torch 1.12.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/80946"
+},
+{
+    "Root Cause": "Bug due to feeding invalid equation to torch.einsum API",
+    "Argument Type": "String",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/80805"
+},
+{
+    "Root Cause": "Bug due to maxnorm being set to 0, which causes division by zero error in the backend implementation.",
+    "Argument Type": "Float",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/80804"
+},
+{
+    "Root Cause": "Bug due to feeding NaN values as input to torch.baddbmm API",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/80588"
+},
+{
+    "Root Cause": "Bug due to feeding zero values to the kl_div function, which results in negative outputs.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/80488"
+},
+{
+    "Root Cause": "Bug due to feeding an empty tensor to pack_sequence API",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/78153"
+},
+{
+    "Root Cause": "Bug due to passing an empty tensor as batch_sizes argument to torch._pad_packed_sequence function.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/78131"
+},
+{
+    "Root Cause": "Bug due to feeding an empty tensor as grid argument to the function `torch._grid_sampler_2d_cpu_fallback`.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/78130"
+},
+{
+    "Root Cause": "Bug due to passing empty tensor as indices argument to torch._embedding_bag_forward_only function",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/78129"
+},
+{
+    "Root Cause": "Bug due to feeding invalid or unsupported input arguments to the function.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/78128"
+},
+{
+    "Root Cause": "Bug due to passing an empty list as the second argument to torch._C._nn.reflection_pad2d function",
+    "Argument Type": "List",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/78127"
+},
+{
+    "Root Cause": "Bug due to passing empty list as argument to `intarrayref_2` parameter of `torch.max_unpool3d` function.",
+    "Argument Type": "List",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/78126"
+},
+{
+    "Root Cause": "Bug due to feeding negative integer value to interpolation_mode and padding_mode arguments which are expected to be positive integers.",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/78125"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/78123"
+},
+{
+    "Root Cause": "Bug due to feeding weights tensor with too many dimensions",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/78122"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/77893"
+},
+{
+    "Root Cause": "Bug due to input and exponent having different dtype, causing a segmentation fault in `_remove_batch_dim` during forward AD.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/77493"
+},
+{
+    "Root Cause": "Bug due to passing an empty complex tensor as the index argument, which causes a segmentation fault in the `_remove_batch_dim` function.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/77231"
+},
+{
+    "Root Cause": "Bug due to input and mat/vec having different data types, which causes a type mismatch during backward pass.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/76778"
+},
+{
+    "Root Cause": "Bug due to feeding NaN value to the torch.unique() function on GPU",
+    "Argument Type": "Float",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/76571"
+},
+{
+    "Root Cause": "Bug due to non-ascii characters in the file path",
+    "Argument Type": "String",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/75171"
+},
+{
+    "Root Cause": "Bug due to creating a tensor from a non-contiguous NumPy array",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/74809"
+},
+{
+    "Root Cause": "Bug due to passing a Long (int32) tensor as the exponent argument to torch.pow() which is not supported by the function.",
+    "Argument Type": "Tensor (int32)",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/73196"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/73191"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/73190"
+},
+{
+    "Root Cause": "Bug due to feeding 0s in the output_size argument of fractional_max_pool3d function",
+    "Argument Type": "List",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/73186"
+},
+{
+    "Root Cause": "Bug due to feeding 0s in the output_size argument of fractional_max_pool2d function",
+    "Argument Type": "List",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/73185"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/73182"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/73181"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/73180"
+},
+{
+    "Root Cause": "Bug due to feeding 0 as the batch dimension to the Categorical constructor, which results in an ambiguous tensor shape when trying to reshape it.",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71689"
+},
+{
+    "Root Cause": "Bug due to passing a sparse tensor as input to torch.bmm() during backward pass, which expects a dense tensor as gradient input.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71678"
+},
+{
+    "Root Cause": "Bug due to feeding an empty tensor to torch.median() function",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71636"
+},
+{
+    "Root Cause": "Bug due to 0-d tensor input which is not handled properly in the API implementation",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71477"
+},
+{
+    "Root Cause": "Bug due to 0-d tensor input which is not handled properly in the API implementation",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71477"
+},
+{
+    "Root Cause": "Bug due to 0-d tensor input which is not handled properly in the API implementation",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71477"
+},
+{
+    "Root Cause": "Bug due to passing a dimension argument that is out of range for the input tensor",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71477"
+},
+{
+    "Root Cause": "Bug due to passing NoneType argument to in_proj_weight parameter",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71470"
+},
+{
+    "Root Cause": "Bug due to passing a diagonal value greater than the maximum diagonal value of the input tensor.",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71204"
+},
+{
+    "Root Cause": "Bug due to passing a very large integer value as the diagonal argument to torch.diag function.",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71204"
+},
+{
+    "Root Cause": "Bug due to feeding a very large value to the 'r' parameter, which causes the function to allocate a large amount of memory.",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71082"
+},
+{
+    "Root Cause": "Bug due to negative padding values resulting in a negative output size, which is invalid.",
+    "Argument Type": "List",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71078"
+},
+{
+    "Root Cause": "Bug due to negative padding values resulting in a negative output size, which is invalid.",
+    "Argument Type": "List",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71078"
+},
+{
+    "Root Cause": "Bug due to passing an empty tensor as input to torch.scatter",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71059"
+},
+{
+    "Root Cause": "Bug due to passing a float value as the second argument 'y' to the 'where' method of a tensor, which is not supported.",
+    "Argument Type": "Float",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/71058"
+},
+{
+    "Root Cause": "Bug due to overflow of `n + count` in the `batch_norm_reduce_statistics_kernel` function when `count` is half type.",
+    "Argument Type": "Tensor (half type)",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/70901"
+},
+{
+    "Root Cause": "feeding negative dimension to torch.as_strided",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/70672"
+},
+{
+    "Root Cause": "Bug due to negative dimension being passed as an argument to the API, which is not allowed for tensors.",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/70398"
+},
+{
+    "Root Cause": "Bug due to negative dimension specified in the shape argument of torch.broadcast_to() and tensor.expand() functions.",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/70398"
+},
+{
+    "Root Cause": "Bug due to negative stride value causing the tensor to have a negative storage size, which is not allowed.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/70397"
+},
+{
+    "Root Cause": "Bug due to indexing a 0-dimensional tensor which is not allowed.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/69433"
+},
+{
+    "Root Cause": "Bug due to feeding a 0-dimensional tensor as input to torch.hstack, which is not supported.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/69408"
+},
+{
+    "Root Cause": "Bug due to passing positional optional arguments instead of keyword arguments",
+    "Argument Type": "Boolean",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/68610"
+},
+{
+    "Root Cause": "Bug due to feeding Boolean Tensor to `torch.utils.dlpack.to_dlpack` API which is not supported by dlpack",
+    "Argument Type": "Bool",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/67081"
+},
+{
+    "Root Cause": "Bug due to feeding Boolean type variable",
+    "Argument Type": "Bool",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/65683"
+},
+{
+    "Root Cause": "Bug due to feeding scalar input to torch.sparse.sum() API with dim argument specified",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/65400"
+},
+{
+    "Root Cause": "Bug due to feeding identical input vectors to torch.cross function, which causes the function to encounter precision problem.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/65050"
+},
+{
+    "Root Cause": "Bug due to weight tensor having only one dimension instead of two as expected by the function.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/64978"
+},
+{
+    "Root Cause": "Bug due to NaN values in the input tensor",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/59439"
+},
+{
+    "Root Cause": "Bug due to using sparse tensors in TorchScript which is experimental and many optimization pathways have not been thoroughly tested with sparse tensors.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/54638"
+},
+{
+    "Root Cause": "Bug due to using 'pow' function which is not implemented for 'bool' data type",
+    "Argument Type": "Bool",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/54620"
+},
+{
+    "Root Cause": "Bug due to passing a very large integer variable as the kernel size argument to MaxPool1d function, causing an integer overflow.",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/54499"
+},
+{
+    "Root Cause": "Bug due to feeding empty input tensors to torch.matmul API",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/53407"
+},
+{
+    "Root Cause": "Bug due to passing an empty tensor as input to the function.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/53391"
+},
+{
+    "Root Cause": "Bug due to feeding empty input tensors to the function",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/53358"
+},
+{
+    "Root Cause": "Bug due to feeding very large float variable",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/51911"
+},
+{
+    "Root Cause": "Bug due to feeding empty tensor as input",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/51906"
+},
+{
+    "Root Cause": "Bug due to feeding empty tensor as input",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/51906"
+},
+{
+    "Root Cause": "Bug due to input-dependent size of the tensor passed to arange() function, which is not supported by the function signature.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/51803"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/51732"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/51134"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/49520"
+},
+{
+    "Root Cause": "Bug due to passing an index tensor with incompatible dimensions to torch.gather() function.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/47610"
+},
+{
+    "Root Cause": "Bug due to feeding input tensor with NaN values",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/46225"
+},
+{
+    "Root Cause": "Bug due to feeding NaN value as input to torch.svd() API",
+    "Argument Type": "Float",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/43567"
+},
+{
+    "Root Cause": "Bug due to probabilities having very different values, causing numerical instability in the implementation of torch.multinomial with replacement=True for large number of categories.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/43115"
+},
+{
+    "Root Cause": "Bug due to passing a tensor with more than one dimension to torch.cartesian_prod() function",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/37556"
+},
+{
+    "Root Cause": "Bug due to feeding a single item tensor to torch.std() function",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/29372"
+},
+{
+    "Root Cause": "Bug due to feeding a scalar value to torch.std() instead of a tensor.",
+    "Argument Type": "Float",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/25648"
+},
+{
+    "Root Cause": "Bug due to NaN values in the grid input of the `grid_sample` function, causing segfaults, corrupted CUDA memory, and incorrect results.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/24823"
+},
+{
+    "Root Cause": "Bug due to NaN values in the grid input of the grid_sample function not being properly handled, leading to segfaults, corrupted CUDA memory, and incorrect results.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/24823"
+},
+{
+    "Root Cause": "Bug due to feeding a dimension value greater than or equal to 64 to the TensorIterator reduction functions.",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/23159"
+},
+{
+    "Root Cause": "Bug due to the inefficiency of fp16 arithmetic operations on NVIDIA GPUs, which leads to slower performance of torch.einsum and torch.matmul when using fp16 data type.",
+    "Argument Type": "Float",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/23061"
+},
+{
+    "Root Cause": "Bug due to using distributed multiprocessing with Pytorch 1.1.0 which causes a deadlock when certain distributed modules combine together in a very nasty way.",
+    "Argument Type": "Null",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/22788"
+},
+{
+    "Root Cause": "Bug due to utilizing pandas.Int64Index with torch.zeros, causing a memory leak",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/22105"
+},
+{
+    "Root Cause": "Bug due to feeding a matrix with more than 2^31-1 elements to torch.mv API",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/17897"
+},
+{
+    "Root Cause": "Bug due to non-deterministic behavior of CUDA backend when using reduction other than 'none' in torch.nn.CrossEntropyLoss",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/17350"
+},
+{
+    "Root Cause": "Bug due to deserializing a tensor with a negative size.",
+    "Argument Type": "Tensor",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/15728"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/7343"
+},
+{
+    "Root Cause": "Bug due to feeding very large integer variable",
+    "Argument Type": "Integer",
+    "link": "https://api.github.com/repos/pytorch/pytorch/issues/7343"
+},
