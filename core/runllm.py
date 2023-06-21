@@ -5,6 +5,8 @@ import backoff
 import json
 from langchain.prompts import ChatPromptTemplate
 from langchain.chat_models import ChatOpenAI
+from langchain.output_parsers import ResponseSchema
+from langchain.output_parsers import StructuredOutputParser
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -13,40 +15,43 @@ openai.organization = os.getenv("ORG_ID")
 openai.api_key = os.getenv("API_KEY")
 
 template_string = """
-                Given following pieces of information:\
+                Observations: Given following pieces of information:\
                     Title: {_title} \
                     Bug description: {bug_description} \
                     Minimum reproduceable example: {sample_code} \
                     Code change: {code_change}\
                     API Siganture: {api_sig} \
                 
-                The above information are artifacts collected from security-related PyTorch issues collected from Github.\
+                Explanations: The above information are artifacts collected from security-related PyTorch issues collected from Github.\
                 In all issues, there is one API that is vulnerable to due the fact that attackers can feed malicious inputs.\
-                Based on the information, your tasks are as follows: \
+                
+                Tasks: Your tasks are as follows: \
                 1 - Explain the root cause of bug using the following structure:\
                     Bug due to ```explain the root cause here```, e.g., ```Bug due to feeding very large integer variable```\
                 2 - Do not explain root cause in detail. The purpose is to understand the malicious arguments to DL APIs. \
                 3 - Determine the type of the buggy argument.\
                 4 - You should only consider the following torch types: Tensor, Integer, String, Float, Null, Tuple,\
                     List, Bool, TORCH_VARIABLE, TORCH_DTYPE, TORCH_OBJECT, TF_VARIABLE, TF_DTYPE, TF_OBJECT
-                
-                Your task is to structure the response as a JSON with the following key-value pairs:\
-                
-                Root Cause: Root cause explanation\
-                Argument Type: Type of argument\
                     
                 Note: Please note that the root causes are going to be used for building fuzzer to fuzz the backend implementation of PyTorch.\
                     
-                You also need to consider the following constraints:\
+                Constraints: You also need to consider the following constraints:\
                 1 - Do not suggest any fix.\
                 2 - Do not explain what is the weakness in the backend.\
                 3 - Do not generate any example. \
+                    
+                Output:
+                5 - Your task is to structure the output as JSON with the following keys:\
+                    Root Cause\
+                    Argument Type\
+                    
+                {formatted_response}
                 """
 
 
 chat_ = ChatOpenAI(temperature=0.0, openai_api_key=os.getenv("API_KEY"))
 
-_prompt_template = ChatPromptTemplate.from_template(template_string)
+_prompt_template = ChatPromptTemplate.from_template(template=template_string)
 
 
 @backoff.on_exception(backoff.expo, openai.error.RateLimitError)
@@ -72,7 +77,20 @@ def gpt_conversation(prompt, model="gpt-3.5-turbo"):
     return response
 
 
-def run_llm(item, model='tf'):
+def _formatOutput():
+    _root_case_schema = ResponseSchema(
+        name='Root Cause', description='Root cause explanation')
+    _arg_type_schema = ResponseSchema(name='Argument Type',
+                                      description='The type of buggy argument')
+
+    response_schemas = [_root_case_schema, _arg_type_schema]
+    output_parser = StructuredOutputParser.from_response_schemas(
+        response_schemas)
+    format_instructions = output_parser.get_format_instructions()
+    return format_instructions, output_parser
+
+
+def run_llm(item, formatted_response, model='tf'):
 
     if model == 'torch':
         if "Issue link" in item.keys():
@@ -86,7 +104,8 @@ def run_llm(item, model='tf'):
                 bug_description=bug_description,
                 sample_code=sample_code,
                 code_change="",
-                api_sig=api_sig
+                api_sig=api_sig,
+                formatted_response=formatted_response
             )
 
             response_ = chat_(torch_issue_message)
@@ -102,7 +121,8 @@ def run_llm(item, model='tf'):
                 bug_description=bug_description,
                 sample_code="",
                 code_change=code_change,
-                api_sig=api_sig
+                api_sig=api_sig,
+                formatted_response=formatted_response
             )
 
             response_ = chat_(torch_commit_message)
@@ -119,7 +139,8 @@ def run_llm(item, model='tf'):
             bug_description=bug_description,
             sample_code=sample_code,
             code_change="",
-            api_sig=api_sig
+            api_sig=api_sig,
+            formatted_response=formatted_response
         )
 
         response_ = chat_(tf_message)
@@ -137,31 +158,18 @@ def run():
 
     with open(f'data/{lib_name}_bug_data.json') as json_file:
         data = json.load(json_file)
-        for item in data:
-            response_ = run_llm(item, lib_name)
+        for j, item in enumerate(data):
+            print(f"Record {j}/{len(data)}")
+            formatted_response, output_parser = _formatOutput()
+            response_ = run_llm(item, formatted_response, lib_name)
 
-            # _parition_response_level2 = gpt_conversation(
-            #     prompt, model=model_name)
-
-            # _parition_response_level2 = completions_with_backoff(
-            #     model=model_name,
-            #     prompt=prompt
-            # )
-
-            print(_parition_response_level2.choices[0].message.content)
-
+            output_dict = output_parser.parse(response_.content)
             try:
-                # rule_ = json.loads(conversations.choices[0].message.content)
-
-                rule_ = {
-                    'rule': _parition_response_level2.choices[0].message.content}
                 _key = next(iter(item))
-                rule_.update({'link': item[_key]})
-
-                print(rule_)
+                output_dict.update({'link': item[_key]})
 
                 with open(rules_path, "a") as json_file:
-                    json.dump(rule_, json_file, indent=4)
+                    json.dump(output_dict, json_file, indent=4)
                     json_file.write(',')
                     json_file.write('\n')
 
