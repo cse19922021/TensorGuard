@@ -24,20 +24,26 @@ def gpt_conversation(prompt, model="gpt-3.5-turbo"):
 
 
 def driver():
-    _prompt = f"""
-    Given the following API:
-        torch.nn.CosineSimilarity(dim=1, eps=1e-08)
-    How do you perform input space partioning on the input specification?
+    a = f"""10"""
+    b = f"""20"""
+
+    template_string = """
+    Add ```{a}``` and ```{b}``` together.
     """
     # _parition_response_level1 = gpt_conversation(_prompt)
     # print(_parition_response_level1.choices[0].message.content)
 
     chat_ = ChatOpenAI(temperature=0.0, openai_api_key=os.getenv("API_KEY"))
 
-    _prompt_template = ChatPromptTemplate.from_template(_prompt)
+    _prompt_template = ChatPromptTemplate.from_template(template_string)
 
-    print(_prompt_template.messages[0].prompt)
-    print('')
+    _message = _prompt_template.format_messages(
+        a=a,
+        b=b
+    )
+
+    response_ = chat_(_message)
+    print(response_.content)
 
 
 if __name__ == '__main__':

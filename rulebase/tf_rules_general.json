@@ -1,144 +1,610 @@
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to nonscalar num_bits input tensor\",\n    \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        `CHECK` fail in `QuantizeAndDequantizeV3`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to feeding non-scalar inputs for min or max variables\",\n    \"Argument Type\": \"Tensor with rank greater than 0\"\n}",
-    "link": "\n        `CHECK` fail in `FakeQuantWithMinMaxVarsGradient`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to feeding large input shape and rates into tf.random.gamma API, causing a CHECK fail that can trigger a denial of service attack\",\n    \"Argument Type\": \"Shape and rates\"\n}",
-    "link": "\n        `CHECK` fail in `tf.random.gamma`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to feeding large input shape and rates that trigger CHECK fail and denial of service attack\",\n    \"Argument Type\": \"TensorFlow tensor\"\n}",
-    "link": "\n        `CHECK` fail in `RandomPoissonV2`\n      "
-},
-{
-    "rule": "{\n  \"Root Cause\": \"Bug due to not validating the input 'id' of type int64, which can trigger a CHECK fail and lead to a denial of service attack.\",\n  \"Argument Type\": \"int64\"\n}",
-    "link": "\n        `CHECK` fail in `Unbatch`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to passing an input to DrawBoundingBoxes that is not of dtype float.\",\n    \"Argument Type\": \"Numpy array\"\n}",
-    "link": "\n        `CHECK` fail in `DrawBoundingBoxes`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to feeding incorrect Tout input to the Eig API\",\n    \"Argument Type\": \"Type of argument: Tout\"\n}",
-    "link": "\n        `CHECK` fail in `Eig`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to feeding empty tensor inputs to the Conv2DBackpropInput API\",\n    \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        `CHECK` fail in `Conv2DBackpropInput`\n      "
-},
-{
-    "rule": "{\n  \"Root Cause\": \"Bug due to passing input element_shape with more than one dimension to EmptyTensorList API\",\n  \"Argument Type\": \"Shape Tensor\"\n}",
-    "link": "\n        `CHECK` fail in `EmptyTensorList`\n      "
-},
-{
-    "rule": "{\n  \"Root Cause\": \"Bug due to feeding non-scalar input separator to tf.sparse.cross function.\",\n  \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        `CHECK` fail in `tf.sparse.cross`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to providing empty input to Conv2D API which causes division-by-zero floating point exceptions\",\n    \"Argument Type\": \"Input\"\n}",
-    "link": "\n        Floating point exception in `Conv2D`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to feeding a multi-dimensional tensor to 'sample_rate' argument whereas it only accepts a scalar value\",\n    \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        `CHECK` fail in `AudioSummaryV2`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to passing a scalar input `input` to `CollectiveGather` API, which is not supported and triggers a CHECK fails that can be used to trigger a denial of service attack.\", \n    \"Argument Type\": \"Scalar\"\n}",
-    "link": "\n        `CHECK` fail in `CollectiveGather`\n      "
-},
-{
-    "rule": "{\n\"Root Cause\": \"Bug due to feeding non 1D tensor input to set_shape parameter in SetSize API\",\n\"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        `CHECK` fail in `SetSize`\n      "
-},
-{
-    "rule": "{\n  \"Root Cause\": \"Bug due to receiving an element_shape of a rank greater than one, which triggers a CHECK fail and can lead to a denial of service attack.\",\n  \"Argument Type\": \"Tensor element shape\"\n}",
-    "link": "\n        `CHECK` fail in `TensorListFromTensor`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to passing a tensor of rank greater than one as element_shape argument to TensorListScatter and TensorListScatterV2 APIs\",\n    \"Argument Type\": \"Tensor with rank greater than one\"\n}",
-    "link": "\n        `CHECK` fail in `TensorListScatter` and `TensorListScatterV2`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to passing element_shape of a rank greater than one to TensorListScatter and TensorListScatterV2.\",\n    \"Argument Type\": \"TensorShape\"\n}",
-    "link": "\n        `CHECK` fail in `TensorListScatter` and `TensorListScatterV2`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to using input min or max of rank other than 1\",\n    \"Argument Type\": \"Tensor of rank other than 1\"\n}",
-    "link": "\n        `CHECK` fail in `FakeQuantWithMinMaxVarsPerChannelGradient`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to feeding a window size input array ksize with dimensions greater than the input tensor input\",\n    \"Argument Type\": \"Input array\"\n}",
-    "link": "\n        `CHECK` fail in `MaxPool`\n      "
-},
-{
-    "rule": "{\n  \"Root Cause\": \"Bug due to feeding empty input to tf.linalg.matrix_rank API\",\n  \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        `CHECK` fail in `tf.linalg.matrix_rank`\n      "
-},
-{
-    "rule": "{\n\"Root Cause\": \"Assuming input tensor weights to either have the same shape as its input tensor input or to be length-0, causing a CHECK fail that can be used to trigger a denial of service attack.\",\n\"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        `CHECK` fail in `DenseBincount`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to feeding an empty tensor splits causing a segfault\",\n    \"Argument Type\": \"Tensor (splits)\"\n}",
-    "link": "\n        Segfault in `RaggedBincount`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to LRNGrad API accepting an output_image input tensor that is not 4-D\",\n    \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        `CHECK` fail in `LRNGrad`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to passing an int64 type as the argument instead of int32 type, resulting in a type mismatch error and a potential denial of service attack.\",\n    \"Argument Type\": \"int64\"\n}",
-    "link": "\n        `CHECK` fail in `ParameterizedTruncatedNormal`\n      "
-},
-{
-    "rule": "{\n  \"Root Cause\": \"Bug due to running Save or SaveSlices operations over tensors of an unsupported dtype, which triggers a CHECK fail and consequently can be used to trigger a denial of service attack.\",\n  \"Argument Type\": \"Unsupported Data Type\"\n}",
-    "link": "\n        `CHECK` fail in `Save` and `SaveSlices`\n      "
-},
-{
-    "rule": "{\n  \"Root Cause\": \"Bug due to passing tensors of an unsupported dtype to Save or SaveSlices API\",\n  \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        `CHECK` fail in `Save` and `SaveSlices`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to providing inputs for indices, values and dense_shape that do not make a valid sparse tensor\",\n    \"Argument Type\": \"SparseTensor\"\n}",
-    "link": "\n        Segfault in `SparseBincount`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to feeding rt_nested_splits list that contains tensors of ranks other than one to the RaggedTensorToVariant API.\",\n    \"Argument Type\": \"List of Tensors\"\n}",
-    "link": "\n        `CHECK` fail in `RaggedTensorToVariant`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to incorrectly sized inputs triggering CHECK failure instead of returning errors\",\n    \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        `CHECK` fail in `FractionalMaxPoolGrad`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to providing non-scalar input for min_features or max_features\",\n    \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        Segfault in `QuantizedRelu` and `QuantizedRelu6`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to feeding nonscalar inputs for min_features or max_features\",\n    \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        Segfault in `QuantizedRelu` and `QuantizedRelu6`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to feeding empty tensor to the input_min argument of QuantizeDownAndShrinkRange API\",\n    \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        Segfault in `QuantizeDownAndShrinkRange`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to feeding nonscalar input to QuantizedMatMul API.\",\n    \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        Segfault in `QuantizedMatMul`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to providing min or max tensors of a rank other than one, resulting in a CHECK fail and enabling a denial of service attack.\",\n    \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        `CHECK` fail in `FakeQuantWithMinMaxVarsPerChannel`\n      "
-},
-{
-    "rule": "{\n    \"Root Cause\": \"Bug due to passing empty tensor as input to `min_input` and uninitialized tensors as `max_input` and `max_bias`.\",\n    \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        Segfault in `QuantizedBiasAdd`\n      "
-},
-{
-    "rule": "{\n  \"Root Cause\": \"Bug due to providing empty tensor as input_min argument\",\n  \"Argument Type\": \"Tensor\"\n}",
-    "link": "\n        Segfault in `Requantize`\n      "
-},
+[
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing an empty tensor as the input to QuantizeAndDequantizeV3 API\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-9cr2-8pwr-fhfq"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to non-scalar input for min or max argument\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-r26c-679w-mrjm"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding excessively large input shape and rates\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-mv8m-8x97-937q"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding extremely large input rate to function causing a CHECK fail that can lead to a denial of service attack.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-cv2p-32v3-vhwq"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to non-scalar input id\",\n   \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-mh3m-62v7-68xg"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to providing  boxes  input that is not of dtype float\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-jqm7-m5q7-3hm5"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to feeding an incorrect Tout input, which triggers a CHECK fail and can lead to a denial of service attack\",\n  \"Argument Type\": \"TF_DTYPE\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-fqxc-pvf8-2w9v"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding empty inputs to Conv2DBackpropInput API, which causes a CHECK failure in current CPU/GPU kernels with dnnl or cudnn libraries and can be used to trigger a denial of service attack.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-37jf-mjv6-xfqw"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing a multi-dimensional Tensor as input to EmptyTensorList\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-qhw4-wwr7-gjc5"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to passing non-scalar value to separator argument in tf.sparse.cross API\",\n  \"Argument Type\": \"String (dtype=tf.string)\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-p7hr-f446-x6qf"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to feeding empty input to Conv2D API causing division-by-zero floating point exceptions.\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-q5jv-m6qw-5g37"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding a multi-dimensional tensor as an argument to AudioSummaryV2 API\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-g9h5-vr8m-x2h4"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to missing input validation of argument 'shape', allowing attackers to feed invalid input and triggering a CHECK failure that can cause a denial of service attack.\",\n    \"Argument Type\": \"Tuple\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-fhfc-2q7x-929f"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to passing a non-1D tensor object as input to the set_shape parameter of the SetSize API.\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-wq6q-6m32-9rv9"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing element_shape argument of rank greater than 1 to TensorListFromTensor API\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-9v8w-xmr4-wgxp"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing an element_shape of a rank greater than one to TensorListScatter and TensorListScatterV2.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-vm7x-4qhj-rrcq"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to passing invalid argument to the API. Specifically, passing an `element_shape` of a rank greater than 1 triggers a CHECK fail which can cause a denial of service attack.\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-vm7x-4qhj-rrcq"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to checking input arguments with rank other than 1 instead of flattening them.\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-h7ff-cfc9-wmmh"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to providing a window size input array ( ksize ) with dimensions greater than its input tensor ( input ) to the MaxPool API. This causes the GPU kernel to give a CHECK fail that an attacker can use to trigger a denial of service attack.\",\n    \"Argument Type\": \"List\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-j43h-pgmg-5hjq"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to sending an empty input to tf.linalg.matrix_rank API\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-9vqj-64pv-w55c"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to assuming input tensor weights to either have the same shape as its input tensor or to be length-0, triggering a CHECK fail when a different weights shape is used.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-w62h-8xjm-fv49"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding an empty tensor to splits argument of `RaggedBincount` API which results in a segfault.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-wr9v-g9vf-c74v"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding a 6-D tensor variable as an argument to LRNGrad API, while it expects only 4-D input tensor.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-9942-r22v-78cp"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding int64 instead of int32 for the shape parameter\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-p2xf-8hgm-hpw5"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to feeding unsupported data type to Save or SaveSlices.\",\n   \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-m6vp-8q9j-whx4"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to feeding tensors of an unsupported dtype.\",\n   \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-m6vp-8q9j-whx4"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding invalid inputs for indices, values, and/or dense_shape, causing a segfault.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-397c-5g2j-qxpv"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to passing tensors of ranks other than one in rt_nested_splits argument of RaggedTensorToVariant API\",\n   \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-m6cv-4fmf-66xf"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to using CHECK validations instead of returning errors in the FractionalMaxPoolGrad API, allowing attackers to trigger a denial of service attack by feeding incorrectly sized inputs.\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-vxv8-r8q2-63xw"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding nonscalar inputs for min_features or max_features, which are expected to be scalar.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v7vw-577f-vp8x"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding nonscalar inputs for min_features or max_features, which results in a segfault that can be used to trigger a denial of service attack.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v7vw-577f-vp8x"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to giving empty array for input_min or non-scalar value for input_min or input_max causing Segfault\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-vgvh-2pf4-jr2x"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding non-scalar input for QuantizedMatMul that expects scalar input only.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-689c-r7h2-fv9v"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing a min or max tensor of rank other than one to FakeQuantWithMinMaxVarsPerChannel API.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-9j4v-pp28-mxv7"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing empty tensor or tensor of zero rank as min_input or max_input argument to QuantizedBiasAdd API\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-4pc4-m9mj-v2r9"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to passing tensors of nonzero rank to the 'Requantize' API\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-wqmc-pm8c-2jhc"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to passing non-scalar min or max tensors to the FakeQuantWithMinMaxVars API, which triggers a CHECK fail and can lead to a denial of service attack.\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-9fpg-838v-wpv7"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing empty tensor and scalar tensor to x_min and x_max arguments respectively, which results in a mismatch of expected and actual tensor shapes.\",\n    \"Argument Type\": {\n        \"x_min\": \"Tensor\",\n        \"x_max\": \"Scalar Tensor\"\n    }\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-g35r-369w-3fqp"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding input_sizes argument with only 2-dimensional integer variable\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-q2c3-jpmc-gfjx"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to missing validation of input parameter orig_input_shape\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-2475-53vw-vp25"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to feeding tensors of a nonzero rank to the min_input or max_input arguments.\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v6h3-348g-6h5x"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to providing empty list of float values to min_input tensor\",\n    \"Argument Type\": \"List\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-4w68-4x85-mjj9"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding an empty sorted_inputs input resulting in a nullptr dereference in LowerBound or UpperBound API, leading to a segfault that can be used to trigger a denial of service attack.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-qxpx-j395-pw36"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing an empty tensor as the sorted_inputs argument to the UpperBound API, which results in a nullptr dereference.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-qxpx-j395-pw36"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to insufficient input validation in the BlockLSTMGradV2 implementation\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-f7r5-q7cx-h668"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to incomplete input validation of the `BlockLSTMGradV2` API.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-f7r5-q7cx-h668"
+  },
+  {
+    "rule": "{\n\"Root Cause\": \"Bug due to incomplete input validation\",\n\"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-f7r5-q7cx-h668"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding a very large negative integer value to 'orig_input_tensor_shape' argument.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-84jm-4cf3-9jfm"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding very negative integer value to orig_input_tensor_shape\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-84jm-4cf3-9jfm"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to a lack of input validation in FractionalAvgPoolGrad API\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-84jm-4cf3-9jfm"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding very large integer variable\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-wxjj-cgcx-r3vq"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to feeding a non-scalar value to the argument 'id'\",\n   \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-h5vq-gw2c-pq47"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing a non-scalar argument to the 'id' parameter of 'UnbatchGradOp' function, which is assumed to be scalar.\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-h5vq-gw2c-pq47"
+  },
+  {
+    "rule": "{\n\"Root Cause\": \"Bug due to a negative ksize argument which is not checked\",\n\"Argument Type\": \"List\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-mgmh-g2v6-mqw5"
+  },
+  {
+    "rule": "{\n \"Root Cause\": \"Bug due to feeding a very large float variable, which overflows when converted to int64.\",\n \"Argument Type\": \"Float\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-x989-q2pq-4q5x"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing `num_elements` as a tensor with more than one element, while the function assumes it to be a tensor of size 1 in `core/kernels/list_kernels.cc's TensorListReserve`.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v5xg-3q2c-c2r4"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to assuming input(0), input(1), and input(2) to be scalar.\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-97p7-w86h-vcf9"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to overflowing the number of elements in the tensor via feeding a shape tensor with a very large number of dimensions.\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-f4w6-h4f5-wx45"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding NaN value to the values parameter of tf.histogram_fixed_width\",\n    \"Argument Type\": \"Float\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-xrp2-fhq4-4q3w"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to lack of validation in input arguments of the tf.ragged.constant function\",\n    \"Argument Type\": \"List\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-cwpm-f78v-7m5c"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to insufficient input validation in tf.raw_ops.UnsortedSegmentJoin API\",\n    \"Argument Type\": \"List\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-hx9q-2mx4-m4pg"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to missing input validation in the `tf.strings.unsorted_segment_join` API.\",\n    \"Argument Type\": \"String\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-hx9q-2mx4-m4pg"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to incomplete validation of user inputs passed through hypothesis_indices and truth_indices arguments, allowing attackers to pass negative values, causing a segfault and OOB write\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-2r2f-g8mw-9gvr"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding very large integer variable\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-jjm6-4vf7-cjh4"
+  },
+  {
+    "rule": "{\n   \"Root Cause\":\"Bug due to missing validation in input arguments of QuantizedConv2D API\",\n   \"Argument Type\":\"TF_CONSTANT\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-pqhm-4wvf-2jg8"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to inadequate input validation in the implementation of tf.raw_ops.SparseTensorDenseAdd\",\n    \"Argument Type\": \"Sparse tensor indices (a_indices) which are integers\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-rc9w-5c64-9vqq"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding invalid resource handles to the TensorFlow operation QueueIsClosedV2\",\n    \"Argument Type\": \"TF_OBJECT\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-5wpj-c6f7-24x8"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to providing an invalid resource handle to TensorFlow operations in eager mode\",\n    \"Argument Type\": \"TF_OBJECT\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-5wpj-c6f7-24x8"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to insufficient validation of input arguments in tf.raw_ops.Conv3DBackpropFilterV2\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-5v77-j66x-4c4g"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to missing validation of input arguments in tf.raw_ops.LSTMBlockCell API\",\n    \"Argument Type\": \"Float\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-2vv3-56qg-g2cf"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to lack of input argument validation in tf.raw_ops.LSTMBlockCell API implementation\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-2vv3-56qg-g2cf"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to missing input validation causing a CHECK-failure which can be used to trigger a denial of service attack\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-2vv3-56qg-g2cf"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to insufficient input validation in tf.raw_ops.LSTMBlockCell API\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-2vv3-56qg-g2cf"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to missing validation of input arguments\",\n    \"Argument Type\": {\n        \"x\": \"Tensor\",\n        \"cs_prev\": \"Tensor\",\n        \"h_prev\": \"Tensor\",\n        \"w\": \"Tensor\",\n        \"wci\": \"Tensor\",\n        \"wcf\": \"Tensor\",\n        \"wco\": \"Tensor\",\n        \"b\": \"Tensor\",\n        \"forget_bias\": \"Integer\",\n        \"cell_clip\": \"Integer\",\n        \"use_peephole\": \"Bool\",\n        \"name\": \"String\"\n    }\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-2vv3-56qg-g2cf"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to missing input validation of the argument 'wci', which allows the attacker to feed a null value, triggering a CHECK-failure and leading to a denial of service attack.\",\n    \"Argument Type\": \"Null\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-2vv3-56qg-g2cf"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to insufficient input validation\", \n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-2vv3-56qg-g2cf"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to incomplete validation of input arguments in the implementation of tf.raw_ops.LSTMBlockCell\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-2vv3-56qg-g2cf"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to missing validation in the implementation of tf.raw_ops.SparseTensorToCSRSparseMatrix API\",\n  \"Argument Type\": \"Sparse tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-mg66-qvc5-rm93"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to lack of input validation for the argument 'indices' which allows attackers to manipulate it causing a CHECK-failure and thus a denial of service attack\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-mg66-qvc5-rm93"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to lack of input validation on 'row_remapping' argument passed to the 'LoadAndRemapMatrix' API, allowing an attacker to trigger a CHECK failure and cause a denial of service attack.\",\n  \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-p9rc-rmr5-529j"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to missing input validation in tf.raw_ops.UnsortedSegmentJoin API\",\n   \"Argument Type\": \"Inputs\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-hrg5-737c-2p56"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to lack of validation of input argument in tf.raw_ops.StagePeek API\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-h48f-q7rw-hvr7"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to insufficient input validation in the implementation of tf.raw_ops.GetSessionTensor API.\",\n    \"Argument Type\": \"TF_VARIABLE\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-fv25-wrff-wf86"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to the lack of input argument validation while processing the input to tf.raw_ops.DeleteSessionTensor API.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-h5g4-ppwx-48q2"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to insufficient input validation\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-h2wq-prv9-2f56"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to absence of input validation in the implementation of `tf.raw_ops.TensorSummaryV2` API.\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-2p9q-h29j-3f5v"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to incomplete input validation in tf.sparse.split implementation\",\n  \"Argument Type\": \"Tuple\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-43q8-3fv7-pr5x"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding large integer variable\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-x4qx-4fjv-hmw6"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to reference binding to null pointer in QuantizedMaxPool implementation\",\n   \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-3mw4-6rj6-74g5"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to providing a zero in the 'pooling_ratio' argument, resulting in a division by zero error in the backend implementation of 'FractionalMaxPool'\",\n  \"Argument Type\": \"Float\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-87v6-crgm-2gfj"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding very large integer variable\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-6445-fm66-fvq2"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding very large integer variable\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-rrx2-r989-2c43"
+  },
+  {
+    "rule": "{\n \"Root Cause\": \"Bug due to feeding very large integer variable\",\n \"Argument Type\": \"Integer\"\n}\n\nNote: This response is based on the given information for the specific API tf.raw_ops.SparseDenseCwiseDiv().",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-rrx2-r989-2c43"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to integer overflow in 'StringNGrams'\",\n   \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-98j8-c9q4-r38g"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to feeding a very large integer variable\",\n   \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-c582-c96p-r5cq"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to type confusion in ConcatV2's shape inference implementation\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-m4hf-j54p-p353"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to feeding very large integer variable that causes an integer overflow and leads to a division by zero error.\",\n  \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-34f9-hjfq-rr8j"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to providing invalid input argument to `row_pooling_sequence` and `col_pooling_sequence` which allows OOB access to heap\",\n    \"Argument Type\": \"List of Integers\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-vjg4-v33c-ggc4"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding extremely large integer input, causing an integer overflow weakness in the implementation of shape inference for `Dequantize`.\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-c6fh-56w7-fvjw"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to providing an out-of-bounds (OOB) value for argument 'axis' in the 'tf.raw_ops.Dequantize' API.\",\n  \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-23hm-7w47-xw72"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to insufficient validation of input parameter 'batch_dim'.\",\n  \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-6gmv-pjp9-p8w8"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to setting strides argument to contain 0 in one of the dimensions, leading to division by zero in the cost estimator for some convolution operations\",\n   \"Argument Type\": \"List\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v3f7-j968-4h5f"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding a very long string as input value to the `values` parameter of the `tf.raw_ops.SparseFillEmptyRows` API, causing a heap OOB access.\",\n    \"Argument Type\": \"String\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-rg3m-hqc5-344v"
+  },
+  {
+    "rule": "{\n \"Root Cause\": \"Bug due to providing negative integers to size_splits parameter of SplitV API\",\n \"Argument Type\": \"List\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-cpf4-wx82-gxp6"
+  },
+  {
+    "rule": "{\n \"Root Cause\": \"Bug due to feeding negative integer value as size_splits argument in SplitV\",\n \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-cpf4-wx82-gxp6"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to heap buffer overflow in the shape inference code for the Cudnn* operations in TensorFlow\",\n  \"Argument Type\": \"List\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-cqv6-3phm-hcwx"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to the split_count argument being set to 0, causing division by zero in the shape inference code.\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-9crf-c6qr-r273"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to incorrect handling of input parameters in the `CollectiveReduceV2` API leading to a use after free and memory leak.\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-gpfh-jvf9-7wg5"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to binding a reference to nullptr.\",\n    \"Argument Type\": \"Null\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-4f99-p9c2-3j8x"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to providing a negative integer, which can cause the heap buffer overflow in the shape inference function of `Transpose` API.\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-3ff2-r28g-w7h9"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing a null value as serialized_sparse argument to DeserializeSparse API\",\n    \"Argument Type\": \"Null\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-x3v8-c8qx-3j3r"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to binding a reference to nullptr.\",\n  \"Argument Type\": \"Null\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-vwhq-49r4-gj9v"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to out-of-bounds heap access in the shape inference code for `QuantizeV2` API\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-cvgx-3v3q-m36c"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing a negative value to the axis parameter\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-49rx-x2rw-pc6f"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to missing input validation where zero value input is accepted resulting in division by zero.\",\n   \"Argument Type\": \"Float\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-7v94-64hj-m82h"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to invoking `tf.raw_ops.SparseCountSparseOutput` with a malformed input that triggers out-of-bounds read in the shape inference functions.\",\n    \"Argument Type\": \"List\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-m342-ff57-4jcc"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to implicit conversion resulting in overflow during calculation of the output size in `tf.range` kernel\",\n    \"Argument Type\": \"Float\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-xrqm-fpgr-6hhx"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding very large integer variable\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-5hx2-qx8j-qjqm"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to feeding very large integer values\",\n   \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-2p25-55c9-h58q"
+  },
+  {
+    "rule": "{\n\"Root Cause\": \"Bug due to passing a non-scalar argument to the `flush_millis` parameter of `tf.summary.create_file_writer`. This parameter expects a scalar float or integer value, but the given input is a numpy.ndarray object. Therefore, the `CHECK`-fail is triggered, leading to a crash.\",\n\"Argument Type\": \"Numpy array\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-gh8h-7j2j-qv4f"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to providing 0 or negative value in the size argument of the Keras pooling layer, which triggers a segfault.\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-m539-j985-hcr8"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing a pool size of 0 or negative. The pooling operation requires a non-zero positive pool size to execute properly\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-m539-j985-hcr8"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to feeding a segment id that is too large\",\n  \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-cq76-mxrc-vchh"
+  },
+  {
+    "rule": "{\n\"Root Cause\": \"Bug due to feeding very large integer variable\",\n\"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-cq76-mxrc-vchh"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding very large integer value as segment id argument in tf.math.segment_* operations\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-cq76-mxrc-vchh"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to feeding very large integer variable to the segment_ids argument of tf.math.segment_* operations\",\n   \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-cq76-mxrc-vchh"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to feeding very large integer variable to segment_ids argument of tf.math.segment_* operations\",\n   \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-cq76-mxrc-vchh"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding negative integer variable as input to TFLite's Gather* API\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-jwf9-w5xm-f437"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to deserializing YAML from an untrusted source which allows attackers to feed malicious inputs and perform arbitrary code execution.\",\n    \"Argument Type\": \"String\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-r6jx-9g48-2r5r"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to missing validation in shape inference for `Dequantize` API.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-qfpc-5pjr-mh26"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to division by 0 in most convolution operators.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-9c8h-2mv3-49ww"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to division by 0 in the implementation of most convolution operators in TensorFlow\",\n   \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-9c8h-2mv3-49ww"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to binding a reference to a null pointer\",\n  \"Argument Type\": \"Null\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v768-w7m9-2vmm"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to incorrect validation of input arguments in MaxPoolGrad API which allows an attacker to feed invalid inputs.\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-7ghq-fvr3-pj2x"
+  },
+  {
+    "rule": "{\n   \"Root Cause\":\"Bug due to incomplete validation in `MaxPoolGrad`\",\n   \"Argument Type\":\"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-7ghq-fvr3-pj2x"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Bug due to feeding empty list as the value of the 'key' argument, which violates the precondition of tf.raw_ops.MapStage API that expects a non-empty list\",\n   \"Argument Type\": \"List\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-278g-rq84-9hmg"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to accessing data outside of bounds of heap allocated memory. The issue occurs when a variable is allocated memory using tf.raw_ops.SdcaOptimizerV2 and the attacker feeds the function with illegal arguments that are not properly validated.\",\n    \"Argument Type\": \"List\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-5hj3-vjjf-f5m7"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to binding a reference to null pointer in tf.raw_ops.Map* and tf.raw_ops.OrderedMap* operations\",\n  \"Argument Type\": \"Null\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-qr82-2c78-4m8h"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to feeding values that are outside the range of the sorted_input\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-9697-98pf-4rw7"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to providing illegal arguments that cause out-of-bounds access to heap-allocated data in tf.raw_ops.UpperBound and tf.raw_ops.LowerBound functions.\",\n  \"Argument Type\": \"List\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-9697-98pf-4rw7"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to division by 0 when feeding a 0 value in max_output_size_per_class argument\",\n  \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-vmjw-c2vp-p33c"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to feeding a zero value to the 'max_output_size_per_class' argument of the 'tf.raw_ops.CombinedNonMaxSuppression' API, which results in a division by zero error.\",\n    \"Argument Type\": \"Integer\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-vmjw-c2vp-p33c"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to passing negative index value to the 'indices' argument in tf.raw_ops.UnravelIndex API, which leads to division by 0 error\",\n    \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-2wmv-37vq-52g5"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to binding a reference to null pointer\",\n    \"Argument Type\": \"Null\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-w74j-v8xh-3w5h"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to binding a reference to nullptr in tf.raw_ops.RaggedTensorToVariant.\",\n    \"Argument Type\": \"Null\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-w4xf-2pqw-5mq7"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Bug due to incomplete validation in the MKL implementation of requantization.\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v82p-hv3v-p6qp"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Incomplete validation in MKL implementation of requantization\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v82p-hv3v-p6qp"
+  },
+  {
+    "rule": "{\n    \"Root Cause\": \"Bug due to incomplete validation in the MKL implementation of requantization API.\",\n    \"Argument Type\": \"List\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v82p-hv3v-p6qp"
+  },
+  {
+    "rule": "{\n\"Root Cause\": \"Incomplete validation in MKL implementation of requantization\",\n\"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v82p-hv3v-p6qp"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Incomplete validation in MKL implementation of requantization\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v82p-hv3v-p6qp"
+  },
+  {
+    "rule": "{\n  \"Root Cause\": \"Incomplete validation in MKL implementation of requantization\",\n  \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v82p-hv3v-p6qp"
+  },
+  {
+    "rule": "{\n   \"Root Cause\": \"Incomplete validation in MKL implementation of requantization\",\n   \"Argument Type\": \"Tensor\"\n}",
+    "link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v82p-hv3v-p6qp"
+  }
+]
