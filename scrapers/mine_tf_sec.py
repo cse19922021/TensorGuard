@@ -12,6 +12,7 @@ import json
 import requests
 import os
 import time
+from collections import Counter
 import numpy as np
 from pydriller import Repository
 # test
@@ -197,8 +198,17 @@ def scrape_security_page(link):
     return data
 
 
+def calculate_rule_importance(data):
+    element_frequency = Counter(data['Anomaly'].values.flatten())
+    total_elements = len(data['Anomaly'].values.flatten())
+    element_importance = {element: frequency /
+                          total_elements for element, frequency in element_frequency.items()}
+    return sorted(element_importance.items(), key=lambda x: x[1], reverse=True)
+
+
 def scrape_tensorflow_security_from_list(hash_table):
     data = pd.read_csv('data/TF_RECORDS.csv', encoding='utf-8', delimiter=',')
+    weights_ = calculate_rule_importance(data)
     data_list = []
     for idx, row in data.iterrows():
         print(row['API'])
