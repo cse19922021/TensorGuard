@@ -11,6 +11,7 @@ import subprocess
 import json
 import requests
 import os
+import time
 import numpy as np
 from pydriller import Repository
 # test
@@ -176,7 +177,8 @@ def scrape_security_page(link):
     if code_flag and change_flag:
         data = {'Title': title_,
                 'Bug description': description_,
-                'Sample Code': code_formated}
+                'Sample Code': code_formated,
+                'Code change': changes}
     elif code_flag == True and change_flag == False:
         data = {'Title': title_,
                 'Bug description': description_,
@@ -184,7 +186,8 @@ def scrape_security_page(link):
     elif code_flag == False and change_flag == True:
         data = {'Title': title_,
                 'Bug description': description_,
-                'Sample Code': ''}
+                'Sample Code': '',
+                'Code change': changes}
     else:
         data = {'Title': title_,
                 'Bug description': description_,
@@ -195,7 +198,7 @@ def scrape_security_page(link):
 
 
 def scrape_tensorflow_security_from_list(hash_table):
-    data = pd.read_csv('data/TF_records.csv', encoding='utf-8', delimiter=',')
+    data = pd.read_csv('data/TF_RECORDS.csv', encoding='utf-8', delimiter=',')
     data_list = []
     for idx, row in data.iterrows():
         print(row['API'])
@@ -218,6 +221,7 @@ def scrape_tensorflow_security():
 
     data_list = []
     for page_num in range(1, 43):
+        time.sleep(2)
         sub_content = requests.get(
             f"https://github.com/tensorflow/tensorflow/security/advisories?page={page_num}")
         page_soup2 = soup(sub_content.text, "html.parser")

@@ -3,10 +3,10 @@ import json
 
 
 def main():
-    libs = ['tf', 'torch']
+    libs = ['TF', 'TORCH']
 
     for lib in libs:
-        data = pd.read_csv(f'API signatures/{lib}_APIs_signatures.csv',
+        data = pd.read_csv(f'data/{lib}_RECORDS.csv',
                            delimiter=',', encoding='utf-8')
         for idx, row in data.iterrows():
             print(row['API'])

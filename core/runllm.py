@@ -20,18 +20,23 @@ template_string = """
                     Title: {_title} \
                     Bug description: {bug_description} \
                     Minimum reproduceable example: {sample_code} \
-                    Code change: {code_change}\
                     API Siganture: {api_sig} \
+                    Code change: {code_change}
                 
                 Explanations: The above information are artifacts collected from security-related PyTorch issues collected from Github.\
-                In all issues, there is one API that is vulnerable to due the fact that attackers can feed malicious inputs.\
+                In all records, there is atleast one API that is vulnerable to due the fact that attackers can feed malicious inputs.\
                 
                 Tasks: Your tasks are as follows: \
-                1 - Explain the root cause of bug using the following structure:\
-                    Bug due to ```explain the root cause here```, e.g., ```Bug due to feeding very large integer variable```\
-                2 - Do not explain root cause in detail. The purpose is to understand the malicious arguments to DL APIs. \
-                3 - Determine the type of the buggy argument.\
-                4 - You should only consider the following torch types: Tensor, Integer, String, Float, Null, Tuple,\
+                1 - First, throughly parse the bug description to understand what is the root cause of the bug.\
+                2 - Second, throughly parse the minimum reproduceable example and try to find the malicious parameter.\
+                3 - If the bug description is not informative enough, try to understand the root cause by parsing the source code.\
+                4 - Explain the root cause of bug using the following structure:\
+                    Bug due to ```root cause here```, e.g., ```Bug due to feeding very large integer variable```\
+                5 - Explain the root cause in one sentence.
+                6 - Do not explain the impact of the bugs. Do not explain the results of the bugs, just explain the root cause.\
+                7 - Do not explain root cause in detail. The purpose is to understand the malicious arguments to DL APIs. \
+                8 - Determine the type of the buggy argument.\
+                9 - You should only consider the following torch types: Tensor, Integer, String, Float, Null, Tuple,\
                     List, Bool, TORCH_VARIABLE, TORCH_DTYPE, TORCH_OBJECT, TF_VARIABLE, TF_DTYPE, TF_OBJECT
                     
                 Note: Please note that the root causes are going to be used for building fuzzer to fuzz the backend implementation of PyTorch.\
@@ -127,9 +132,8 @@ def run_llm(item, formatted_response, model='tf'):
 
         if "Commit link" in item.keys():
             bug_description = item["Bug description"]
-            code_change = item["Bug fix"]
             api_sig = item["API Signature"]
-
+            code_change = item['Code change']
             torch_commit_message = _prompt_template.format_messages(
                 _title="",
                 bug_description=bug_description,
@@ -151,12 +155,13 @@ def run_llm(item, formatted_response, model='tf'):
         bug_description = item["Bug description"]
         sample_code = item["Sample Code"]
         api_sig = item["API Signature"]
+        code_change = item['Code change']
 
         tf_message = _prompt_template.format_messages(
             _title=Title,
             bug_description=bug_description,
             sample_code=sample_code,
-            code_change="",
+            code_change=code_change,
             api_sig=api_sig,
             formatted_response=formatted_response
         )
@@ -183,9 +188,10 @@ def run():
             formatted_response, output_parser = _formatOutput()
             response_ = run_llm(item, formatted_response, lib_name)
 
-            if response_:
-                output_dict = output_parser.parse(response_.content)
-                try:
+            try:
+                if response_:
+                    output_dict = output_parser.parse(response_.content)
+
                     # _key = next(iter(item))
                     output_dict.update({'link': item['Link']})
 
@@ -193,11 +199,10 @@ def run():
                         json.dump(output_dict, json_file, indent=4)
                         json_file.write(',')
                         json_file.write('\n')
-
-                except JSONDecodeError as e:
-                    print(e)
-            else:
-                print("Your messages exceeded the limit.")
+                else:
+                    print("Your messages exceeded the limit.")
+            except JSONDecodeError as e:
+                print(e)
 
 
 if __name__ == '__main__':

@@ -138,7 +138,7 @@ def miner(hash_table):
     # torch_issues = read_txt('data/torch_issues.txt')
 
     torch_issues = pd.read_csv(
-        'data/TORCH_records.csv', sep=',', encoding='utf-8')
+        'data/TORCH_RECORDS.csv', sep=',', encoding='utf-8')
 
     issue_flag = False
 

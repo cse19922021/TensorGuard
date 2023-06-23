@@ -14,38 +14,6 @@ openai.organization = os.getenv("ORG_ID")
 openai.api_key = os.getenv("API_KEY")
 
 
-def extract_frequent_patterns(sentences, ngram_size, min_frequency):
-    frequent_patterns = []
-
-    for sentence in sentences:
-        # Tokenize the sentence into words
-        words = nltk.word_tokenize(sentence)
-
-        # Generate n-grams of specified size
-        ngrams_list = list(ngrams(words, n=ngram_size))
-
-        # Count the occurrences of each n-gram
-        ngram_counts = Counter(ngrams_list)
-
-        # Filter the n-grams based on the minimum frequency
-        frequent_patterns.extend(
-            [ngram for ngram, count in ngram_counts.items() if count >= min_frequency])
-
-    return frequent_patterns
-
-
-def gpt_conversation(prompt, model="gpt-3.5-turbo"):
-
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
-
-    return response
-
-
 def driver():
     a = f"""10"""
     b = f"""20"""
