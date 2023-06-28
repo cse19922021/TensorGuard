@@ -57,15 +57,21 @@ moshi_template = """
         The context sections are as follows:
             Detailed bug description:{bug_description}
             Concise root cause of the bug:{_anomaly}
+            Minimum reproducing example:{_code}
             Malicious argument:{_argument}
             The argument's type:{arg_type}
             API signature:{api_sig}
-        In this task, you are expected to do input space partitioning for fuzz testing 
-        based on the contex information provided, and output the answer in given json format:
+        In this task, you are expected to do input space partitioning for fuzz testing for Malicious argument:{_argument}.
+        You need to output the paritions in given json format:
+        
         <answer json start>
-        "Parition 1":"Code pattern for parition 1",
-        "Parition 2":"Code pattern for parition 2",
-        "Parition n":"Code pattern for parition n"
+        "Partition 1":"Code pattern for partition 1",
+        "Partition 2":"Code pattern for partition 2",
+        "Partition 3":"Code pattern for partition 3"
+        "Partition 4":"Code pattern for partition 4",
+        "Partition 5":"Code pattern for partition 5",
+        "Partition 6":"Code pattern for partition 6"
+        {formatted_response_1}
 """
 
 template_string = """
@@ -153,10 +159,19 @@ def _formatOutput2():
     part_2 = ResponseSchema(
         name='Partition 2', description='Partition 2')
 
-    # part_3 = ResponseSchema(
-    #     name='Partition 3', description='Partition 3')
+    part_3 = ResponseSchema(
+        name='Partition 3', description='Partition 3')
 
-    response_schemas = [part_1, part_2]
+    part_4 = ResponseSchema(
+        name='Partition 1', description='Partition 4')
+
+    part_5 = ResponseSchema(
+        name='Partition 2', description='Partition 5')
+
+    part_6 = ResponseSchema(
+        name='Partition 3', description='Partition 6')
+
+    response_schemas = [part_1, part_2, part_3, part_4, part_5, part_6]
     output_parser = StructuredOutputParser.from_response_schemas(
         response_schemas)
     format_instructions = output_parser.get_format_instructions()
@@ -189,11 +204,13 @@ def generate_partitions(item, formatted_response, model='tf'):
             argument_type = item['Category']
 
             torch_issue_message = _prompt_template.format_messages(
-                api_sig=api_sig,
+                bug_description=bug_description,
                 _anomaly=anomaly,
+                _code=sample_code,
                 _argument=argument,
                 arg_type=argument_type,
-                formatted_response=formatted_response
+                api_sig=api_sig,
+                formatted_response_1=formatted_response
             )
 
             t_count = get_token_count(torch_issue_message[0].content)
@@ -211,11 +228,13 @@ def generate_partitions(item, formatted_response, model='tf'):
             argument = item['Argument']
 
             torch_commit_message = _prompt_template.format_messages(
-                api_sig=api_sig,
+                bug_description=bug_description,
                 _anomaly=anomaly,
+                _code=sample_code,
                 _argument=argument,
                 arg_type=argument_type,
-                formatted_response=formatted_response
+                api_sig=api_sig,
+                formatted_response_1=formatted_response
             )
 
             t_count = get_token_count(torch_commit_message[0].content)
@@ -235,10 +254,12 @@ def generate_partitions(item, formatted_response, model='tf'):
         argument = item['Argument']
 
         tf_message = _prompt_template.format_messages(
-            api_sig=api_sig,
+            bug_description=bug_description,
             _anomaly=anomaly,
+            _code=sample_code,
             _argument=argument,
             arg_type=argument_type,
+            api_sig=api_sig,
             formatted_response_1=formatted_response
         )
 
@@ -333,32 +354,21 @@ def run():
             formatted_response, output_parser = _formatOutput2()
             # response_ = run_llm(item, formatted_response, lib_name)
             response_ = generate_partitions(item, formatted_response, lib_name)
-            x = response_.content.replace('\n', '')
-            x = x.replace('\t', '')
-            x = x.replace('json', '')
-            x = x.replace('```', '')
-            output_dict = json.loads(x)
-            output_dict.update({'Anomaly': item['Anomaly']})
+            try:
+                if response_:
+                    output_dict = output_parser.parse(response_.content)
 
-            with open(rules_path, "a") as json_file:
-                json.dump(output_dict, json_file, indent=4)
-                json_file.write(',')
-                json_file.write('\n')
-            # try:
-            #     if response_:
-            #         output_dict = output_parser.parse(response_.content)
+                    # _key = next(iter(item))
+                    output_dict.update({'Anomaly': item['Anomaly']})
 
-            #         # _key = next(iter(item))
-            #         output_dict.update({'Anomaly': item['Anomaly']})
-
-            #         with open(rules_path, "a") as json_file:
-            #             json.dump(output_dict, json_file, indent=4)
-            #             json_file.write(',')
-            #             json_file.write('\n')
-            #     else:
-            #         print("Your messages exceeded the limit.")
-            # except JSONDecodeError as e:
-            #     print(e)
+                    with open(rules_path, "a") as json_file:
+                        json.dump(output_dict, json_file, indent=4)
+                        json_file.write(',')
+                        json_file.write('\n')
+                else:
+                    print("Your messages exceeded the limit.")
+            except JSONDecodeError as e:
+                print(e)
 
 
 if __name__ == '__main__':

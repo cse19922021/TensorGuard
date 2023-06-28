@@ -221,6 +221,7 @@ def scrape_tensorflow_security_from_list(hash_table):
 
         data_.update({'Score': score_})
         data_.update({'Anomaly': row['Anomaly']})
+        data_.update({'Anomaly Description': row['Anomaly description']})
         data_.update({'Category': row['Category']})
         data_.update({'Argument': row['Reproducing Example']})
 
