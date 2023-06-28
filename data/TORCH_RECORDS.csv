@@ -1,5 +1,5 @@
 Library,Commit,Parent Module,API,Advisory Link,Anomaly,Category,Reproducing Example,Vulnerable Parameter,Root cause 1,Root cause 2,Attack type
-Pytorch,https://github.com/pytorch/pytorch/commit/b6b1c01adfdadf93a4a1d30c3661ff177412a876,torch,torch.view_as_complex,N.A,Empty input tensor,Tensor,z = torch.tensor(2.0),z,N.A,segfault,Denial of service
+Pytorch,https://github.com/pytorch/pytorch/commit/b6b1c01adfdadf93a4a1d30c3661ff177412a876,torch,torch.view_as_complex,https://github.com/pytorch/pytorch/commit/b6b1c01adfdadf93a4a1d30c3661ff177412a876,Empty input tensor,Tensor,z = torch.tensor(2.0),z,N.A,segfault,Denial of service
 Pytorch,https://github.com/pytorch/pytorch/issues/43476,torch.nn,torch.nn.Conv3d,https://github.com/pytorch/pytorch/commit/c010ef7f0c6d837809a7e973048afac76373e3de,Large input tensor,Tensor,"torch.backends.cudnn.enabled=False
 x = torch.rand(1, 32, 512, 512, 256).to('cuda:0')
 m = torch.nn.Conv3d(32, 1, kernel_size=1, padding=0,stride=1,bias=False).to('cuda:0')
@@ -35,10 +35,10 @@ y = F.max_pool1d(x.contiguous(), kernel_size=poolsize, stride=None, padding=0)
 
 loss = torch.sum(y)
 loss.backward()",N.A,N.A,N.A,Illegal memory acces
-Pytorch,https://github.com/pytorch/pytorch/commit/63b1ae69831cd21bc4d6059a5854bc1155a152c9,torch,torch.remainder,N.A,Large input tensor,Tensor,"n = 1e9
+Pytorch,https://github.com/pytorch/pytorch/commit/63b1ae69831cd21bc4d6059a5854bc1155a152c9,torch,torch.remainder,https://github.com/pytorch/pytorch/commit/63b1ae69831cd21bc4d6059a5854bc1155a152c9,Large input tensor,Tensor,"n = 1e9
 torch.remainder(torch.tensor([n], device=""cpu"", dtype=torch.float32), math.pi) 
 torch.remainder(torch.tensor([n], device=""cuda"", dtype=torch.float32), math.pi) ",N.A,N.A,N.A,overflow
-Pytorch,https://github.com/pytorch/pytorch/commit/7aec364bdf9ed7297b77e8445a6a6d4116265dde,torch,torch.gather,N.A,Dimension mismatch,Tensor,"""k0 = 8
+Pytorch,https://github.com/pytorch/pytorch/commit/7aec364bdf9ed7297b77e8445a6a6d4116265dde,torch,torch.gather,https://github.com/pytorch/pytorch/commit/7aec364bdf9ed7297b77e8445a6a6d4116265dde,Dimension mismatch,Tensor,"""k0 = 8
 k1 = 8
 m = 100
 
@@ -47,13 +47,13 @@ ind = torch.randint(0, k0, (m, k1))
 output = torch.empty((m, k1))""
 print(torch.gather(x, 0, ind, out=output))
 print(torch.gather(x, 1, ind, out=output))""",N.A,N.A,segfault,Denial of service
-Pytorch,https://github.com/pytorch/pytorch/commit/74828be4a7d0d2dba3f0ec3f6e79265cdfae5329,torch,torch.cat,N.A,Large input tensor,Tensor,"SIZE1 = 6500
+Pytorch,https://github.com/pytorch/pytorch/commit/74828be4a7d0d2dba3f0ec3f6e79265cdfae5329,torch,torch.cat,https://github.com/pytorch/pytorch/commit/74828be4a7d0d2dba3f0ec3f6e79265cdfae5329,Large input tensor,Tensor,"SIZE1 = 6500
 SIZE2 = 4500
 concat_list = []
 concat_list.append(torch.ones((SIZE1, 1024 * 512), dtype=torch.uint8))
 concat_list.append(torch.ones((SIZE2, 1024 * 512), dtype=torch.uint8))
 result = torch.cat(concat_list)",N.A,N.A,segfault,N.A
-Pytorch,https://github.com/pytorch/pytorch/commit/071971476d7431a24e527bdc181981678055a95d,torch.distributions.binomial,torch.distributions.binomial.Binomial,N.A,Large input tensor,Tensor,"logits = torch.tensor([-100., 100.], dtype=torch.float)
+Pytorch,https://github.com/pytorch/pytorch/commit/071971476d7431a24e527bdc181981678055a95d,torch.distributions.binomial,torch.distributions.binomial.Binomial,https://github.com/pytorch/pytorch/commit/071971476d7431a24e527bdc181981678055a95d,Large input tensor,Tensor,"logits = torch.tensor([-100., 100.], dtype=torch.float)
 total_count = 1.
 x = torch.tensor([0., 0.], dtype=torch.float)
 log_prob = Binomial(total_count, logits=logits).log_prob(x)",N.A,N.A,overflow,N.A

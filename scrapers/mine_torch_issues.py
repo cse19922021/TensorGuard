@@ -12,6 +12,7 @@ from urllib3.util import Retry
 import pandas as pd
 from csv import writer
 from pydriller import Repository
+from collections import Counter
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -118,6 +119,22 @@ def search_comit_data(c, commit_data):
         return False
 
 
+def calculate_rule_importance(data):
+    element_frequency = Counter(data['Anomaly'].values.flatten())
+    total_elements = len(data['Anomaly'].values.flatten())
+    element_importance = {element: frequency /
+                          total_elements for element, frequency in element_frequency.items()}
+    return sorted(element_importance.items(), key=lambda x: x[1], reverse=True)
+
+
+def search_in_tuples(target_tuple, target_rule):
+    for item in target_tuple:
+        if item[0] == target_rule:
+            return item[1]
+        else:
+            continue
+
+
 def select_access_token(current_token):
     x = ''
     if all(value == False for value in tokens_status.values()):
@@ -143,10 +160,14 @@ def miner(hash_table):
     issue_flag = False
 
     data_list = []
+    weights_ = calculate_rule_importance(torch_issues)
 
     for idx, item in torch_issues.iterrows():
         print(item['Advisory Link'])
         sha_str = item['Advisory Link'].split('/')[-1]
+        score_ = search_in_tuples(weights_, item['Anomaly'])
+        _anomaly = item['Anomaly']
+        _cat = item['Category']
         if 'commit' in item['Advisory Link']:
             commit_base_str = "https://api.github.com/repos/pytorch/pytorch"
             branchLink = f"{commit_base_str}/commits/{sha_str}"
@@ -292,12 +313,26 @@ def miner(hash_table):
                     r'To Reproduce((.|\n)*?)Additional context', data_['body'])[0][0]
 
             target_api = search(hash_table, target_api=item['API'])
-            data_ = {'Issue link': branchLink,
-                     'Issue title': issue_title_,
-                     'Bug description': issue_description,
-                     'Sample Code': issue_code,
-                     'API Signature': target_api,
-                     'Bug fix': ''}
+
+            try:
+                data_ = {'Issue link': branchLink,
+                         'Issue title': issue_title_,
+                         'Bug description': issue_description,
+                         'Sample Code': issue_code,
+                         'API Signature': target_api,
+                         'Bug fix': '',
+                         'Score': score_,
+                         'Category': _cat}
+            except Exception as e:
+                if 'issue_description' in e.args:
+                    data_ = {'Issue link': branchLink,
+                             'Issue title': issue_title_,
+                             'Bug description': '',
+                             'Sample Code': issue_code,
+                             'API Signature': target_api,
+                             'Bug fix': '',
+                             'Score': score_,
+                             'Category': _cat}
 
             issue_flag = False
 
@@ -320,7 +355,10 @@ def miner(hash_table):
                      'Bug description': commit.msg,
                      'Sample Code': '',
                      'API Signature': target_api,
-                     'Bug fix': changes}
+                     'Bug fix': changes,
+                     'Score': score_,
+                     'Anomaly': _anomaly,
+                     'Category': _cat}
 
         data_list.append(data_)
 
