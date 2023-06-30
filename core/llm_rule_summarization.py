@@ -49,28 +49,51 @@ Structure the output as JSON with the following keys:
 
 # """
 
-moshi_template = """
+fix_template = """
         You are an experienced software developer in fuzz testing as well as API level testing.
         You are great at understanding software security and bugs that are caused by malicious inputs to APIs.
-        When you don't know the answer to a question you admit that you don't know.
+        When you don't know how to do program repair, you admit that you don't know.
         
         The context sections are as follows:
-            Detailed bug description:{bug_description}
-            Concise root cause of the bug:{_anomaly}
+            Root cause:{_anomaly}
+            Root cause description:{_description}
             Minimum reproducing example:{_code}
             Malicious argument:{_argument}
             The argument's type:{arg_type}
-            API signature:{api_sig}
-        In this task, you are expected to do input space partitioning for fuzz testing for Malicious argument:{_argument}.
+            Malicious API:{api_sig}
+        The context provided are the artifacts extracted from TensorFlow security advisorties.
+        The context is reporting a bug in the backend implementation of TensorFlow which is triggerd
+        via fuzzing the front-end APIs.
+        In this task, you are expected to do program repair given the context provided.
+
+        You need to output the paritions in given json format:
+        <answer json start>
+        "Fix pattern":"Explain fix pattern"
+        {formatted_response_1}
+"""
+
+moshi_template = """
+        You are an experienced software developer in fuzz testing as well as API level testing.
+        You are great at understanding software security and bugs that are caused by malicious inputs to APIs.
+        When you don't know how to do input space partitioning, you admit that you don't know.
+        
+        The context sections are as follows:
+            Root cause:{_anomaly}
+            Root cause description:{_description}
+            Minimum reproducing example:{_code}
+            Malicious argument:{_argument}
+            The argument's type:{arg_type}
+        In this task, you are expected to do input space partitioning for fuzz testing.
+        Perform the input space partitioning based on the given argument type {arg_type}.
+        
+        Your task is to generate different values for each partition.
         You need to output the paritions in given json format:
         
         <answer json start>
-        "Partition 1":"Code pattern for partition 1",
-        "Partition 2":"Code pattern for partition 2",
-        "Partition 3":"Code pattern for partition 3"
-        "Partition 4":"Code pattern for partition 4",
-        "Partition 5":"Code pattern for partition 5",
-        "Partition 6":"Code pattern for partition 6"
+        "Partition 1":"Python Code pattern for partition 1",
+        "Partition 2":"Python Code pattern for partition 2",
+        "Partition 3":"Python Code pattern for partition 3",
+        "Partition 4":"Python Code pattern for partition 4"
         {formatted_response_1}
 """
 
@@ -117,7 +140,7 @@ template_string = """
 chat_ = ChatOpenAI(temperature=0.0, openai_api_key=os.getenv("API_KEY"))
 
 _prompt_template = ChatPromptTemplate.from_template(
-    template=moshi_template)
+    template=fix_template)
 
 
 def get_token_count(string):
@@ -154,24 +177,10 @@ def gpt_conversation(prompt, model="gpt-3.5-turbo"):
 
 def _formatOutput2():
     part_1 = ResponseSchema(
-        name='Partition 1', description='Partition 1')
+        name='Fix00 pattern', description='Explain fix pattern')
 
-    part_2 = ResponseSchema(
-        name='Partition 2', description='Partition 2')
+    response_schemas = [part_1]
 
-    part_3 = ResponseSchema(
-        name='Partition 3', description='Partition 3')
-
-    part_4 = ResponseSchema(
-        name='Partition 1', description='Partition 4')
-
-    part_5 = ResponseSchema(
-        name='Partition 2', description='Partition 5')
-
-    part_6 = ResponseSchema(
-        name='Partition 3', description='Partition 6')
-
-    response_schemas = [part_1, part_2, part_3, part_4, part_5, part_6]
     output_parser = StructuredOutputParser.from_response_schemas(
         response_schemas)
     format_instructions = output_parser.get_format_instructions()
@@ -200,12 +209,13 @@ def generate_partitions(item, formatted_response, model='tf'):
             sample_code = item["Sample Code"]
             api_sig = item["API Signature"]
             anomaly = item['Anomaly']
+            anomaly_description = item['Anomaly Description']
             argument = item['Argument']
             argument_type = item['Category']
 
             torch_issue_message = _prompt_template.format_messages(
-                bug_description=bug_description,
                 _anomaly=anomaly,
+                _description=anomaly_description,
                 _code=sample_code,
                 _argument=argument,
                 arg_type=argument_type,
@@ -226,10 +236,11 @@ def generate_partitions(item, formatted_response, model='tf'):
             anomaly = item['Anomaly']
             argument_type = item['Category']
             argument = item['Argument']
+            anomaly_description = item['Anomaly Description']
 
             torch_commit_message = _prompt_template.format_messages(
-                bug_description=bug_description,
                 _anomaly=anomaly,
+                _description=anomaly_description,
                 _code=sample_code,
                 _argument=argument,
                 arg_type=argument_type,
@@ -252,10 +263,11 @@ def generate_partitions(item, formatted_response, model='tf'):
         anomaly = item['Anomaly']
         argument_type = item['Category']
         argument = item['Argument']
+        anomaly_description = item['Anomaly Description']
 
         tf_message = _prompt_template.format_messages(
-            bug_description=bug_description,
             _anomaly=anomaly,
+            _description=anomaly_description,
             _code=sample_code,
             _argument=argument,
             arg_type=argument_type,
@@ -359,7 +371,7 @@ def run():
                     output_dict = output_parser.parse(response_.content)
 
                     # _key = next(iter(item))
-                    output_dict.update({'Anomaly': item['Anomaly']})
+                    # output_dict.update({'Anomaly': item['Anomaly']})
 
                     with open(rules_path, "a") as json_file:
                         json.dump(output_dict, json_file, indent=4)

@@ -10,7 +10,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-9cr2-8pwr-fhfq",
     "API Signature": "tf.raw_ops.QuantizeAndDequantizeV3(\n    input,\n    input_min,\n    input_max,\n    num_bits,\n    signed_input=True,\n    range_given=True,\n    narrow_range=False,\n    axis=-1,\n    name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "num_bits = tf.constant([], shape=[0], dtype=tf.int32)"
@@ -26,7 +26,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-r26c-679w-mrjm",
     "API Signature": "tf.quantization.fake_quant_with_min_max_vars_gradient(\n    gradients, inputs, min, max, num_bits=8, narrow_range=False, name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "arg_2=tf.constant(value=np.random.random(size=(2, 2)), shape=(2, 2), dtype=tf.float32)\narg_3=tf.constant(value=np.random.random(size=(2, 2)), shape=(2, 2), dtype=tf.float32)"
@@ -78,7 +78,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-mh3m-62v7-68xg",
     "API Signature": "tf.raw_ops.Unbatch(\n    batched_tensor,\n    batch_index,\n    id,\n    timeout_micros,\n    container='',\n    shared_name='',\n    name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "arg_2=tf.constant(value=np.random.randint(0,100,size=(3, 3, 1)), dtype=tf.int64)"
@@ -158,7 +158,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-p7hr-f446-x6qf",
     "API Signature": "tf.sparse.cross(\n    inputs, name=None, separator=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "separator=tf.constant(['a', 'b']"
@@ -190,7 +190,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-g9h5-vr8m-x2h4",
     "API Signature": "tf.raw_ops.AudioSummaryV2(\n    tag, tensor, sample_rate, max_outputs=3, name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "arg_2=tf.random.uniform(shape=(2,1), dtype=tf.float32, maxval=None)"
@@ -484,7 +484,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v7vw-577f-vp8x",
     "API Signature": "tf.raw_ops.QuantizedRelu(\n    features,\n    min_features,\n    max_features,\n    out_type=tf.dtypes.quint8,\n    name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "min_features = tf.constant([], shape=[0], dtype=tf.float32)\nmax_features = tf.constant(-128, shape=[1], dtype=tf.float32)"
@@ -502,7 +502,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v7vw-577f-vp8x",
     "API Signature": "tf.raw_ops.QuantizedRelu6(\n    features,\n    min_features,\n    max_features,\n    out_type=tf.dtypes.quint8,\n    name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "min_features = tf.constant([], shape=[0], dtype=tf.float32)\nmax_features = tf.constant(-128, shape=[1], dtype=tf.float32)"
@@ -519,7 +519,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-vgvh-2pf4-jr2x",
     "API Signature": "tf.raw_ops.QuantizeDownAndShrinkRange(\n    input, input_min, input_max, out_type, name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "input_min = tf.constant([], shape=[0], dtype=tf.float32)\ninput_max = tf.constant(-256, shape=[1], dtype=tf.float32)"
@@ -535,7 +535,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-689c-r7h2-fv9v",
     "API Signature": "tf.raw_ops.QuantizedMatMul(\n    a,\n    b,\n    min_a,\n    max_a,\n    min_b,\n    max_b,\n    Toutput=tf.dtypes.qint32,\n    transpose_a=False,\n    transpose_b=False,\n    Tactivation=tf.dtypes.quint8,\n    name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "min_a = tf.constant([], shape=[0], dtype=tf.float32)\nmax_a = tf.constant(0, shape=[1], dtype=tf.float32)\nmin_b = tf.constant(0, shape=[1], dtype=tf.float32)\nmax_b = tf.constant(0, shape=[1], dtype=tf.float32)"
@@ -827,7 +827,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-h5vq-gw2c-pq47",
     "API Signature": "tf.raw_ops.UnbatchGrad(\n    original_input,\n    batch_index,\n    grad,\n    id,\n    container='',\n    shared_name='',\n    name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "id=tf.constant([1,], dtype=tf.int64)"
@@ -876,7 +876,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-v5xg-3q2c-c2r4",
     "API Signature": "tf.raw_ops.TensorListReserve(\n    element_shape, num_elements, element_dtype, name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "num_elements=tf.constant([1,1], dtype=tf.int32)"
@@ -891,7 +891,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-97p7-w86h-vcf9",
     "API Signature": "tf.raw_ops.SobolSample(\n    dim,\n    num_results,\n    skip,\n    dtype=tf.dtypes.float32,\n    name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "dim=tf.constant([1,0]), num_results=tf.constant([1]), skip=tf.constant([1])"
@@ -1262,7 +1262,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-hrg5-737c-2p56",
     "API Signature": "tf.raw_ops.UnsortedSegmentJoin(\n    inputs, segment_ids, num_segments, separator='', name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "num_segments=tf.constant(0, shape=[12], dtype=tf.int64))"
@@ -1279,7 +1279,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-h48f-q7rw-hvr7",
     "API Signature": "tf.raw_ops.StagePeek(\n    index,\n    dtypes,\n    capacity=0,\n    memory_limit=0,\n    container='',\n    shared_name='',\n    name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "index = tf.constant([], shape=[0], dtype=tf.int32)"
@@ -1294,7 +1294,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-fv25-wrff-wf86",
     "API Signature": "tf.raw_ops.GetSessionTensor(\n    handle, dtype, name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "handle = tf.constant(\"[]\", shape=[0], dtype=tf.string)"
@@ -1309,7 +1309,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-h5g4-ppwx-48q2",
     "API Signature": "tf.raw_ops.DeleteSessionTensor(\n    handle, name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "handle = tf.constant(\"[]\", shape=[0], dtype=tf.string)"
@@ -1324,7 +1324,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-h2wq-prv9-2f56",
     "API Signature": "tf.raw_ops.QuantizeAndDequantizeV4Grad(\n    gradients, input, input_min, input_max, axis=-1, name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "input_min=tf.constant([], shape=[0], dtype=tf.float64),\ninput_max=tf.constant(-10, shape=[], dtype=tf.float64),"
@@ -1339,7 +1339,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-2p9q-h29j-3f5v",
     "API Signature": null,
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "serialized_summary_metadata=tf.io.encode_base64(np.empty((0)))"
@@ -1351,7 +1351,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-43q8-3fv7-pr5x",
     "API Signature": "tf.sparse.split(\n    sp_input=None, num_split=None, axis=None, name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "axis = [1, 2]"
@@ -1381,7 +1381,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-3mw4-6rj6-74g5",
     "API Signature": "tf.raw_ops.QuantizedMaxPool(\n    input, min_input, max_input, ksize, strides, padding, name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Float",
     "Argument": "input = tf.constant([[[[4]]]], dtype=tf.quint8)"
@@ -2496,7 +2496,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-fcwc-p4fc-c5cc",
     "API Signature": "tf.raw_ops.MatrixDiagPartV2(\n    input, k, padding_value, name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "padding_value=[]"
@@ -3662,7 +3662,7 @@
     "Link": "https://github.com/tensorflow/tensorflow/security/advisories/GHSA-m3f9-w3p3-p669",
     "API Signature": "tf.raw_ops.QuantizedMul(\n    x,\n    y,\n    min_x,\n    max_x,\n    min_y,\n    max_y,\n    Toutput=tf.dtypes.qint32,\n    name=None\n)\n",
     "Score": 0.07885304659498207,
-    "Anomaly": "Non scalar input tensor",
+    "Anomaly": "Input tensors that are not scalar",
     "Anomaly Description": "A non-scalar input tensor refers to a tensor that has more than one element or value. It represents a multi-dimensional array or a collection of values organized in a specific shape.",
     "Category": "Tensor",
     "Argument": "min_x = tf.constant([], dtype=tf.float32) \nmax_x = tf.constant([], dtype=tf.float32) \nmin_y = tf.constant([], dtype=tf.float32) \nmax_y = tf.constant([], dtype=tf.float32)"
