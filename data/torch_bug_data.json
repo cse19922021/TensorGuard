@@ -1,0 +1,1004 @@
+[
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/commits/b6b1c01adfdadf93a4a1d30c3661ff177412a876",
+        "Bug description": "torch.view_as_complex fails with segfault for a zero dimensional tensor (#44175)\n\nSummary:\nFixes https://github.com/pytorch/pytorch/issues/44061\n\nPull Request resolved: https://github.com/pytorch/pytorch/pull/44175\n\nReviewed By: colesbury\n\nDifferential Revision: D23628103\n\nPulled By: anjali411\n\nfbshipit-source-id: 6f70b5824150121a1617c0757499832923ae02b5",
+        "Sample Code": "",
+        "API Signature": "\n torch. view_as_complex ( input )   \u2192 \u00b6",
+        "Bug fix": [
+            "@@ -48,6 +48,7 @@ Tensor view_as_complex(const Tensor& self) {\n     self.scalar_type() == kFloat || self.scalar_type() == kDouble || self.scalar_type() == kHalf,\n     \"view_as_complex is only supported for half, float and double tensors, but got a tensor of scalar type: \", self.scalar_type());\n \n+  TORCH_CHECK(self.dim() != 0, \"Input tensor must have one or more dimensions\");\n   auto new_sizes = self.sizes().vec();\n   TORCH_CHECK(new_sizes[self.dim()-1] == 2, \"Tensor must have a last dimension of size 2\");\n   new_sizes.pop_back();\n",
+            "@@ -19220,6 +19220,12 @@ class TestViewOps(TestCase):\n             RuntimeError, \"Tensor must have a last dimension of size 2\",\n             lambda: torch.view_as_complex(x))\n \n+        # zero dimension tensor\n+        z = torch.tensor(2.0)\n+        self.assertRaisesRegex(\n+            RuntimeError, \"Input tensor must have one or more dimensions\",\n+            lambda: torch.view_as_complex(z))\n+\n         y = x.reshape(0, 2)  # torch.Size([0, 2])\n         res = torch.view_as_complex(y)\n         self.assertTrue(self.is_view_of(x, res))\n"
+        ],
+        "Score": 0.15306122448979592,
+        "Anomaly": "Empty input tensor",
+        "Categoery": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/commits/c010ef7f0c6d837809a7e973048afac76373e3de",
+        "Bug description": "use non-overflowing divide in cuda kernel util GET_BLOCKS (#44391)\n\nSummary:\nFixes https://github.com/pytorch/pytorch/issues/43476.\n\nPull Request resolved: https://github.com/pytorch/pytorch/pull/44391\n\nReviewed By: mrshenli\n\nDifferential Revision: D23602424\n\nPulled By: walterddr\n\nfbshipit-source-id: 40ed81547f933194ce5bf4a5bcebdb3434298bc1",
+        "Sample Code": "",
+        "API Signature": null,
+        "Bug fix": [
+            "@@ -25,16 +25,15 @@ namespace at { namespace cuda { namespace detail {\n constexpr int CUDA_NUM_THREADS = 1024;\n \n // CUDA: number of blocks for threads.\n-inline int GET_BLOCKS(const int N)\n-{\n-  AT_ASSERTM(N > 0, \"CUDA kernel launch blocks must be positive, but got N=\", N);\n-  return (N + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS;\n-}\n-\n inline int GET_BLOCKS(const int64_t N) {\n   AT_ASSERTM(N > 0, \"CUDA kernel launch blocks must be positive, but got N=\", N);\n   constexpr int64_t max_int = std::numeric_limits<int>::max();\n-  return GET_BLOCKS(static_cast<int>(std::min(max_int, N)));\n+\n+  // Round up division for positive number that cannot cause integer overflow\n+  auto block_num = (N - 1) / CUDA_NUM_THREADS + 1;\n+  AT_ASSERTM(block_num <= max_int, \"Can't schedule too many blocks on CUDA device\");\n+\n+  return static_cast<int>(block_num);\n }\n \n }}}  // namespace at::cuda::detail\n"
+        ],
+        "Score": 0.11224489795918367,
+        "Anomaly": "Large input tensor",
+        "Categoery": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/commits/42b4a7132e7c6f1df963b473d1583e4791fb1808",
+        "Bug description": "Raise error if `at::native::embedding` is given 0-D weight (#42550)\n\nSummary:\nPreviously, `at::native::embedding` implicitly assumed that the `weight` argument would be 1-D or greater. Given a 0-D tensor, it would segfault. This change makes it throw a RuntimeError instead.\n\nFixes https://github.com/pytorch/pytorch/issues/41780\n\nPull Request resolved: https://github.com/pytorch/pytorch/pull/42550\n\nReviewed By: smessmer\n\nDifferential Revision: D23040744\n\nPulled By: albanD\n\nfbshipit-source-id: d3d315850a5ee2d2b6fcc0bdb30db2b76ffffb01",
+        "Sample Code": "",
+        "API Signature": "\n torch.nn.functional. embedding ( input ,  weight ,  padding_idx ,  max_norm ,  norm_type ,  scale_grad_by_freq ,  sparse ) [source] \u00b6",
+        "Bug fix": [
+            "@@ -13,6 +13,7 @@ namespace at { namespace native {\n \n Tensor embedding(const Tensor & weight, const Tensor & indices,\n                  int64_t padding_idx, bool scale_grad_by_freq, bool sparse) {\n+  TORCH_CHECK(weight.dim() >= 1, \"'weight' must be at least 1-D\");\n   auto indices_arg = TensorArg(indices, \"indices\", 1);\n   checkScalarType(\"embedding\", indices_arg, kLong);\n \n",
+            "@@ -9901,6 +9901,12 @@ class TestNNDeviceType(NNTestCase):\n         fn = fn_wrapper(device)\n         _assertGradAndGradgradChecks(self, fn, (weight, ))\n \n+    def test_embedding_scalar_weight_error(self, device):\n+        indices = torch.rand(2, 2, device=device).long()\n+        weight = torch.tensor(1.0, device=device)\n+        with self.assertRaisesRegex(RuntimeError, \"'weight' must be at least 1-D\"):\n+            torch.nn.functional.embedding(indices, weight)\n+\n     @dtypesIfCUDA(torch.float16, torch.float64)\n     @dtypes(torch.float64)\n     def test_embedding_backward(self, device, dtype):\n",
+            "@@ -10306,6 +10306,12 @@ class TestTorchDeviceType(TestCase):\n         self.assertRaisesRegex(RuntimeError, \"duplicate or invalid\", torch.norm, x, \"nuc\", (0, 0))\n         self.assertRaisesRegex(RuntimeError, \"duplicate or invalid\", torch.norm, x, \"nuc\", (0, 2))\n \n+    def test_embedding_scalar_weight_error(self, device):\n+        indices = torch.rand(2, 2, device=device).long()\n+        weight = torch.tensor(1.0)\n+        with self.assertRaisesRegex(RuntimeError, \"'weight' must be at least 1-D\"):\n+            torch.embedding(weight, indices)\n+\n     def test_dist(self, device):\n         def run_test(x, y):\n             for p in [0, 1, 2, 3, 4, inf, -inf]:\n"
+        ],
+        "Score": 0.02040816326530612,
+        "Anomaly": "Scalar input tensor",
+        "Categoery": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/327",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "",
+        "API Signature": "\n torch. addcdiv ( input ,  tensor1 ,  tensor2 ,  * ,  value ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/327",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/327",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "",
+        "API Signature": "\n torch. fmod ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/327",
+        "Bug description": "Raise error if `at::native::embedding` is given 0-D weight (#42550)\n\nSummary:\nPreviously, `at::native::embedding` implicitly assumed that the `weight` argument would be 1-D or greater. Given a 0-D tensor, it would segfault. This change makes it throw a RuntimeError instead.\n\nFixes https://github.com/pytorch/pytorch/issues/41780\n\nPull Request resolved: https://github.com/pytorch/pytorch/pull/42550\n\nReviewed By: smessmer\n\nDifferential Revision: D23040744\n\nPulled By: albanD\n\nfbshipit-source-id: d3d315850a5ee2d2b6fcc0bdb30db2b76ffffb01",
+        "Sample Code": "",
+        "API Signature": null,
+        "Bug fix": [],
+        "Score": 0.11224489795918367,
+        "Anomaly": "Large input tensor",
+        "Categoery": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/38764",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "",
+        "API Signature": "\n torch.nn.functional. max_pool1d ( input ,  kernel_size ,  stride ,  padding ,  dilation ,  ceil_mode ,  return_indices ) \u00b6",
+        "Bug fix": "",
+        "Score": 0.12244897959183673,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/commits/63b1ae69831cd21bc4d6059a5854bc1155a152c9",
+        "Bug description": "Fix overflow in torch.remainder when dividend is very large (#37758)\n\nSummary:\nThis will fix the GPU implementation in https://github.com/pytorch/pytorch/issues/37743 and https://github.com/pytorch/pytorch/issues/24861. Please also check my [comment](https://github.com/pytorch/pytorch/issues/37743#issuecomment-623285707).\n\nThe fixed `remainder_kernel` follows the similar implementation in numpy. See https://github.com/numpy/numpy/blob/79d7bc276afbe89c746e462d28d4bfbb4fc56148/numpy/core/src/npymath/npy_math_internal.h.src#L649-L658\n\nI also slightly update the doc for `torch.remainder`, to make it similar to `torch.fmod`.\n\nI'm not sure how to modify the Vec256 code of CPU remainder_kernel, so I just leave it there.\nPull Request resolved: https://github.com/pytorch/pytorch/pull/37758\n\nDifferential Revision: D21388417\n\nPulled By: ngimel\n\nfbshipit-source-id: 770ba5801cf34619b2b68b8b0cf95d8cfa52e6f6",
+        "Sample Code": "",
+        "API Signature": "\n torch. remainder ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": [
+            "@@ -77,7 +77,9 @@ void remainder_kernel_cuda(TensorIterator& iter) {\n     AT_DISPATCH_FLOATING_TYPES_AND_HALF(iter.dtype(), \"remainder_cuda\", [&]() {\n       gpu_kernel_with_scalars(iter,\n         []GPU_LAMBDA(scalar_t a, scalar_t b) __ubsan_ignore_float_divide_by_zero__ -> scalar_t {\n-          return a - b * static_cast<scalar_t>(std::floor(a / b));\n+          auto mod = ::fmod(a, b);\n+          if ((mod != 0) && ((b < 0) != (mod < 0))) mod += b;\n+          return mod;\n         });\n     });\n   }\n",
+            "@@ -15449,6 +15449,27 @@ scipy_lobpcg  | {:10.2e}  | {:10.2e}  | {:6} | N/A\n                 long_res1 = long_m1.clone()\n                 long_res1.remainder_(long_qs.unsqueeze(0).expand_as(long_res1))\n \n+    # remove onlyCUDA after CPU impl of remainder_kernel be fixed\n+    @onlyCUDA\n+    @dtypes(torch.float, torch.double)\n+    def test_remainder_fmod_large_dividend(self, device, dtype):\n+        alarge = 1e9\n+        pi = 3.14159265358979\n+        for avalue in [alarge, -alarge]:\n+            for bvalue in [pi, -pi]:\n+                a = torch.tensor([avalue], dtype=dtype, device=device)\n+                b = torch.tensor([bvalue], dtype=dtype, device=device)\n+                c = torch.remainder(a, b)\n+                d = torch.fmod(a, b)\n+                self.assertTrue((b[0] > 0) == (c[0] > 0))  # remainder has same sign as divisor\n+                self.assertTrue((a[0] > 0) == (d[0] > 0))  # fmod has same sign as dividend\n+                self.assertTrue(abs(c[0]) < abs(b[0]))     # remainder is within range of divisor\n+                self.assertTrue(abs(d[0]) < abs(b[0]))     # fmod is within range of divisor\n+                if ((a[0] > 0) == (b[0] > 0)):\n+                    self.assertTrue(c[0] == d[0])   # remainder is same as fmod\n+                else:\n+                    self.assertTrue(abs(c[0] - d[0]) == abs(b[0]))  # differ by one divisor\n+\n     @dtypes(torch.int64, torch.float64)\n     def test_remainder_edge_cases(self, device, dtype):\n         # Test variations of negative values used as input\n",
+            "@@ -4902,8 +4902,8 @@ remainder(input, other, out=None) -> Tensor\n \n Computes the element-wise remainder of division.\n \n-The divisor and dividend may contain both for integer and floating point\n-numbers. The remainder has the same sign as the divisor.\n+The dividend and divisor may contain both for integer and floating point\n+numbers. The remainder has the same sign as the divisor :attr:`other`.\n \n When :attr:`other` is a tensor, the shapes of :attr:`input` and\n :attr:`other` must be :ref:`broadcastable <broadcasting-semantics>`.\n"
+        ],
+        "Score": 0.11224489795918367,
+        "Anomaly": "Large input tensor",
+        "Categoery": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/commits/7aec364bdf9ed7297b77e8445a6a6d4116265dde",
+        "Bug description": "extend gather shape check to handle incorrectly sized outputs (#37102)\n\nSummary:\nFixes a safety issue (Nonsense values and segfaults) introduced by https://github.com/pytorch/pytorch/pull/36875 when in-place gather tries to use incorrect shapes.\n\nConsider the following block of code:\n```\nk0 = 8\nk1 = 8\nm = 100\n\nx = torch.rand((k0, k1))\nind = torch.randint(0, k0, (m, k1))\noutput = torch.empty((m, k1))\n\nprint(torch.gather(x, 0, ind, out=output))\nprint(torch.gather(x, 1, ind, out=output))\n```\n\nThe first gather is legal, the second is not. (`ind` and `output` need to be transposed) Previously this was caught when the kernel tried to restride inputs for TensorIterator, but we can no longer rely on those checks and must test explicitly. If `m` is small the second gather returns gibberish; if it is large enough to push the read out of memory block the program segfaults.\nPull Request resolved: https://github.com/pytorch/pytorch/pull/37102\n\nDifferential Revision: D21190580\n\nPulled By: robieta\n\nfbshipit-source-id: 80175620d24ad3380d78995f7ec7dbf2627d2998",
+        "Sample Code": "",
+        "API Signature": "\n torch. gather ( input ,  dim ,  index ,  * ,  sparse_grad ,  out )   \u2192 \u00b6",
+        "Bug fix": [
+            "@@ -9,23 +9,37 @@ namespace {\n \n // Used for `gather`-like methods\n // Test:\n-// 1. index.size(d) == self.size(d) for all d != dim\n-void gather_shape_check(const Tensor& self, int64_t dim, const Tensor& index) {\n+// 1. index.size(d) == src.size(d) for all d != dim\n+// 2. index.size(d) == self.size(d) for all d\n+void gather_shape_check(const Tensor& self, int64_t dim, const Tensor& index, const Tensor& src) {\n   auto self_dims = ensure_nonempty_dim(self.dim());\n+  auto src_dims = ensure_nonempty_dim(src.dim());\n \n   TORCH_CHECK(self_dims == ensure_nonempty_dim(index.dim()),\n     \"Index tensor must have the same number of dimensions as input tensor\"\n   );\n \n+  TORCH_CHECK(src_dims == ensure_nonempty_dim(index.dim()),\n+    \"Index tensor must have the same number of dimensions as output tensor\"\n+  );\n+\n   for (int64_t i = 0; i < self_dims; ++i) {\n+    auto index_size = ensure_nonempty_size(index, i);\n     if (i != dim) {\n       TORCH_CHECK(\n-        ensure_nonempty_size(index, i) == ensure_nonempty_size(self, i),\n-        \"Size does not match at dimension \", i,\n-        \" get \", ensure_nonempty_size(self, i),\n+        index_size == ensure_nonempty_size(src, i),\n+        \"Output size does not match at dimension \", i,\n+        \" get \", ensure_nonempty_size(src, i),\n         \" vs \", ensure_nonempty_size(index, i)\n       );\n     }\n+    TORCH_CHECK(\n+      index_size == ensure_nonempty_size(self, i),\n+      \"Input size does not match at dimension \", i,\n+      \" get \", ensure_nonempty_size(self, i),\n+      \" vs \", ensure_nonempty_size(index, i)\n+    );\n+\n   }\n }\n \n@@ -131,7 +145,7 @@ struct cpu_scatter_gather_base_kernel {\n       scatter_shape_check(self, dim, index, src);\n     }\n     else {\n-      gather_shape_check(self, dim, index);\n+      gather_shape_check(self, dim, index, src);\n     }\n \n     auto iter = TensorIterator();\n",
+            "@@ -2534,6 +2534,9 @@ class _TestTorchMixin(object):\n                     expected[i, j, k] = src[tuple(ii)]\n         self.assertEqual(actual, expected, 0)\n \n+        bad_src = torch.randn(*[i - 1 for i in idx_size])\n+        self.assertRaises(RuntimeError, lambda: torch.gather(bad_src, dim, idx))\n+\n         if test_bounds:\n             idx[0][0][0] = 23\n             self.assertRaises(RuntimeError, lambda: torch.gather(src, dim, idx))\n"
+        ],
+        "Score": 0.09183673469387756,
+        "Anomaly": "Dimension mismatch",
+        "Categoery": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/commits/74828be4a7d0d2dba3f0ec3f6e79265cdfae5329",
+        "Bug description": "fix segfault in `cat` on CPU with tensors that can't be indexed with 32-bit ints. (#21530)\n\nSummary:\nShould be self-explanatory. This `int` variable is overflowing.\n\nReported in #21526\nPull Request resolved: https://github.com/pytorch/pytorch/pull/21530\n\nDifferential Revision: D15719275\n\nPulled By: umanwizard\n\nfbshipit-source-id: 24e917a00a5b78bc3af29ef3b8b72eea7e89d5d5",
+        "Sample Code": "",
+        "API Signature": "\n torch. cat ( tensors ,  dim ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": [
+            "@@ -799,7 +799,7 @@ void THTensor_(catArray)(THTensor *result, THTensor **inputs, int numInputs, int\n         if (!should_skip(inputs[j])) {\n           THTensor* input0 = inputs[j];\n           scalar_t* input0_data = THStorage_(data)(THTensor_getStoragePtr(input0)) + input0->storage_offset();\n-          int local_inner = inner * input0->size(dimension);\n+          int64_t local_inner = inner * input0->size(dimension);\n           if (local_inner != 0) {\n             memcpy(result_data + offset, input0_data + o*local_inner, local_inner*sizeof(scalar_t));\n           } // input0_size != 0\n",
+            "@@ -4948,6 +4948,16 @@ class _TestTorchMixin(object):\n     def test_cat_empty(self):\n         self._test_cat_empty(self)\n \n+    @slowTest\n+    def test_cat_big(self):\n+        SIZE1 = 6500\n+        SIZE2 = 4500\n+        concat_list = []\n+        concat_list.append(torch.ones((SIZE1, 1024 * 512), dtype=torch.uint8))\n+        concat_list.append(torch.ones((SIZE2, 1024 * 512), dtype=torch.uint8))\n+        result = torch.cat(concat_list)\n+        self.assertEqual(result.size(0), SIZE1 + SIZE2)\n+\n     def test_narrow(self):\n         x = torch.Tensor([[0, 1, 2], [3, 4, 5], [6, 7, 8]])\n         self.assertEqual(x.narrow(0, 0, 1), torch.Tensor([[0, 1, 2]]))\n"
+        ],
+        "Score": 0.11224489795918367,
+        "Anomaly": "Large input tensor",
+        "Categoery": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/commits/071971476d7431a24e527bdc181981678055a95d",
+        "Bug description": "Fix Binomimal overflow when logits is large (#20679)\n\nSummary:\nThis PR fixes  #17843. In addition (test locally), this still maintains the continuity of log_prob which is addressed in https://github.com/pytorch/pytorch/pull/15962\n\ncc neerajprad\nPull Request resolved: https://github.com/pytorch/pytorch/pull/20679\n\nDifferential Revision: D15413311\n\nPulled By: ezyang\n\nfbshipit-source-id: 4fc0ca755ae6a85aa7deb2206dab675f82f9aa25",
+        "Sample Code": "",
+        "API Signature": null,
+        "Bug fix": [
+            "@@ -953,6 +953,18 @@ class TestDistributions(TestCase):\n             logits = probs_to_logits(probs, is_binary=True)\n             self._check_log_prob(Binomial(total_count, logits=logits), ref_log_prob)\n \n+    def test_binomial_stable(self):\n+        logits = torch.tensor([-100., 100.], dtype=torch.float)\n+        total_count = 1.\n+        x = torch.tensor([0., 0.], dtype=torch.float)\n+        log_prob = Binomial(total_count, logits=logits).log_prob(x)\n+        self.assertTrue(torch.isfinite(log_prob).all())\n+\n+        # make sure that the grad at logits=0, value=0 is 0.5\n+        x = torch.tensor(0., requires_grad=True)\n+        y = Binomial(total_count, logits=x).log_prob(torch.tensor(0.))\n+        self.assertEqual(grad(y, x)[0], torch.tensor(-0.5))\n+\n     @unittest.skipIf(not TEST_NUMPY, \"NumPy not found\")\n     def test_binomial_log_prob_vectorized_count(self):\n         probs = torch.tensor([0.2, 0.7, 0.9])\n",
+            "@@ -5,6 +5,11 @@ from torch.distributions.distribution import Distribution\n from torch.distributions.utils import broadcast_all, probs_to_logits, lazy_property, logits_to_probs\n \n \n+def _clamp_by_zero(x):\n+    # works like clamp(x, min=0) but has grad at 0 is 0.5\n+    return (x.clamp(min=0) + x - x.clamp(max=0)) / 2\n+\n+\n class Binomial(Distribution):\n     r\"\"\"\n     Creates a Binomial distribution parameterized by :attr:`total_count` and\n@@ -113,9 +118,15 @@ class Binomial(Distribution):\n         log_factorial_n = torch.lgamma(self.total_count + 1)\n         log_factorial_k = torch.lgamma(value + 1)\n         log_factorial_nmk = torch.lgamma(self.total_count - value + 1)\n-        # Note that: torch.log1p(-self.probs)) = - torch.log1p(self.logits.exp()))\n-        return (log_factorial_n - log_factorial_k - log_factorial_nmk +\n-                value * self.logits - self.total_count * torch.log1p(self.logits.exp()))\n+        # k * log(p) + (n - k) * log(1 - p) = k * (log(p) - log(1 - p)) + n * log(1 - p)\n+        #     (case logit < 0)              = k * logit - n * log1p(e^logit)\n+        #     (case logit > 0)              = k * logit - n * (log(p) - log(1 - p)) + n * log(p)\n+        #                                   = k * logit - n * logit - n * log1p(e^-logit)\n+        #     (merge two cases)             = k * logit - n * max(logit, 0) - n * log1p(e^-|logit|)\n+        normalize_term = (self.total_count * _clamp_by_zero(self.logits)\n+                          + self.total_count * torch.log1p(torch.exp(-torch.abs(self.logits)))\n+                          - log_factorial_n)\n+        return value * self.logits - log_factorial_k - log_factorial_nmk - normalize_term\n \n     def enumerate_support(self, expand=True):\n         total_count = int(self.total_count.max())\n"
+        ],
+        "Score": 0.11224489795918367,
+        "Anomaly": "Large input tensor",
+        "Categoery": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/3498",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": "Numpy array"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/86279",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\nAfter https://github.com/pytorch/pytorch/pull/80760 added MPS version of multinomial op, operations with replacement fails for arrays of more than 32K elements with non-recoverable error:\r\n```\r\n % python -c \"import torch;print(torch.multinomial(torch.ones(1, 32768, device='mps'), 2, replacement=True))\"\r\n/AppleInternal/Library/BuildRoots/4883e71d-37bd-11ed-b0ef-b25c5e9b9057/Library/Caches/com.apple.xbs/Sources/MetalPerformanceShaders/MPSCore/Types/MPSNDArray.mm:724: failed assertion `[MPSNDArray initWithDevice:descriptor:] Error: total bytes of NDArray > 2**32'\r\nzsh: abort      python -c \r\n```\n\n### ",
+        "API Signature": "\n torch. multinomial ( input ,  num_samples ,  replacement ,  * ,  generator ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.11224489795918367,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/86074",
+        "Issue title": "",
+        "Bug description": "\n\nFor some inputs, torch.remainder and torch.fmod produce wrong results, especially for integer datatype. When converting the int32 input to float32, they can produce correct results.\r\n\r\nI suspect this might be caused by type promotion.\r\n\r\nReproduce ",
+        "Sample Code": "\n\nFor some inputs, torch.remainder and torch.fmod produce wrong results, especially for integer datatype. When converting the int32 input to float32, they can produce correct results.\r\n\r\nI suspect this might be caused by type promotion.\r\n\r\nReproduce code:\r\n```\r\nimport torch\r\nimport numpy as np\r\n\r\ninput = torch.tensor(1693446850, dtype=torch.int32)\r\nother = torch.tensor([7285], dtype=torch.int16)\r\n\r\n# test the apis with int input (wrong results)\r\nr = torch.remainder(input, other)\r\nprint(r)\r\nr = torch.fmod(input, other)\r\nprint(r)\r\nr = np.fmod(input.numpy(), other.numpy())\r\nprint(r)\r\n\r\ninput = input.to(torch.float32)\r\n\r\n# test the apis with float input (correct results)\r\nr = torch.remainder(input, other)\r\nprint(r)\r\nr = torch.fmod(input, other)\r\nprint(r)\r\nr = np.fmod(input.numpy(), other.numpy())\r\nprint(r)\r\n```\r\nOutput:\r\n```\r\ntensor([3895], dtype=torch.int16)\r\ntensor([-3390], dtype=torch.int16)\r\n[4890]\r\ntensor([4952.])\r\ntensor([4952.])\r\n[4952.]\r\n```\n\n### ",
+        "API Signature": "\n torch. remainder ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.11224489795918367,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/86074",
+        "Bug description": "Fix Binomimal overflow when logits is large (#20679)\n\nSummary:\nThis PR fixes  #17843. In addition (test locally), this still maintains the continuity of log_prob which is addressed in https://github.com/pytorch/pytorch/pull/15962\n\ncc neerajprad\nPull Request resolved: https://github.com/pytorch/pytorch/pull/20679\n\nDifferential Revision: D15413311\n\nPulled By: ezyang\n\nfbshipit-source-id: 4fc0ca755ae6a85aa7deb2206dab675f82f9aa25",
+        "Sample Code": "",
+        "API Signature": "\n torch. fmod ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": [],
+        "Score": 0.11224489795918367,
+        "Anomaly": "Large input tensor",
+        "Categoery": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/85217",
+        "Issue title": "",
+        "Bug description": "\n\nSegmentation fault in `native_batch_norm`.\r\n\r\n### ",
+        "Sample Code": "\n\nSegmentation fault in `native_batch_norm`.\r\n\r\n### Example to reproduce\r\n\r\n```python\r\nimport torch\r\n\r\ninput = torch.full((5, 5,), 1, dtype=torch.float64, requires_grad=False)\r\nweight = torch.full((14, 9, 12, 0, 6, 0, 15, 0, 0, 0,), -1.5e+300, dtype=torch.float64, requires_grad=False)\r\nbias = torch.full((5,), 1, dtype=torch.float64, requires_grad=False)\r\nrunning_mean = torch.full((0,), 1, dtype=torch.float64, requires_grad=False)\r\nrunning_var = torch.full((0,), 1, dtype=torch.float64, requires_grad=False)\r\ntraining = True\r\nmomentum = 0\r\neps = 0\r\ntorch.native_batch_norm(input, weight, bias, running_mean, running_var, training, momentum, eps)\r\n```\r\n\r\n### Result\r\n```segmentation fault```\r\n\r\n### Expected behavior\r\nGraceful termination or a RuntimeError to be thrown.\r\n\r\n### Note\r\nThis bug was discovered using fuzz testing.\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/85216",
+        "Issue title": "",
+        "Bug description": "\n\nSegmentation fault in `_mkldnn_transpose`.\r\n\r\n### ",
+        "Sample Code": "\n\nSegmentation fault in `_mkldnn_transpose`.\r\n\r\n### Example to reproduce\r\n\r\n```python\r\nimport torch\r\n\r\nself = torch.full((3, 4, 5,), 1, dtype=torch.float32, requires_grad=False).to_mkldnn()\r\ndim0 = 1250999896764\r\ndim1 = 0\r\ntorch._mkldnn_transpose(self, dim0, dim1)\r\n```\r\n\r\n### Result\r\n```segmentation fault```\r\n\r\n### Expected behavior\r\nGraceful termination or a RuntimeError to be thrown.\r\n\r\n### Note\r\nThis bug was discovered using fuzz testing.\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.12244897959183673,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/85214",
+        "Issue title": "",
+        "Bug description": "\n\nSegmentation fault in `mkldnn_reorder_conv2d_weight` and  `mkldnn_reorder_conv3d_weight`.\r\n\r\n### ",
+        "Sample Code": "\n\nSegmentation fault in `mkldnn_reorder_conv2d_weight` and  `mkldnn_reorder_conv3d_weight`.\r\n\r\n### Example to reproduce\r\n\r\n```python\r\nimport torch\r\n\r\nself = torch.full((3, 3, 1, 1,), 1, dtype=torch.float32, requires_grad=False).to_mkldnn()\r\npadding = []\r\nstride = [65534, 65534]\r\ndilation = [65534, 65534]\r\ngroups = 0\r\ntorch._C._nn.mkldnn_reorder_conv2d_weight(self, padding, stride, dilation, groups)\r\n\r\n\r\nimport torch\r\n\r\nself = torch.full((32, 3, 3, 3, 3,), 1, dtype=torch.float32, requires_grad=False).to_mkldnn()\r\npadding = []\r\nstride = [1250999896764, 1250999896764, 1250999896764]\r\ndilation = [1250999896764, 1250999896764, 1250999896764]\r\ngroups = 0\r\ntorch._C._nn.mkldnn_reorder_conv3d_weight(self, padding, stride, dilation, groups)\r\n```\r\n\r\n### Result\r\n```segmentation fault```\r\n\r\n### Expected behavior\r\nGraceful termination or a RuntimeError to be thrown.\r\n\r\n### Note\r\nThis bug was discovered using fuzz testing.\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.04081632653061224,
+        "Category": "List"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/85213",
+        "Issue title": "",
+        "Bug description": "\n\nSegmentation fault in `embedding_bag`, `_embedding_bag` and `_embedding_bag_forward_only`.\r\n\r\n### ",
+        "Sample Code": "\n\nSegmentation fault in `embedding_bag`, `_embedding_bag` and `_embedding_bag_forward_only`.\r\n\r\n### Example to reproduce\r\n\r\n```python\r\nimport torch\r\n\r\ntensor_0 = torch.full((8, 8, 0, 0, 0,), 1.5e+300, dtype=torch.float64, requires_grad=False)\r\ntensor_1 = torch.full((8, 8, 0, 0, 0,), 1, dtype=torch.int64, requires_grad=False)\r\ntensor_2 = torch.full((8, 8, 0, 0, 0, 14, 13, 0, 0, 6,), 1, dtype=torch.int64, requires_grad=False)\r\nbool_3 = True\r\nint_4 = 0\r\nbool_5 = True\r\ntensor_6 = torch.full((4,), 1, dtype=torch.int64, requires_grad=False)\r\nbool_7 = True\r\nint_8 = 0\r\ntorch.embedding_bag(tensor_0, tensor_1, tensor_2, bool_3, int_4, bool_5, tensor_6, bool_7)\r\n\r\nimport torch\r\n\r\nweight = torch.full((2, 0, 0, 6, 6,), 0, dtype=torch.float64, requires_grad=False)\r\nindices = torch.full((2, 0, 0, 6, 6,), 2, dtype=torch.int64, requires_grad=False)\r\noffsets = torch.full((2, 0, 0, 6, 6, 8, 6, 8, 0, 6, 0, 11, 0, 0, 0,), 65534, dtype=torch.int64, requires_grad=False)\r\nscale_grad_by_freq = True\r\nmode = 0\r\nsparse = True\r\nper_sample_weights = torch.full((1, 1, 1, 1, 1, 1, 1, 1, 1, 1,), 3.5e+35, dtype=torch.float64, requires_grad=False)\r\ninclude_last_offset = True\r\npadding_idx = 0\r\ntorch._embedding_bag(weight, indices, offsets, scale_grad_by_freq, mode, sparse, per_sample_weights, include_last_offset, padding_idx)\r\n\r\n\r\nimport torch\r\n\r\nweight = torch.full((2, 0, 0, 6, 6,), 0, dtype=torch.float64, requires_grad=False)\r\nindices = torch.full((2, 0, 0, 6, 6,), 2, dtype=torch.int64, requires_grad=False)\r\noffsets = torch.full((2, 0, 0, 6, 6, 8, 6, 8, 0, 6, 0, 11, 0, 0, 0,), 65534, dtype=torch.int64, requires_grad=False)\r\nscale_grad_by_freq = True\r\nmode = 0\r\nsparse = True\r\nper_sample_weights = torch.full((1, 1, 1, 1, 1, 1, 1, 1, 1, 1,), 3.5e+35, dtype=torch.float64, requires_grad=False)\r\ninclude_last_offset = True\r\npadding_idx = 0\r\ntorch._embedding_bag_forward_only(weight, indices, offsets, scale_grad_by_freq, mode, sparse, per_sample_weights, include_last_offset, padding_idx)\r\n```\r\n\r\n### Result\r\n```segmentation fault```\r\n\r\n### Expected behavior\r\nGraceful termination or a RuntimeError to be thrown.\r\n\r\n### Note\r\nThis bug was discovered using fuzz testing.\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.04081632653061224,
+        "Category": "List"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/85072",
+        "Issue title": "",
+        "Bug description": "\n\nPassing `None` to `torch.jit.wait` can cause a Segmentation fault.\r\n\r\n## ",
+        "Sample Code": "\n\nPassing `None` to `torch.jit.wait` can cause a Segmentation fault.\r\n\r\n## code\r\n\r\n```python\r\nimport torch\r\n\r\ntorch.jit.wait(None)\r\n```\r\n## output\r\n```bash\r\nSegmentation fault (core dumped)\r\n```\n\n### ",
+        "API Signature": "\n torch.jit. wait ( future ) [source] \u00b6",
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": NaN
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/84990",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nIn `torch.futures.collect_all` when `futures` got invalid input, it causes a Segmentation fault.\r\n\r\n## ",
+        "Sample Code": "\r\n\r\nIn `torch.futures.collect_all` when `futures` got invalid input, it causes a Segmentation fault.\r\n\r\n## code\r\n\r\n```python\r\nimport torch\r\n\r\ninput = (None,)\r\n\r\ntorch.futures.collect_all(futures=input)\r\n```\r\n\r\n## output\r\n```bash\r\nSegmentation fault (core dumped)\r\n```\r\n\r\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": "Tuple"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/83328",
+        "Issue title": "",
+        "Bug description": "\n\n```\r\nresults = dict()\r\nimport torch\r\narg_class = torch.nn.Conv2d(512,2048,1)\r\narg_1 = torch.rand([128, 512, 16, 16], dtype=torch.float16)\r\nresults[\"time_low\"] = arg_class(arg_1)\r\n```\r\nThe above ",
+        "Sample Code": "\n\n```\r\nresults = dict()\r\nimport torch\r\narg_class = torch.nn.Conv2d(512,2048,1)\r\narg_1 = torch.rand([128, 512, 16, 16], dtype=torch.float16)\r\nresults[\"time_low\"] = arg_class(arg_1)\r\n```\r\nThe above code hangs, I have to kill the program. I think it's expected that if dtype is float16, it will output 'float16 is not supported'.\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.02040816326530612,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/83229",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\nWhen the kernel_size is negative, torch.nn.MaxUnpool2d will output negative size tensor.\r\nIn torch.nn.MaxUnpool3d, if the kernel_size is <=0, the program will die, ctrl+c cannot quit and have to force to kill the program.\r\n```\r\nimport torch\r\nresults={}\r\narg_1 = -100\r\narg_2 = False\r\narg_class = torch.nn.MaxUnpool2d(arg_1,stride=arg_2,)\r\narg_3_0 = torch.rand([1, 1, 2, 2], dtype=torch.float32)\r\narg_3_1 = torch.randint(-1,64,[1, 1, 2, 2], dtype=torch.int64)\r\narg_3 = [arg_3_0,arg_3_1,]\r\nresults['res'] = arg_class(*arg_3)\r\nprint(results['res'].shape)\r\n#torch.Size([1, 1, -100, -100])\r\n```\r\n\r\n```\r\nimport torch\r\npool = torch.nn.MaxPool3d(3, stride=2, return_indices=True)\r\nunpool = torch.nn.MaxUnpool3d(-3, stride=2)\r\noutput, indices = pool(torch.randn(20, 16, 51, 33, 15))\r\nunpooled_output = unpool(output, indices)\r\nprint(unpooled_output.size())\r\n#program die\r\n```\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.05102040816326531,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/83221",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nParameter 'num_features' is the number of features or channels C of the input. However, I found that num_features can be set to negative integral / string / list and other type value. torch.nn.InstanceNorm1d doesn't verify whether the value of num_features and input channels are equal. \r\n```\r\nimport torch\r\nresults={}\r\narg_1 = 'max'\r\narg_2 = False\r\narg_class = torch.nn.InstanceNorm1d(arg_1,affine=arg_2,)\r\narg_3 = torch.rand([20, 100, 40], dtype=torch.float32)\r\nresults['res'] = arg_class(arg_3)\r\n```\r\nAbove ",
+        "Sample Code": "\r\n\r\nParameter 'num_features' is the number of features or channels C of the input. However, I found that num_features can be set to negative integral / string / list and other type value. torch.nn.InstanceNorm1d doesn't verify whether the value of num_features and input channels are equal. \r\n```\r\nimport torch\r\nresults={}\r\narg_1 = 'max'\r\narg_2 = False\r\narg_class = torch.nn.InstanceNorm1d(arg_1,affine=arg_2,)\r\narg_3 = torch.rand([20, 100, 40], dtype=torch.float32)\r\nresults['res'] = arg_class(arg_3)\r\n```\r\nAbove code works.\r\n\r\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.05102040816326531,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/83175",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\nWhen num_layers is 100000, torch.nn.GRU runs more than 5 minutes. Program hangs and doesn't return result.\r\n```\r\nimport torch\r\nresults={}\r\narg_1 = 10\r\narg_2 = 20\r\narg_3 = 100000\r\narg_class = torch.nn.GRU(arg_1,arg_2,arg_3,)\r\n```\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.12244897959183673,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/83152",
+        "Issue title": "",
+        "Bug description": "\n\nWhen I run the ",
+        "Sample Code": "\n\nWhen I run the code, there is no error information reports. After 5 mins running, there is no response and I can't stop the cmd, I have to kill the cmd.\r\n\r\n```\r\nimport torch\r\nresults={}\r\narg_1_tensor = torch.rand([1, 12, 12], dtype=torch.float32)\r\narg_1 = arg_1_tensor.clone()\r\narg_2 = [4,5,]\r\narg_3 = [2,2,]\r\narg_4 = 1\r\narg_5 = 36028797018963968\r\narg_6 = 1\r\nresults['res'] = torch.nn.functional.fold(arg_1,arg_2,arg_3,arg_4,arg_5,arg_6,)\r\n```\n\n### ",
+        "API Signature": "\n torch.nn.functional. fold ( input ,  output_size ,  kernel_size ,  dilation ,  padding ,  stride ) [source] \u00b6",
+        "Bug fix": "",
+        "Score": 0.12244897959183673,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/81409",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nThe segmentation fault appears when `torch._C._nn.adaptive_avg_pool2d` is called for some combinations of input and output shapes.\r\n\r\n#### ",
+        "Sample Code": "\r\n\r\nHere is the python script named `test.py`.\r\n\r\n``` python:test.py\r\nfrom __future__ import annotations\r\nimport sys\r\nimport torch\r\n\r\nif __name__ == '__main__':\r\n    assert len(sys.argv) == 5\r\n    Ih, Iw, Oh, Ow = map(int, sys.argv[1:])\r\n    _input_size = (Ih, Iw)\r\n    _output_size = (Oh, Ow)\r\n\r\n    torch.manual_seed(0)  # it seems seed value is irrelevant as far as I checked\r\n    imgs = torch.randint(low=0, high=256, size=(1,)+_input_size).type(torch.float32)\r\n    imgs_ = torch._C._nn.adaptive_avg_pool2d(imgs, _output_size)\r\n```\r\n\r\n",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/81195",
+        "Issue title": "",
+        "Bug description": "\r\n`torch._weight_norm` outputs wrong result from torch 1.12\r\n\r\nThough `torch._weight_norm` is an undocumented API, I report this issue since the API is made public.\r\n\r\n#### ",
+        "Sample Code": "\n\n# Problem\r\n`torch._weight_norm` outputs wrong result from torch 1.12\r\n\r\nThough `torch._weight_norm` is an undocumented API, I report this issue since the API is made public.\r\n\r\n#### torch 1.11 and before\r\n```python3\r\n$ python3\r\nPython 3.8.10 (default, Mar 15 2022, 12:22:08) \r\n[GCC 9.4.0] on linux\r\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\r\n>>> import torch\r\n>>> a = torch.Tensor([[1,2],[3,4]])\r\n>>> b = torch.Tensor([[5],[6]])\r\n>>> torch._weight_norm(a,b,dim=1)\r\ntensor([[1.5811, 2.2361],\r\n        [5.6921, 5.3666]])\r\n```\r\n\r\n\r\n#### torch 1.12\r\n```python3\r\n$ python3\r\nPython 3.8.10 (default, Mar 15 2022, 12:22:08) \r\n[GCC 9.4.0] on linux\r\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\r\n>>> import torch\r\n>>> a = torch.Tensor([[1,2],[3,4]])\r\n>>> b = torch.Tensor([[5],[6]])\r\n>>> torch._weight_norm(a,b,dim=1)\r\ntensor([[1.5811, 2.6833],\r\n        [4.7434, 5.3666]])\r\n```\r\n\r\n#### manual computation\r\n```python3\r\n>>> def weight_norm_dim1(a, b):\r\n...     norm = a.norm(2, [0], True)\r\n...     return a * b / norm\r\n... \r\n>>> weight_norm_dim1(a, b)\r\ntensor([[1.5811, 2.2361],\r\n        [5.6921, 5.3666]])\r\n```\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/80804",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\n`torch.renorm` gives wrong gradient for 0-valued input when `p` is even and `maxnorm=0`.\r\n\r\n```py\r\nimport torch\r\n\r\ndef fn(input):\r\n    p = 2\r\n    dim = -1\r\n    maxnorm = 0\r\n    fn_res = torch.renorm(input, p, dim, maxnorm, )\r\n    return fn_res\r\ninput = torch.tensor([[0.1, 0.], [0., 0.]], dtype=torch.float64, requires_grad=True)\r\n\r\ntorch.autograd.gradcheck(fn, (input))\r\n```\r\n\r\n```\r\nGradcheckError: Jacobian mismatch for output 0 with respect to input 0,\r\nnumerical:tensor([[0., 0., 0., 0.],\r\n        [0., 0., 0., 0.],\r\n        [0., 0., 0., 0.],\r\n        [0., 0., 0., 0.]], dtype=torch.float64)\r\nanalytical:tensor([[1., 0., 0., 0.],\r\n        [0., 1., 0., 0.],\r\n        [0., 0., 1., 0.],\r\n        [0., 0., 0., 1.]], dtype=torch.float64)\r\n```\r\n\r\nBecause `p=2` and `maxnorm=0`, this function should be `f(x) = 0` for every element. Therefore, it should return 0 as the gradient.\n\n### ",
+        "API Signature": "\n torch. renorm ( input ,  p ,  dim ,  maxnorm ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.15306122448979592,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78153",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\n`pack_sequence` crash\r\n\r\n```python\r\nimport torch\r\nsequences_0 = torch.rand([1, 16, 86], dtype=torch.float32)\r\nsequences_1 = torch.rand([1, 85, 0], dtype=torch.float16)\r\nsequences_2 = torch.randint(0, 2, [2, 84, 85], dtype=torch.bool)\r\nsequences_3 = torch.randint(-8, 2, [0, 4, 85], dtype=torch.int8)\r\nsequences = [sequences_0,sequences_1,sequences_2,sequences_3,]\r\nenforce_sorted = 0\r\ntorch.nn.utils.rnn.pack_sequence(sequences, enforce_sorted=enforce_sorted, )\r\n# Segmentation fault (core dumped)\r\n```\n\n### ",
+        "API Signature": "\n torch.nn.utils.rnn. pack_sequence ( sequences ,  enforce_sorted ) [source] \u00b6",
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78131",
+        "Issue title": "",
+        "Bug description": "\n\n\r\nFunction `torch._pad_packed_sequence` contains segmentation fault.\r\n\r\n### ",
+        "Sample Code": "\n\n\r\nFunction `torch._pad_packed_sequence` contains segmentation fault.\r\n\r\n### Example to reproduce\r\n\r\n```\r\nimport torch\r\n\r\ndata = torch.full([1, 1, 1, 1], -10000, dtype=torch.float16, requires_grad=False)\r\nbatch_sizes = torch.full([0], 978, dtype=torch.int64, requires_grad=False)\r\nbatch_first = True\r\npadding_value = False\r\ntotal_length = torch.full([], -9937, dtype=torch.int64, requires_grad=False)\r\ntorch._pad_packed_sequence(data, batch_sizes, batch_first, padding_value, total_length)\r\n```\r\n\r\n### Result\r\n\r\nSegmentation fault\r\n\r\n### Expected Behavior\r\n\r\nThrowing a Python Exception\r\n\r\n### Notes\r\n\r\nThis bug was discovered using [Atheris](https://github.com/google/atheris).\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.15306122448979592,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78130",
+        "Issue title": "",
+        "Bug description": "\n\n\r\nFunction `torch._grid_sampler_2d_cpu_fallback` contains segmentation fault.\r\n\r\n### ",
+        "Sample Code": "\n\n\r\nFunction `torch._grid_sampler_2d_cpu_fallback` contains segmentation fault.\r\n\r\n### Example to reproduce\r\n\r\n```\r\nimport torch\r\n\r\ninput = torch.full([3, 3, 3, 2], 9490, dtype=torch.float32, requires_grad=False)\r\ngrid = torch.full([0, 3, 8, 2, 4, 1], -9545, dtype=torch.float32, requires_grad=False)\r\ninterpolation_mode = 8330\r\npadding_mode = 5934\r\nalign_corners = False\r\ntorch._grid_sampler_2d_cpu_fallback(input, grid, interpolation_mode, padding_mode, align_corners)\r\n```\r\n\r\n### Result\r\n\r\nSegmentation fault\r\n\r\n### Expected Behavior\r\n\r\nThrowing a Python Exception\r\n\r\n### Notes\r\n\r\nThis bug was discovered using [Atheris](https://github.com/google/atheris).\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78129",
+        "Issue title": "",
+        "Bug description": "\n\nFunction `torch._embedding_bag_forward_only` contains segmentation fault.\r\n\r\n### ",
+        "Sample Code": "\n\nFunction `torch._embedding_bag_forward_only` contains segmentation fault.\r\n\r\n### Example to reproduce\r\n\r\n```\r\nimport torch\r\n\r\nweight = torch.full([2, 2, 5, 3, 3], -8670, dtype=torch.float64, requires_grad=False)\r\nindices = torch.full([3, 0, 1], -4468, dtype=torch.int32, requires_grad=False)\r\noffsets = torch.full([7, 1, 0], -7226, dtype=torch.int64, requires_grad=False)\r\nscale_grad_by_freq = True\r\nmode = torch.full([], 6318, dtype=torch.int64, requires_grad=False)\r\nsparse = False\r\nper_sample_weights = torch.full([3], -8750, dtype=torch.int64, requires_grad=False)\r\ninclude_last_offset = False\r\npadding_idx = torch.full([], 6383, dtype=torch.int64, requires_grad=False)\r\ntorch._embedding_bag_forward_only(weight, indices, offsets, scale_grad_by_freq, mode,\r\n                                  sparse, per_sample_weights, include_last_offset, padding_idx)\r\n```\r\n\r\n### Result\r\n\r\nSegmentation fault\r\n\r\n### Expected Behavior\r\n\r\nThrowing a Python Exception\r\n\r\n### Notes\r\n\r\nThis bug was discovered using [Atheris](https://github.com/google/atheris).\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.15306122448979592,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78128",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nFunction `torch._C._nn.thnn_conv2d` contains segmentation fault.\r\n\r\n### ",
+        "Sample Code": "\r\n\r\nFunction `torch._C._nn.thnn_conv2d` contains segmentation fault.\r\n\r\n### Example to reproduce\r\n\r\n```\r\nimport torch\r\n\r\ntensor_0 = torch.full([3, 3, 3], -4398, dtype=torch.float64, requires_grad=False)\r\ntensor_1 = torch.full([6, 7], -4532, dtype=torch.int32, requires_grad=False)\r\nintarrayref_2 = -10000\r\ntensor_3 = torch.full([3, 3, 3, 6, 7], -2321, dtype=torch.float16, requires_grad=False)\r\nintarrayref_4 = -2807\r\nintarrayref_5 = []\r\ntorch._C._nn.thnn_conv2d(tensor_0, tensor_1, intarrayref_2, tensor_3, intarrayref_4, intarrayref_5)\r\n```\r\n\r\n### Result\r\n\r\nSegmentation fault\r\n\r\n### Expected Behavior\r\n\r\nThrowing a Python Exception\r\n\r\n### Notes\r\n\r\nThis bug was discovered using [Atheris](https://github.com/google/atheris).\r\n\r\n\r\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78127",
+        "Issue title": "",
+        "Bug description": "\n\n\r\nFunction `torch._C._nn.reflection_pad2d` contains segmentation fault.\r\n\r\n### ",
+        "Sample Code": "\n\n\r\nFunction `torch._C._nn.reflection_pad2d` contains segmentation fault.\r\n\r\n### Example to reproduce\r\n\r\n```\r\nimport torch\r\n\r\ntensor_0 = torch.full([6, 5, 7], -8754, dtype=torch.int32, requires_grad=False)\r\nintarrayref_1 = []\r\ntorch._C._nn.reflection_pad2d(tensor_0, intarrayref_1)\r\n```\r\n\r\n### Result\r\n\r\nSegmentation fault\r\n\r\n### Expected Behavior\r\n\r\nThrowing a Python Exception\r\n\r\n### Notes\r\n\r\nThis bug was discovered using [Atheris](https://github.com/google/atheris).\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78126",
+        "Issue title": "",
+        "Bug description": "\n\n\r\nFunction `torch.max_unpool3d` contains segmentation fault.\r\n\r\n### ",
+        "Sample Code": "\n\n\r\nFunction `torch.max_unpool3d` contains segmentation fault.\r\n\r\n### Example to reproduce\r\n\r\n```\r\nimport torch\r\n\r\ntensor_0 = torch.full([], -10000, dtype=torch.int64, requires_grad=False)\r\ntensor_1 = torch.full([7, 7, 7, 4, 4, 4, 7, 7], -8695, dtype=torch.float16, requires_grad=False)\r\nintarrayref_2 = []\r\nintarrayref_3 = 7052\r\nintarrayref_4 = -9995\r\ntorch._C._nn.max_unpool3d(tensor_0, tensor_1, intarrayref_2, intarrayref_3, intarrayref_4)\r\n```\r\n\r\n### Result\r\n\r\nSegmentation fault\r\n\r\n### Expected Behavior\r\n\r\nThrowing a Python Exception\r\n\r\n### Notes\r\n\r\nThis bug was discovered using [Atheris](https://github.com/google/atheris).\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78125",
+        "Issue title": "",
+        "Bug description": "\n\n\r\nFunction `torch.grid_sampler_3d` contains segmentation fault.\r\n\r\n### ",
+        "Sample Code": "\n\n\r\nFunction `torch.grid_sampler_3d` contains segmentation fault.\r\n\r\n### Example to reproduce\r\n\r\n```\r\nimport torch\r\n\r\ninput = torch.full([4, 2, 0, 0, 4, 0, 0, 3], -1480, dtype=torch.float64, requires_grad=False)\r\ngrid = torch.full([1, 6, 3, 5, 3, 4, 0, 6], -2024, dtype=torch.float64, requires_grad=False)\r\ninterpolation_mode = -3278\r\npadding_mode = -1469\r\nalign_corners = True\r\ntorch.grid_sampler_3d(input, grid, interpolation_mode, padding_mode, align_corners)\r\n```\r\n\r\n### Result\r\n\r\nSegmentation fault\r\n\r\n### Expected Behavior\r\n\r\nThrowing a Python Exception\r\n\r\n### Notes\r\n\r\nThis bug was discovered using [Atheris](https://github.com/google/atheris).\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.05102040816326531,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78123",
+        "Issue title": "",
+        "Bug description": "\n\n\r\nFunction `torch.choose_qparams_optimized` contains segmentation fault.\r\n\r\n### ",
+        "Sample Code": "\n\n\r\nFunction `torch.choose_qparams_optimized` contains segmentation fault.\r\n\r\n### Example to reproduce\r\n\r\n```\r\nimport torch\r\n\r\ninput = torch.full([7, 7, 4, 6, 3, 1, 2], -7124, dtype=torch.float32, requires_grad=False)\r\nnumel = -8192\r\nn_bins = 1255\r\nratio = -9185\r\nbit_width = -4519\r\ntorch.choose_qparams_optimized(input, numel, n_bins, ratio, bit_width)\r\n```\r\n\r\n### Result\r\n\r\nSegmentation fault\r\n\r\n### Expected Behavior\r\n\r\nThrowing a Python Exception\r\n\r\n### Notes\r\n\r\nThis bug was discovered using [Atheris](https://github.com/google/atheris).\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.05102040816326531,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78122",
+        "Issue title": "",
+        "Bug description": "\n\nFunction `torch.bincount` contains segmentation fault.\r\n\r\n### ",
+        "Sample Code": "\n\nFunction `torch.bincount` contains segmentation fault.\r\n\r\n### Example to reproduce\r\n\r\n```\r\nimport torch\r\n\r\nself = torch.full([3], 2550, dtype=torch.int64, requires_grad=False)\r\nweights = torch.full([3, 1, 3, 0, 0, 0, 1, 1], -4620, dtype=torch.int64, requires_grad=False)\r\nminlength = 9711\r\ntorch.bincount(self, weights, minlength)\r\n```\r\n\r\n### Result\r\n\r\nSegmentation fault\r\n\r\n### Expected Behavior\r\n\r\nThrowing a Python Exception\r\n\r\n### Notes\r\n\r\nThis bug was discovered using [Atheris](https://github.com/google/atheris).\r\n\n\n### ",
+        "API Signature": "\n torch. bincount ( input ,  weights ,  minlength )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/77893",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nSegmentation fault in `_remove_batch_dim`.\r\n\r\n### ",
+        "Sample Code": "\r\n\r\nSegmentation fault in `_remove_batch_dim`.\r\n\r\n### Example to reproduce\r\n\r\n```python\r\nimport torch\r\n\r\nself = torch.full((5, 5, 5, 5, 5,), 1, dtype=torch.float64, requires_grad=False)\r\nlevel = 0\r\nbatch_size = 0\r\nout_dim = 1250999896764\r\ntorch._remove_batch_dim(self, level, batch_size, out_dim)\r\n```\r\n\r\n### Result\r\n```segmentation fault```\r\n\r\n### Expected behavior\r\nGraceful termination or a RuntimeError to be thrown.\r\n\r\n### Note\r\nThis bug was discovered using IvySyn, a fuzz testing tool which is currently being developed at Secure Systems Labs at Brown University.\r\n\r\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.12244897959183673,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/77231",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\n`torch.scatter_add` will succeed when the `index` is a complex tensor without any elements.\r\n\r\n```python\r\nimport torch\r\n\r\ninput_tensor = torch.rand([10, 5], dtype=torch.float64)\r\nindex_tensor = torch.rand([13, 0], dtype=torch.complex128)\r\nsrc_tensor = torch.rand([10, 2], dtype=torch.float64)\r\n\r\ndef fn(input, index, src):\r\n    dim = -1\r\n    fn_res = torch.scatter_add(input, dim, index, src, )\r\n    return fn_res\r\n\r\nfn(input_tensor, index_tensor, src_tensor)\r\n# tensor([[0.9610, 0.2629, 0.8555, 0.7965, 0.3472],\r\n#         [0.7140, 0.6187, 0.4872, 0.3589, 0.7170],\r\n#         [0.3184, 0.3303, 0.8061, 0.6865, 0.5176],\r\n#         [0.6451, 0.1152, 0.4974, 0.0535, 0.0350],\r\n#         [0.1497, 0.7439, 0.7563, 0.8654, 0.6401],\r\n#         [0.1090, 0.9057, 0.2156, 0.3272, 0.6849],\r\n#         [0.8402, 0.4956, 0.4937, 0.9882, 0.1275],\r\n#         [0.0889, 0.8429, 0.3421, 0.1373, 0.1697],\r\n#         [0.1318, 0.0984, 0.1662, 0.4122, 0.1132],\r\n#         [0.9094, 0.2276, 0.8924, 0.3781, 0.7588]], dtype=torch.float64)\r\n```\r\n\r\nHowever, when trying to compute the gradient\r\n\r\n```python\r\nimport torch\r\nfrom torch.autograd import gradcheck\r\n\r\ninput_tensor = torch.rand([10, 5], dtype=torch.float64, requires_grad=True)\r\nindex_tensor = torch.rand([13, 0], dtype=torch.complex128, requires_grad=True)\r\nsrc_tensor = torch.rand([10, 2], dtype=torch.float64, requires_grad=True)\r\n\r\ndef fn(input, index, src):\r\n    dim = -1\r\n    fn_res = torch.scatter_add(input, dim, index, src, )\r\n    return fn_res\r\n\r\ngradcheck(fn, (input_tensor, index_tensor, src_tensor))\r\n# RuntimeError: Function ScatterAddBackward0 returned an invalid gradient at index 1 - got [13, 0] but expected shape compatible with [10, 2]\r\n```\n\n### ",
+        "API Signature": "\n torch. scatter_add ( input ,  dim ,  index ,  src )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.01020408163265306,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/76778",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\n`torch.addmv` backward fails when `input` is `float64`, `mat` and `vec` are `complex128`\r\n\r\n```python\r\nimport torch\r\ninput = torch.rand([2], dtype=torch.float64, requires_grad=True)\r\nmat = torch.rand([2, 3], dtype=torch.complex128, requires_grad=True)\r\nvec = torch.rand([3], dtype=torch.complex128, requires_grad=True)\r\n\r\nres = torch.addmv(input, mat, vec)\r\nprint(\"addmv SUCCEED!\")\r\n\r\nres_2 = res.sum()\r\nprint(\"sum SUCCEED!\")\r\n\r\nres_2.backward()\r\n# addmv SUCCEED!\r\n# sum SUCCEED!\r\n# RuntimeError: Expected isFloatingType(grad.scalar_type()) || (input_is_complex == grad_is_complex) to be true, but got false.  (Could this error message be improved?  If so, please report an enhancement request to PyTorch.)\r\n```\r\n\r\nHowever, when `input` is `complex128`, `mat` and `vec` are `float64`, it will succeed to backward\n\n### ",
+        "API Signature": "\n torch. addmv ( input ,  mat ,  vec ,  * ,  beta ,  alpha ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/76571",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\n```python\r\nimport torch\r\n\r\ndef unique(x):\r\n    return torch.unique(x, sorted=False, return_inverse=False, return_counts=True)\r\n\r\ns = torch.tensor(0.).cuda()\r\nx = torch.tensor(float('nan')).cuda()\r\n\r\nprint(unique(s))\r\nprint(unique(x)) # <- these two calls have different outputs\r\nprint(unique(x)) # <-\r\n```\r\n\r\noutput:\r\n```\r\n(tensor([0.], device='cuda:0'), tensor([1], device='cuda:0'))\r\n(tensor([0., 0.], device='cuda:0'), tensor([1, 0], device='cuda:0'))\r\n(tensor([0., 0.], device='cuda:0'), tensor([0, 0], device='cuda:0'))\r\n```\r\n\r\nTwo issues:\r\n* a) the last two results output a tensor with two elements, despite the fact that there's only one unique value (and only one element in the input tensor)\r\n* b) the last two results are different, despite having the same input.\n\n### ",
+        "API Signature": "\n torch. unique ( input ,  sorted ,  return_inverse ,  return_counts ,  dim )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/75171",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\r\n\r\nhttps://github.com/openai/CLIP/pull/227\r\n\r\n`torch.jit.load` fails when path contains non-ascii characters\r\n\r\n\r\n```py\r\nimport torch\r\n\r\ntorch.jit.load('C:\\\\Users\\\\\u6d41\u661f\u66b4\u96e8/.cache/clip\\\\ViT-B-16.pt', \"cpu\")\r\n```\r\n\r\n```\r\nTraceback (most recent call last):\r\n  File \"<string>\", line 1, in <module>\r\n  File \"[C:\\Users\\]()\u6d41\u661f\u66b4\u96e8\\AppData\\Local\\Programs\\Python\\Python39\\lib\\site-packages\\torch\\jit\\_serialization.py\", line 161, in load\r\n    cpp_module = torch._C.import_ir_module(cu, str(f), map_location, _extra_files)\r\nRuntimeError: open file failed, file path: [C:\\Users\\]()\u6d41\u661f\u66b4\u96e8/.cache/clip\\ViT-B-16.pt\r\n```\r\n\r\nRelated issues: https://github.com/pytorch/pytorch/issues/47422\r\n\r\n### ",
+        "API Signature": "\n torch.jit. load ( f ,  map_location ,  _extra_files ) [source] \u00b6",
+        "Bug fix": "",
+        "Score": 0.01020408163265306,
+        "Category": "String"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73196",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\nrunning into the issue with the scripts below:\r\n\r\n```\r\nimport torch\r\n\r\nx = torch.tensor(0, device=\"cuda\", dtype=torch.int32)\r\ny = torch.tensor(-1)\r\no = torch.pow(x, y)\r\n\r\n---------------------------------------------------------------------------\r\nRuntimeError                              Traceback (most recent call last)\r\n<ipython-input-10-bc9daa4bd4d3> in <module>\r\n----> 1 o = torch.pow(x, y)\r\n\r\nRuntimeError: \"reciprocal_cuda\" not implemented for 'Long'\r\n```\r\n\n\n### ",
+        "API Signature": "\n torch. pow ( input ,  exponent ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73191",
+        "Issue title": "",
+        "Bug description": "\n\nSegmentation fault in `max_pool3d` when containing large arguments (`kernel_size`, `dilation`).\r\n\r\n### ",
+        "Sample Code": "\n\nSegmentation fault in `max_pool3d` when containing large arguments (`kernel_size`, `dilation`).\r\n\r\n### Example to reproduce\r\n\r\n```python\r\nimport torch\r\n\r\nself = torch.full((1, 1, 1, 1, 1,), 1.5e+300, dtype=torch.float64, requires_grad=False)\r\nkernel_size = [536870912, 536870912, 536870912]\r\nstride = [1, 1, 1]\r\npadding = [0, 0, 0]\r\ndilation = [1879048192, 1879048192, 1879048192]\r\nceil_mode = True\r\ntorch.max_pool3d(self, kernel_size, stride, padding, dilation, ceil_mode)\r\n```\r\n\r\n### Result\r\n```segmentation fault```\r\n\r\n### Expected behavior\r\nGraceful termination or a RuntimeError to be thrown.\r\n\r\n### Note\r\nThis bug was discovered using fuzz testing.\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.04081632653061224,
+        "Category": "List"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73190",
+        "Issue title": "",
+        "Bug description": "\n\nSegmentation fault in `max_pool1d` when `kernel_size`, `stride` and `dilation` are large.\r\n\r\n### ",
+        "Sample Code": "\n\nSegmentation fault in `max_pool1d` when `kernel_size`, `stride` and `dilation` are large.\r\n\r\n### Example to reproduce\r\n\r\n```python\r\nimport torch\r\n\r\nself = torch.full((2, 10, 4,), 0.5, dtype=torch.float64, requires_grad=False)\r\nkernel_size = [1250999896764]\r\nstride = [1250999896764]\r\npadding = [0]\r\ndilation = [1250999896764]\r\nceil_mode = True\r\ntorch.max_pool1d(self, kernel_size, stride, padding, dilation, ceil_mode)\r\n```\r\n\r\n### Result\r\n```segmentation fault```\r\n\r\n### Expected behavior\r\nGraceful termination or a RuntimeError to be thrown.\r\n\r\n### Note\r\nThis bug was discovered using fuzz testing.\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.04081632653061224,
+        "Category": "List"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73186",
+        "Issue title": "",
+        "Bug description": "\n\nSegmentation fault in `fractional_max_pool3d` when `output_size` contains 0s.\r\n\r\n### ",
+        "Sample Code": "\n\nSegmentation fault in `fractional_max_pool3d` when `output_size` contains 0s.\r\n\r\n### Example to reproduce\r\n\r\n```python\r\nimport torch\r\n\r\nself = torch.full((2, 4, 5, 5, 5,), 1, dtype=torch.float64, requires_grad=False)\r\nkernel_size = [0, 0, 0]\r\noutput_size = [0, 0, 0]\r\nrandom_samples = torch.full((2, 4, 5, 5, 5,), 1, dtype=torch.float64, requires_grad=False)\r\ntorch._C._nn.fractional_max_pool3d(self, kernel_size, output_size, random_samples)\r\n```\r\n\r\n### Result\r\n```segmentation fault```\r\n\r\n### Expected behavior\r\nGraceful termination or a RuntimeError to be thrown.\r\n\r\n### Note\r\nThis bug was discovered using fuzz testing.\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.02040816326530612,
+        "Category": "List"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73185",
+        "Issue title": "",
+        "Bug description": "\n\nSegmentation fault in `fractional_max_pool2d` when `output_size` contains 0s.\r\n\r\n### ",
+        "Sample Code": "\n\nSegmentation fault in `fractional_max_pool2d` when `output_size` contains 0s.\r\n\r\n### Example to reproduce\r\n\r\n```python\r\nimport torch\r\n\r\nself = torch.full((1, 3, 7, 6,), 1, dtype=torch.float64, requires_grad=False)\r\nkernel_size = [0, 0]\r\noutput_size = [0, 0]\r\nrandom_samples = torch.full((1, 3, 7, 6,), 1, dtype=torch.float64, requires_grad=False)\r\ntorch._C._nn.fractional_max_pool2d(self, kernel_size, output_size, random_samples)\r\n```\r\n\r\n### Result\r\n```segmentation fault```\r\n\r\n### Expected behavior\r\nGraceful termination or a RuntimeError to be thrown.\r\n\r\n### Note\r\nThis bug was discovered using fuzz testing.\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.02040816326530612,
+        "Category": "List"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73182",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nSegmentation fault in `_sobol_engine_scramble_` when `dimension` is large.\r\n\r\n### ",
+        "Sample Code": "\r\n\r\nSegmentation fault in `_sobol_engine_scramble_` when `dimension` is large.\r\n\r\n### Example to reproduce\r\n\r\n```python\r\nimport torch\r\n\r\nself = torch.full((100, 30,), 1, dtype=torch.int64, requires_grad=False)\r\nltm = torch.full((100, 30, 30,), 1, dtype=torch.int64, requires_grad=False)\r\ndimension = 1250999896764\r\ntorch._sobol_engine_scramble_(self, ltm, dimension)\r\n```\r\n\r\n### Result\r\n```segmentation fault```\r\n\r\n### Expected behavior\r\nGraceful termination or a RuntimeError to be thrown.\r\n\r\n### Note\r\nThis bug was discovered using fuzz testing.\r\n\r\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.12244897959183673,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73181",
+        "Issue title": "",
+        "Bug description": "\n\nSegmentation fault in `_sobol_engine_initialize_state_` when `dimension` is large.\r\n\r\n### ",
+        "Sample Code": "\n\nSegmentation fault in `_sobol_engine_initialize_state_` when `dimension` is large.\r\n\r\n### Example to reproduce\r\n\r\n```python\r\nimport torch\r\n\r\nself = torch.full((2, 30,), 1, dtype=torch.int64, requires_grad=False)\r\ndimension = 1250999896764\r\ntorch._sobol_engine_initialize_state_(self, dimension)\r\n```\r\n\r\n### Result\r\n```segmentation fault```\r\n\r\n### Expected behavior\r\nGraceful termination or a RuntimeError to be thrown.\r\n\r\n### Note\r\nThis bug was discovered using fuzz testing.\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.12244897959183673,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73180",
+        "Issue title": "",
+        "Bug description": "\n\nSegmentation fault in `_sobol_engine_ff_` when `n` and `dimension` are large.\r\n\r\n### ",
+        "Sample Code": "\n\nSegmentation fault in `_sobol_engine_ff_` when `n` and `dimension` are large.\r\n\r\n### Example to reproduce\r\n\r\n```python\r\nimport torch\r\n\r\nself = torch.full((2,), 1, dtype=torch.int64, requires_grad=False)\r\nn = 1250999896764\r\nsobolstate = torch.full((2, 30,), 1, dtype=torch.int64, requires_grad=False)\r\ndimension = 1250999896764\r\nnum_generated = 0\r\ntorch._sobol_engine_ff_(self, n, sobolstate, dimension, num_generated)\r\n```\r\n\r\n### Result\r\n```segmentation fault```\r\n\r\n### Expected behavior\r\nGraceful termination or a RuntimeError to be thrown.\r\n\r\n### Note\r\nThis bug was discovered using fuzz testing.\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.12244897959183673,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71689",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\nInitializing a `Categorical` with `logits` that have a batch dimension of 0 raises an error. I would expect this to work and result in probabilities/entropies/... with batch dimension 0.\r\n\r\n```\r\nPython 3.8.10 (default, Nov 26 2021, 20:14:08)\r\n[GCC 9.3.0] on linux\r\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\r\n>>> from torch.distributions.categorical import Categorical\r\n>>> import torch\r\n>>> Categorical(logits=torch.zeros((2, 5)))\r\nCategorical(logits: torch.Size([2, 5]))\r\n>>> Categorical(logits=torch.zeros((0, 5)))\r\nTraceback (most recent call last):\r\n  File \"<stdin>\", line 1, in <module>\r\n  File \"/home/clemens/.cache/pypoetry/virtualenvs/incubator-Qe8CM38i-py3.8/lib/python3.8/site-packages/torch/distributions/categorical.py\", line 64, in __init__\r\n    super(Categorical, self).__init__(batch_shape, validate_args=validate_args)\r\n  File \"/home/clemens/.cache/pypoetry/virtualenvs/incubator-Qe8CM38i-py3.8/lib/python3.8/site-packages/torch/distributions/distribution.py\", line 53, in __init__\r\n    valid = constraint.check(value)\r\n  File \"/home/clemens/.cache/pypoetry/virtualenvs/incubator-Qe8CM38i-py3.8/lib/python3.8/site-packages/torch/distributions/constraints.py\", line 206, in check\r\n    result = result.reshape(result.shape[:result.dim() - self.reinterpreted_batch_ndims] + (-1,))\r\nRuntimeError: cannot reshape tensor of 0 elements into shape [0, -1] because the unspecified dimension size -1 can be any value and is ambiguous\r\n```\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.01020408163265306,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71678",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\r\n\r\nBased on the torch.sparse documentation it sounds like `torch.bmm` supports forward and backward for sparse tensors (but the gradients themselves will be dense). During the backward pass I'm getting the error shown below. Is this expected (in which case this is a feature request) or is this a bug?\r\n\r\n```python\r\nimport torch\r\na = torch.rand(2, 3, 3).to_sparse().requires_grad_(True)\r\nb = torch.rand(2, 3, 3)\r\nc = torch.bmm(a, b)\r\nloss = c.sum()\r\nloss.backward()\r\n```\r\n\r\ngives\r\n\r\n```text\r\nTraceback (most recent call last):\r\n  File \"/home/test_bmm.py\", line 7, in <module>\r\n    loss.backward()\r\n  File \"/home/cmccarth/.conda/envs/test/lib/python3.8/site-packages/torch/_tensor.py\", line 255, in backward\r\n    torch.autograd.backward(self, gradient, retain_graph, create_graph, inputs=inputs)\r\n  File \"/home/cmccarth/.conda/envs/test/lib/python3.8/site-packages/torch/autograd/__init__.py\", line 147, in backward\r\n    Variable._execution_engine.run_backward(\r\nRuntimeError: Function BmmBackward0 returned an invalid gradient at index 0 - expected type TensorOptions(dtype=float, device=cpu, layout=Sparse, requires_grad=false (default), pinned_memory=false (default), memory_format=(nullopt)) but got TensorOptions(dtype=float, device=cpu, layout=Strided, requires_grad=false (default), pinned_memory=false (default), memory_format=(nullopt))\r\n```\r\n\r\nThank you for your help!\r\n\r\n### ",
+        "API Signature": "\n torch. bmm ( input ,  mat2 ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71636",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\n`torch.median` will return -2147483648 when input is an empty tensor with `int32`. By contrast, `torch.min` will raise an error, which I think is a better behavior.\r\n\r\n```python\r\nimport torch\r\ninput = torch.randint(-2,2,[0], dtype=torch.int32)\r\nprint(torch.median(input))\r\n# tensor(-2147483648, dtype=torch.int32)\r\ntorch.min(input)\r\n# RuntimeError: min(): Expected reduction dim to be specified for input.numel() == 0. Specify the reduction dim with the 'dim' argument.\r\n```\n\n### ",
+        "API Signature": "\n torch. median ( input )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.15306122448979592,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71477",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\r\n\r\n`torch.cummin`, `torch.cummax`, `torch.sort` and `torch.argsort` do not check the `dim` when the input is 0-d tensor\r\n\r\n```python\r\nimport torch\r\ninput = torch.rand([], dtype=torch.float64)\r\ndim = 100\r\ntorch.cummin(input, dim)\r\n# torch.return_types.cummin(\r\n# values=tensor(0.8172, dtype=torch.float64),\r\n# indices=tensor(0))\r\n```\r\n\r\n```python\r\nimport torch\r\ninput = torch.rand([1], dtype=torch.float64)\r\ndim = 100\r\ntorch.cummin(input, dim)\r\n# IndexError: Dimension out of range (expected to be in range of [-1, 0], but got 100)\r\n```\r\n\r\n### ",
+        "API Signature": "\n torch. cummin ( input ,  dim ,  * ,  out ) \u00b6",
+        "Bug fix": "",
+        "Score": 0.15306122448979592,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71477",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\r\n\r\n`torch.cummin`, `torch.cummax`, `torch.sort` and `torch.argsort` do not check the `dim` when the input is 0-d tensor\r\n\r\n```python\r\nimport torch\r\ninput = torch.rand([], dtype=torch.float64)\r\ndim = 100\r\ntorch.cummin(input, dim)\r\n# torch.return_types.cummin(\r\n# values=tensor(0.8172, dtype=torch.float64),\r\n# indices=tensor(0))\r\n```\r\n\r\n```python\r\nimport torch\r\ninput = torch.rand([1], dtype=torch.float64)\r\ndim = 100\r\ntorch.cummin(input, dim)\r\n# IndexError: Dimension out of range (expected to be in range of [-1, 0], but got 100)\r\n```\r\n\r\n### ",
+        "API Signature": "\n torch. cummax ( input ,  dim ,  * ,  out ) \u00b6",
+        "Bug fix": "",
+        "Score": 0.15306122448979592,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71477",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\r\n\r\n`torch.cummin`, `torch.cummax`, `torch.sort` and `torch.argsort` do not check the `dim` when the input is 0-d tensor\r\n\r\n```python\r\nimport torch\r\ninput = torch.rand([], dtype=torch.float64)\r\ndim = 100\r\ntorch.cummin(input, dim)\r\n# torch.return_types.cummin(\r\n# values=tensor(0.8172, dtype=torch.float64),\r\n# indices=tensor(0))\r\n```\r\n\r\n```python\r\nimport torch\r\ninput = torch.rand([1], dtype=torch.float64)\r\ndim = 100\r\ntorch.cummin(input, dim)\r\n# IndexError: Dimension out of range (expected to be in range of [-1, 0], but got 100)\r\n```\r\n\r\n### ",
+        "API Signature": "\n torch. sort ( input ,  dim ,  descending ,  stable ,  * ,  out ) \u00b6",
+        "Bug fix": "",
+        "Score": 0.15306122448979592,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71477",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\r\n\r\n`torch.cummin`, `torch.cummax`, `torch.sort` and `torch.argsort` do not check the `dim` when the input is 0-d tensor\r\n\r\n```python\r\nimport torch\r\ninput = torch.rand([], dtype=torch.float64)\r\ndim = 100\r\ntorch.cummin(input, dim)\r\n# torch.return_types.cummin(\r\n# values=tensor(0.8172, dtype=torch.float64),\r\n# indices=tensor(0))\r\n```\r\n\r\n```python\r\nimport torch\r\ninput = torch.rand([1], dtype=torch.float64)\r\ndim = 100\r\ntorch.cummin(input, dim)\r\n# IndexError: Dimension out of range (expected to be in range of [-1, 0], but got 100)\r\n```\r\n\r\n### ",
+        "API Signature": "\n torch. argsort ( input ,  dim ,  descending ,  stable )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.15306122448979592,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71204",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\r\n\r\nBased on the documentation, `torch.diag` and `torch.diagonal` should have the same behavior when the input is 2-d and `dim1` and `dim2` are default value.\r\n```python\r\nimport torch\r\na = torch.tensor([[0, 1], [2, 3]])\r\nfor i in [0, 1, 2]:\r\n    assert(torch.equal(torch.diag(a, i), torch.diagonal(a, i)))\r\ntorch.diagonal(a, 3)\r\ntorch.diag(a, 3)\r\n# RuntimeError: [enforce fail at CPUAllocator.cpp:50] ((ptrdiff_t)nbytes) >= 0. alloc_cpu() seems to have been called with negative number: 18446744073709551608\r\n```\r\nFor a 2-d tensor, when `diagonal<=2`, their output are the same. But when `diagonal>=3`, `torch.diagonal` still returns an empty tensor but `torch.diag` raise an error that it allocates negative memory. It seems strange because `diagonal=2` is the first value beyond the range but `torch.diag` just return an empty tensor. \r\n\r\nIn my view, `torch.diag` should succeed when `diagonal >= 2`.\r\n\r\n### ",
+        "API Signature": "\n torch. diag ( input ,  diagonal ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71204",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\r\n\r\nBased on the documentation, `torch.diag` and `torch.diagonal` should have the same behavior when the input is 2-d and `dim1` and `dim2` are default value.\r\n```python\r\nimport torch\r\na = torch.tensor([[0, 1], [2, 3]])\r\nfor i in [0, 1, 2]:\r\n    assert(torch.equal(torch.diag(a, i), torch.diagonal(a, i)))\r\ntorch.diagonal(a, 3)\r\ntorch.diag(a, 3)\r\n# RuntimeError: [enforce fail at CPUAllocator.cpp:50] ((ptrdiff_t)nbytes) >= 0. alloc_cpu() seems to have been called with negative number: 18446744073709551608\r\n```\r\nFor a 2-d tensor, when `diagonal<=2`, their output are the same. But when `diagonal>=3`, `torch.diagonal` still returns an empty tensor but `torch.diag` raise an error that it allocates negative memory. It seems strange because `diagonal=2` is the first value beyond the range but `torch.diag` just return an empty tensor. \r\n\r\nIn my view, `torch.diag` should succeed when `diagonal >= 2`.\r\n\r\n### ",
+        "API Signature": "\n torch. diagonal ( input ,  offset ,  dim1 ,  dim2 )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71082",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\n`torch.combinations` will malloc large memory when `r` is greater than the length of input. In fact, it will an empty tensor since `r` is greater than the length. Therefore, I think it should not allocate a very large memory.\r\n\r\n```python\r\nimport torch\r\ninput_tensor = torch.randint(-1,1,[3], dtype=torch.int64)\r\ninput = input_tensor.clone()\r\nr = 100\r\nprint(torch.combinations(input, r=r))\r\n# killed\r\n```\n\n### ",
+        "API Signature": "\n torch. combinations ( input ,  r ,  with_replacement )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71078",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\n`torch.nn.{Constant,Zero}Pad` unexpectedly fail when trying to create a zero dimension tensor. Instead, `torch.nn.{Reflection,Replication}Pad` will succeed\r\n\r\n```\r\nimport torch\r\npadding = [-1, -2, 1, 1]\r\nc1 = torch.nn.ReflectionPad2d(padding)\r\nc2 = torch.nn.ReplicationPad2d(padding)\r\nc3 = torch.nn.ConstantPad2d(padding, 0)\r\nc4 = torch.nn.ZeroPad2d(padding)\r\ninput = torch.rand([1, 1, 3, 3], dtype=torch.float32)\r\n\r\nprint(c1(input))\r\nprint(c2(input))\r\nc3(input)\r\n# RuntimeError: The input size 3, plus negative padding -1 and -2 resulted in a negative output size, which is invalid. Check dimension 3 of your input.\r\nc4(input)\r\n# RuntimeError: The input size 3, plus negative padding -1 and -2 resulted in a negative output size, which is invalid. Check dimension 3 of your input.\r\n```\r\n\r\n3-3=0, it is not negative\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.05102040816326531,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71078",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\n`torch.nn.{Constant,Zero}Pad` unexpectedly fail when trying to create a zero dimension tensor. Instead, `torch.nn.{Reflection,Replication}Pad` will succeed\r\n\r\n```\r\nimport torch\r\npadding = [-1, -2, 1, 1]\r\nc1 = torch.nn.ReflectionPad2d(padding)\r\nc2 = torch.nn.ReplicationPad2d(padding)\r\nc3 = torch.nn.ConstantPad2d(padding, 0)\r\nc4 = torch.nn.ZeroPad2d(padding)\r\ninput = torch.rand([1, 1, 3, 3], dtype=torch.float32)\r\n\r\nprint(c1(input))\r\nprint(c2(input))\r\nc3(input)\r\n# RuntimeError: The input size 3, plus negative padding -1 and -2 resulted in a negative output size, which is invalid. Check dimension 3 of your input.\r\nc4(input)\r\n# RuntimeError: The input size 3, plus negative padding -1 and -2 resulted in a negative output size, which is invalid. Check dimension 3 of your input.\r\n```\r\n\r\n3-3=0, it is not negative\n\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.05102040816326531,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71059",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\n`torch.scatter` will return random value when `input` is empty tensor\r\n\r\n```python\r\nimport torch\r\ninput = torch.rand([])\r\ndim = 0\r\nindex = torch.tensor([]) # or torch.tensor([0])\r\nsrc = torch.rand([])\r\ntorch.scatter(input, dim, index, src)\r\n# random value like tensor(6.7333e+22)\r\n```\n\n### ",
+        "API Signature": "\n torch. scatter ( input ,  dim ,  index ,  src )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.15306122448979592,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71058",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\nBased on the [documentation](https://pytorch.org/docs/stable/generated/torch.Tensor.where.html?highlight=where#torch.Tensor.where) of `torch.Tensor.where`, `self.where(condition, y)` is equivalent to `torch.where(condition, self, y)`. However, `torch.where` will succeed when `y` is a float but `Tensor.where` will raise an error.\r\n\r\n```python\r\nimport torch\r\ncondition= torch.randint(0,2,[2, 2], dtype=torch.bool)\r\nx= torch.rand([2, 2], dtype=torch.float64)\r\ny = 0.0\r\nprint( torch.where(condition, x, y) )\r\n# tensor([[0.0000, 0.6290],\r\n#        [0.0000, 0.0000]], dtype=torch.float64)\r\nprint( x.where(condition, y) )\r\n# TypeError: where(): argument 'other' (position 2) must be Tensor, not float\r\n```\n\n### ",
+        "API Signature": "\n torch. where ( condition ,  x ,  y )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.02040816326530612,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/70901",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\r\n\r\nIt looks like `n + count` in the `batch_norm_reduce_statistics_kernel` function may overflow when `count` is half type. For example:\r\n\r\n```python\r\nimport torch\r\ni = torch.rand([5,4,10,10], dtype=torch.float).cuda()\r\nc = torch.rand((150,), dtype=torch.half).fill_(500).cuda()\r\nm = torch.rand([150, 4], dtype=torch.float).cuda()\r\nrm = torch.rand([4], dtype=torch.half).cuda()\r\nv = torch.rand([150, 4], dtype=torch.float).cuda()\r\nv += 0.0001\r\nrv = torch.rand([4], dtype=torch.half).cuda()\r\nrv += 0.0001\r\nmea, inv = torch.batch_norm_gather_stats_with_counts(i, m, v, rm, rv, 1.2, 0.001, c)\r\nprint(mea)\r\n```\r\noutput :\r\n\r\n```python\r\n# The value of output tensor \"mea\" should not be zero. \r\ntensor([0., 0., 0., 0.], device='cuda:0')  \r\n```\r\nAm I right? This is easy to fix and I wouldn't mind submitting a PR to do so.\r\n\r\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.01020408163265306,
+        "Category": "torch.half"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/70672",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\n\n`torch.as_strided` can create a tensor with negative dimension\r\n\r\n```python\r\nimport torch\r\na = torch.rand([3, 3])\r\nb = torch.as_strided(a, [1, -1], [1, 1])\r\nprint(b.shape)\r\n# torch.Size([1, -1])\r\n```\n\n### ",
+        "API Signature": "\n torch. as_strided ( input ,  size ,  stride ,  storage_offset )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/70398",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\r\n\r\n`torch.broadcast_to` can create tensor with negative dimension. Though it is a view of tensor, I think it should do the dimension check since tensor cannot have negative dimension.\r\n\r\n```python\r\nimport torch\r\ninput = torch.rand([3])\r\nshape = [-2, 3]\r\nres = torch.broadcast_to(input,shape,)\r\nprint(res.shape)\r\n# torch.Size([-2, 3])\r\nprint(torch.sum(res))\r\n# tensor(0.)\r\ntorch.all(res)\r\n# RuntimeError: Trying to create tensor with negative dimension -2: [-2, 3]\r\n```\r\n\r\nBy the way, `tensor.expand` also has the same issue.\r\n\r\n```python\r\nimport torch\r\ninput = torch.rand([3])\r\nshape = [-2, 3]\r\nres = input.expand(shape)\r\nprint(res.shape)\r\nprint(torch.sum(res))\r\ntorch.all(res)\r\n```\r\n\r\ncc @ezyang @gchanan @zou3519 @bdhirsh @mruberry @albanD @soulitzer \r\n\r\n### ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": "List"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/70398",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\r\n\r\n`torch.broadcast_to` can create tensor with negative dimension. Though it is a view of tensor, I think it should do the dimension check since tensor cannot have negative dimension.\r\n\r\n```python\r\nimport torch\r\ninput = torch.rand([3])\r\nshape = [-2, 3]\r\nres = torch.broadcast_to(input,shape,)\r\nprint(res.shape)\r\n# torch.Size([-2, 3])\r\nprint(torch.sum(res))\r\n# tensor(0.)\r\ntorch.all(res)\r\n# RuntimeError: Trying to create tensor with negative dimension -2: [-2, 3]\r\n```\r\n\r\nBy the way, `tensor.expand` also has the same issue.\r\n\r\n```python\r\nimport torch\r\ninput = torch.rand([3])\r\nshape = [-2, 3]\r\nres = input.expand(shape)\r\nprint(res.shape)\r\nprint(torch.sum(res))\r\ntorch.all(res)\r\n```\r\n\r\ncc @ezyang @gchanan @zou3519 @bdhirsh @mruberry @albanD @soulitzer \r\n\r\n### ",
+        "API Signature": "\n torch. broadcast_to ( input ,  shape )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": "List"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/70397",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\r\n\r\n`torch.empty_strided` works when the stride is negative! We can get the shape or even `torch.sum` the result tensor. But when we try printing the result tensor, it fails.\r\n\r\n```python\r\nimport torch\r\nsize = [2, 3]\r\nstride = [-1, 2]\r\nres = torch.empty_strided(size,stride,)\r\nprint(torch.sum(res))\r\n# tensor(nan)\r\nprint(res.shape)\r\n# torch.Size([2, 3])\r\nprint(res)\r\n# RuntimeError: setStorage: sizes [6], strides [2], storage offset 0, and itemsize 4 requiring a storage size of 44 are out of bounds for storage of size 16\r\n```\r\n\r\n### ",
+        "API Signature": "\n torch. empty_strided ( size ,  stride ,  * ,  dtype ,  layout ,  device ,  requires_grad ,  pin_memory )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": "List"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/69433",
+        "Issue title": "",
+        "Bug description": "\r\n\r\n`torch.transpose` should raise an error when indexing 0 for 0 dimensional tensor. Because you cannot index 0 for a 0 dimensional tensor.\r\n\r\n## To Reproduce\r\n\r\n```python\r\nimport torch\r\ntensor = torch.rand(torch.Size([]))\r\nres1 = torch.transpose(tensor, 0, 0)\r\n```\r\nIt will succeed. But when you index 0 for this tensor it will fail\r\n```\r\ntensor[0]\r\n# IndexError: invalid index of a 0-dim tensor. Use `tensor.item()` in Python or `tensor.item<T>()` in C++ to convert a 0-dim tensor to a number\r\n```\r\n\r\n## ",
+        "Sample Code": "\r\n\r\n```python\r\nimport torch\r\ntensor = torch.rand(torch.Size([]))\r\nres1 = torch.transpose(tensor, 0, 0)\r\n```\r\nIt will succeed. But when you index 0 for this tensor it will fail\r\n```\r\ntensor[0]\r\n# Index",
+        "API Signature": "\n torch. transpose ( input ,  dim0 ,  dim1 )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.15306122448979592,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/69408",
+        "Issue title": "",
+        "Bug description": "\r\n\r\n`torch.hstack` should raise an error when tensor is 0 dimensional like `torch.cat` based on the document that \"This is equivalent to concatenation along the first axis for 1-D tensors, and along the second axis for all other tensors.\"\r\n\r\n## To Reproduce\r\n\r\n```python\r\nimport torch\r\ntensor_0 = torch.rand(torch.Size([]))\r\ntensor_1 = torch.rand(torch.Size([3]))\r\ntensors = [tensor_0, tensor_1]\r\nres1 = torch.hstack(tensors)\r\n# succeed\r\nres2 = torch.cat(tensors, dim=0)\r\n# RuntimeError: zero-dimensional tensor (at position 0) cannot be concatenated\r\n```\r\n\r\n## ",
+        "Sample Code": "\r\n\r\n```python\r\nimport torch\r\ntensor_0 = torch.rand(torch.Size([]))\r\ntensor_1 = torch.rand(torch.Size([3]))\r\ntensors = [tensor_0, tensor_1]\r\nres1 = torch.hstack(tensors)\r\n# succeed\r\nres2 = torch.cat(tensors, dim=0)\r\n# Runtime",
+        "API Signature": "\n torch. hstack ( tensors ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.05102040816326531,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/64978",
+        "Issue title": "",
+        "Bug description": "\r\ntorch.nn.functional.linear function doesn't validate weight dimension == 2. \r\nIt only asserts  weight.t() expects a tensor with <= 2 dimension.\r\n\r\nFrom doc: https://pytorch.org/docs/stable/generated/torch.nn.functional.linear.html#torch.nn.functional.linear\r\n```\r\n Weight: (out_features,in_features)\r\n```\r\n\r\nFor example, it works with weight 1-d\r\n```\r\n>>> import torch\r\n>>> a = torch.ones([1,1,10])\r\n>>> b = torch.ones([10])   # weight is 1-d\r\n>>> c = torch.nn.functional.linear(a, b)\r\n>>> c\r\ntensor([[10.]])\r\n```\r\nBut, **onnx.export** is fail on torch v1.9.0, otherwise torch v1.8.0 ~ v1.4.0 works. \r\n\r\n## ",
+        "Sample Code": "\r\n\r\nSteps to reproduce the behavior:\r\n\r\n```\r\nimport torch\r\nimport torch.nn as nn\r\nimport torch.nn.functional as F\r\n\r\nclass Net(nn.Module):\r\n    def __init__(self):\r\n        super().__init__()\r\n\r\n    def forward(self, a):\r\n        b = torch.ones([10])\r\n        return F.linear(a, b)\r\n\r\nnet = Net()\r\na = torch.ones([1,1,10])\r\nout = net(a)\r\nprint(out)\r\ntorch.onnx.export(net, (a,), \"tmp.onnx\")\r\n```\r\n\r\nstdout:\r\n```\r\ntensor([[10.]])\r\n[W shape_type_inference.cpp:419] Warning: Constant folding in symbolic shape inference fails: number of dims don't match in permute\r\nException raised from permute at /pytorch/aten/src/ATen/native/TensorShape.cpp:934 (most recent call first):\r\nframe #0: c10::",
+        "API Signature": "\n torch.nn.functional. linear ( input ,  weight ,  bias )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.05102040816326531,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/64079",
+        "Issue title": "",
+        "Bug description": "\r\n\r\ntorch.equal(input,other) does not support sparse tensors.\r\n\r\n## To Reproduce\r\n\r\n```python\r\nif __name__ == \"__main__\":\r\n    x = torch.rand(4, 4).to_sparse()\r\n    assert torch.equal(x, x)\r\n```\r\n\r\n```\r\nTraceback (most recent call last):\r\n  File \"benchmarks/distributed/rpc/parameter_server/test.py\", line 82, in <module>\r\n    assert torch.equal(x, y)\r\nNotImplementedError: Could not run 'aten::equal' with arguments from the 'SparseCPU' backend. This could be because the operator doesn't exist for this backend, or was omitted during the selective/custom build process (if using custom build). If you are a Facebook employee using PyTorch on mobile, please visit https://fburl.com/ptmfixes for possible resolutions. 'aten::equal' is only available for these backends: [CPU, CUDA, QuantizedCPU, BackendSelect, Python, Named, Conjugate, Negative, ADInplaceOrView, AutogradOther, AutogradCPU, AutogradCUDA, AutogradXLA, AutogradLazy, AutogradXPU, AutogradMLC, AutogradHPU, AutogradNestedTensor, AutogradPrivateUse1, AutogradPrivateUse2, AutogradPrivateUse3, Tracer, UNKNOWN_TENSOR_TYPE_ID, Autocast, Batched, VmapMode].\r\n\r\nCPU: registered at /fsx/users/gcramer/work/pytorch/build/aten/src/ATen/RegisterCPU.cpp:22545 [kernel]\r\nCUDA: registered at /fsx/users/gcramer/work/pytorch/build/aten/src/ATen/RegisterCUDA.cpp:30514 [kernel]\r\nQuantizedCPU: registered at /fsx/users/gcramer/work/pytorch/build/aten/src/ATen/RegisterQuantizedCPU.cpp:1060 [kernel]\r\nBackendSelect: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/BackendSelectFallbackKernel.cpp:3 [backend fallback]\r\nPython: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/PythonFallbackKernel.cpp:38 [backend fallback]\r\nNamed: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/NamedRegistrations.cpp:11 [kernel]\r\nConjugate: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/ConjugateFallback.cpp:26 [backend fallback]\r\nNegative: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/native/NegateFallback.cpp:26 [backend fallback]\r\nADInplaceOrView: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/VariableFallbackKernel.cpp:64 [backend fallback]\r\nAutogradOther: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradCPU: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradCUDA: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradXLA: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradLazy: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradXPU: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradMLC: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradHPU: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradNestedTensor: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradPrivateUse1: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradPrivateUse2: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradPrivateUse3: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nTracer: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/TraceType_3.cpp:11391 [kernel]\r\nUNKNOWN_TENSOR_TYPE_ID: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/autocast_mode.cpp:455 [backend fallback]\r\nAutocast: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/autocast_mode.cpp:294 [backend fallback]\r\nBatched: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/BatchingRegistrations.cpp:1016 [backend fallback]\r\nVmapMode: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/VmapModeRegistrations.cpp:33 [backend fallback]\r\n```\r\n\r\n```python\r\nif __name__ == \"__main__\":\r\n    x = torch.rand(4, 4).to_sparse_csr()\r\n    assert torch.equal(x, x)\r\n```\r\n\r\n```\r\nTraceback (most recent call last):\r\n  File \"test.py\", line 81, in <module>\r\n    assert torch.equal(x, x)\r\nNotImplementedError: Could not run 'aten::equal' with arguments from the 'SparseCsrCPU' backend. This could be because the operator doesn't exist for this backend, or was omitted during the selective/custom build process (if using custom build). If you are a Facebook employee using PyTorch on mobile, please visit https://fburl.com/ptmfixes for possible resolutions. 'aten::equal' is only available for these backends: [CPU, CUDA, QuantizedCPU, BackendSelect, Python, Named, Conjugate, Negative, ADInplaceOrView, AutogradOther, AutogradCPU, AutogradCUDA, AutogradXLA, AutogradLazy, AutogradXPU, AutogradMLC, AutogradHPU, AutogradNestedTensor, AutogradPrivateUse1, AutogradPrivateUse2, AutogradPrivateUse3, Tracer, UNKNOWN_TENSOR_TYPE_ID, Autocast, Batched, VmapMode].\r\n\r\nCPU: registered at /fsx/users/gcramer/work/pytorch/build/aten/src/ATen/RegisterCPU.cpp:22545 [kernel]\r\nCUDA: registered at /fsx/users/gcramer/work/pytorch/build/aten/src/ATen/RegisterCUDA.cpp:30514 [kernel]\r\nQuantizedCPU: registered at /fsx/users/gcramer/work/pytorch/build/aten/src/ATen/RegisterQuantizedCPU.cpp:1060 [kernel]\r\nBackendSelect: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/BackendSelectFallbackKernel.cpp:3 [backend fallback]\r\nPython: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/PythonFallbackKernel.cpp:38 [backend fallback]\r\nNamed: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/NamedRegistrations.cpp:11 [kernel]\r\nConjugate: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/ConjugateFallback.cpp:26 [backend fallback]\r\nNegative: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/native/NegateFallback.cpp:26 [backend fallback]\r\nADInplaceOrView: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/VariableFallbackKernel.cpp:64 [backend fallback]\r\nAutogradOther: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradCPU: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradCUDA: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradXLA: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradLazy: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradXPU: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradMLC: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradHPU: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradNestedTensor: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradPrivateUse1: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradPrivateUse2: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradPrivateUse3: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nTracer: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/TraceType_3.cpp:11391 [kernel]\r\nUNKNOWN_TENSOR_TYPE_ID: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/autocast_mode.cpp:455 [backend fallback]\r\nAutocast: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/autocast_mode.cpp:294 [backend fallback]\r\nBatched: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/BatchingRegistrations.cpp:1016 [backend fallback]\r\nVmapMode: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/VmapModeRegistrations.cpp:33 [backend fallback]\r\n```\r\n\r\n## ",
+        "Sample Code": "\r\n\r\n```python\r\nif __name__ == \"__main__\":\r\n    x = torch.rand(4, 4).to_sparse()\r\n    assert torch.equal(x, x)\r\n```\r\n\r\n```\r\nTraceback (most recent call last):\r\n  File \"benchmarks/distributed/rpc/parameter_server/test.py\", line 82, in <module>\r\n    assert torch.equal(x, y)\r\nNotImplementedError: Could not run 'aten::equal' with arguments from the 'SparseCPU' backend. This could be because the operator doesn't exist for this backend, or was omitted during the selective/custom build process (if using custom build). If you are a Facebook employee using PyTorch on mobile, please visit https://fburl.com/ptmfixes for possible resolutions. 'aten::equal' is only available for these backends: [CPU, CUDA, QuantizedCPU, BackendSelect, Python, Named, Conjugate, Negative, ADInplaceOrView, AutogradOther, AutogradCPU, AutogradCUDA, AutogradXLA, AutogradLazy, AutogradXPU, AutogradMLC, AutogradHPU, AutogradNestedTensor, AutogradPrivateUse1, AutogradPrivateUse2, AutogradPrivateUse3, Tracer, UNKNOWN_TENSOR_TYPE_ID, Autocast, Batched, VmapMode].\r\n\r\nCPU: registered at /fsx/users/gcramer/work/pytorch/build/aten/src/ATen/RegisterCPU.cpp:22545 [kernel]\r\nCUDA: registered at /fsx/users/gcramer/work/pytorch/build/aten/src/ATen/RegisterCUDA.cpp:30514 [kernel]\r\nQuantizedCPU: registered at /fsx/users/gcramer/work/pytorch/build/aten/src/ATen/RegisterQuantizedCPU.cpp:1060 [kernel]\r\nBackendSelect: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/BackendSelectFallbackKernel.cpp:3 [backend fallback]\r\nPython: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/PythonFallbackKernel.cpp:38 [backend fallback]\r\nNamed: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/NamedRegistrations.cpp:11 [kernel]\r\nConjugate: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/ConjugateFallback.cpp:26 [backend fallback]\r\nNegative: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/native/NegateFallback.cpp:26 [backend fallback]\r\nADInplaceOrView: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/VariableFallbackKernel.cpp:64 [backend fallback]\r\nAutogradOther: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradCPU: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradCUDA: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradXLA: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradLazy: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradXPU: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradMLC: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradHPU: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradNestedTensor: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradPrivateUse1: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradPrivateUse2: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradPrivateUse3: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nTracer: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/TraceType_3.cpp:11391 [kernel]\r\nUNKNOWN_TENSOR_TYPE_ID: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/autocast_mode.cpp:455 [backend fallback]\r\nAutocast: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/autocast_mode.cpp:294 [backend fallback]\r\nBatched: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/BatchingRegistrations.cpp:1016 [backend fallback]\r\nVmapMode: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/VmapModeRegistrations.cpp:33 [backend fallback]\r\n```\r\n\r\n```python\r\nif __name__ == \"__main__\":\r\n    x = torch.rand(4, 4).to_sparse_csr()\r\n    assert torch.equal(x, x)\r\n```\r\n\r\n```\r\nTraceback (most recent call last):\r\n  File \"test.py\", line 81, in <module>\r\n    assert torch.equal(x, x)\r\nNotImplementedError: Could not run 'aten::equal' with arguments from the 'SparseCsrCPU' backend. This could be because the operator doesn't exist for this backend, or was omitted during the selective/custom build process (if using custom build). If you are a Facebook employee using PyTorch on mobile, please visit https://fburl.com/ptmfixes for possible resolutions. 'aten::equal' is only available for these backends: [CPU, CUDA, QuantizedCPU, BackendSelect, Python, Named, Conjugate, Negative, ADInplaceOrView, AutogradOther, AutogradCPU, AutogradCUDA, AutogradXLA, AutogradLazy, AutogradXPU, AutogradMLC, AutogradHPU, AutogradNestedTensor, AutogradPrivateUse1, AutogradPrivateUse2, AutogradPrivateUse3, Tracer, UNKNOWN_TENSOR_TYPE_ID, Autocast, Batched, VmapMode].\r\n\r\nCPU: registered at /fsx/users/gcramer/work/pytorch/build/aten/src/ATen/RegisterCPU.cpp:22545 [kernel]\r\nCUDA: registered at /fsx/users/gcramer/work/pytorch/build/aten/src/ATen/RegisterCUDA.cpp:30514 [kernel]\r\nQuantizedCPU: registered at /fsx/users/gcramer/work/pytorch/build/aten/src/ATen/RegisterQuantizedCPU.cpp:1060 [kernel]\r\nBackendSelect: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/BackendSelectFallbackKernel.cpp:3 [backend fallback]\r\nPython: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/PythonFallbackKernel.cpp:38 [backend fallback]\r\nNamed: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/NamedRegistrations.cpp:11 [kernel]\r\nConjugate: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/ConjugateFallback.cpp:26 [backend fallback]\r\nNegative: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/native/NegateFallback.cpp:26 [backend fallback]\r\nADInplaceOrView: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/core/VariableFallbackKernel.cpp:64 [backend fallback]\r\nAutogradOther: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradCPU: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradCUDA: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradXLA: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradLazy: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradXPU: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradMLC: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradHPU: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradNestedTensor: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradPrivateUse1: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradPrivateUse2: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nAutogradPrivateUse3: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/VariableType_3.cpp:12635 [autograd kernel]\r\nTracer: registered at /fsx/users/gcramer/work/pytorch/torch/csrc/autograd/generated/TraceType_3.cpp:11391 [kernel]\r\nUNKNOWN_TENSOR_TYPE_ID: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/autocast_mode.cpp:455 [backend fallback]\r\nAutocast: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/autocast_mode.cpp:294 [backend fallback]\r\nBatched: registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/BatchingRegistrations.cpp:1016 [backend fallback]\r\nVmapMode: fallthrough registered at /fsx/users/gcramer/work/pytorch/aten/src/ATen/VmapModeRegistrations.cpp:33 [backend fallback]\r\n```\r\n\r\n## Expected behavior\r\n\r\ntorch.equal(input, other) evaluates the sparse tensors and returns a result.\r\n\r\n## Environment\r\n\r\n```\r\nCollecting environment information...\r\nPyTorch version: 1.10.0a0+git6f899c1\r\nIs debug build: False\r\nCUDA used to build PyTorch: 11.1\r\nROCM used to build PyTorch: N/A\r\n\r\nOS: Ubuntu 18.04.5 LTS (x86_64)\r\nGCC version: (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0\r\nClang version: Could not collect\r\nCMake version: version 3.21.1\r\n\r\nPython version: 3.6 (64-bit runtime)\r\nIs CUDA available: True\r\nCUDA runtime version: 11.1.105\r\nGPU models and configuration: \r\nGPU 0: A100-SXM4-40GB\r\nGPU 1: A100-SXM4-40GB\r\nGPU 2: A100-SXM4-40GB\r\nGPU 3: A100-SXM4-40GB\r\nGPU 4: A100-SXM4-40GB\r\nGPU 5: A100-SXM4-40GB\r\nGPU 6: A100-SXM4-40GB\r\nGPU 7: A100-SXM4-40GB\r\n\r\nNvidia driver version: 450.119.03\r\ncuDNN version: Probably one of the following:\r\n/usr/local/cuda-10.1/targets/x86_64-linux/lib/libcudnn.so.7.6.5\r\n/usr/local/cuda-10.2/targets/x86_64-linux/lib/libcudnn.so.7.6.5\r\n/usr/local/cuda-11.0/targets/x86_64-linux/lib/libcudnn.so.8.0.5\r\n/usr/local/cuda-11.0/targets/x86_64-linux/lib/libcudnn_adv_infer.so.8.0.5\r\n/usr/local/cuda-11.0/targets/x86_64-linux/lib/libcudnn_adv_train.so.8.0.5\r\n/usr/local/cuda-11.0/targets/x86_64-linux/lib/libcudnn_cnn_infer.so.8.0.5\r\n/usr/local/cuda-11.0/targets/x86_64-linux/lib/libcudnn_cnn_train.so.8.0.5\r\n/usr/local/cuda-11.0/targets/x86_64-linux/lib/libcudnn_ops_infer.so.8.0.5\r\n/usr/local/cuda-11.0/targets/x86_64-linux/lib/libcudnn_ops_train.so.8.0.5\r\n/usr/local/cuda-11.1/targets/x86_64-linux/lib/libcudnn.so.8.0.5\r\n/usr/local/cuda-11.1/targets/x86_64-linux/lib/libcudnn_adv_infer.so.8.0.5\r\n/usr/local/cuda-11.1/targets/x86_64-linux/lib/libcudnn_adv_train.so.8.0.5\r\n/usr/local/cuda-11.1/targets/x86_64-linux/lib/libcudnn_cnn_infer.so.8.0.5\r\n/usr/local/cuda-11.1/targets/x86_64-linux/lib/libcudnn_cnn_train.so.8.0.5\r\n/usr/local/cuda-11.1/targets/x86_64-linux/lib/libcudnn_ops_infer.so.8.0.5\r\n/usr/local/cuda-11.1/targets/x86_64-linux/lib/libcudnn_ops_train.so.8.0.5\r\nHIP runtime version: N/A\r\nMIOpen runtime version: N/A\r\n```\r\n\r\n## ",
+        "API Signature": "\n torch. equal ( input ,  other )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/54638",
+        "Issue title": "",
+        "Bug description": " of what the bug is. -->\r\n\r\n## To Reproduce\r\n\r\nSteps to reproduce the behavior:\r\n\r\n1. Construct a basic gcn (example code below)\r\n```\r\nimport torch\r\n\r\n### LAYER and GCN DEFINITION\r\n\r\nclass HiddenLayerSparse(torch.nn.Module):\r\n    def __init__(self, dimf_in, dimf_out):\r\n        super().__init__()\r\n        self.weights = torch.nn.Parameter(torch.rand(dimf_in, dimf_out, dtype=float))\r\n\r\n    def forward(self, adj, x):\r\n        x = torch.mm(x, self.weights)\r\n        x = torch.mm(adj, x)\r\n        return x\r\n\r\nclass ExampleSparseGCN(torch.nn.Module):\r\n    def __init__(self, sizes):\r\n        super().__init__()\r\n        self.sizes = sizes\r\n        self.hidden_layers = torch.nn.ModuleList([HiddenLayerSparse(sizes[i], sizes[i+1]) for i in range(len(sizes)-1)])\r\n        self.nonlinear = torch.nn.ReLU()\r\n        self.softmax = torch.nn.Softmax(dim=1)\r\n\r\n    def forward(self, adj, x):\r\n        for h in self.hidden_layers:\r\n            x = self.nonlinear(h(adj, x))\r\n        return self.softmax(x)\r\n\r\n### EXAMPLE SPARSE INPUTS\r\n\r\nadjacency = torch.tensor([[1,0],[0,1]], dtype=float).to_sparse()\r\nfeatures = torch.tensor([[1,0,0,1,0],[0,1,0,0,1]],dtype=float).to_sparse()\r\nlabels = torch.tensor([[1,0,0], [0,1,0]],dtype=float)\r\ninputs = (adjacency, features)\r\n\r\nmodel = ExampleSparseGCN([5, 4, 3]) # training does not fail with [5,3]\r\nloss_fn =  torch.nn.L1Loss()\r\noptimizer = torch.optim.SGD(model.parameters(), lr=0.05)\r\n\r\n_train = False      # FLAG TO ENABLE TRAINING\r\n_trace = True      # FLAG TO ENABLE TRACING\r\n\r\n# TRAINING \r\nif _train:\r\n    model.train()\r\n    for t in range(50):\r\n        optimizer.zero_grad()\r\n        output = model(*inputs)\r\n        loss = loss_fn(output, labels)\r\n        loss.backward()\r\n        optimizer.step() \r\n    print('Train Complete')\r\n\r\n# TRACING\r\nif _trace:\r\n    model.eval()\r\n    with torch.no_grad():\r\n        #torch.onnx.export(model, inputs, path, do_constant_folding=True, verbose=True, export_params=True)\r\n        traced = torch.jit.trace(model, inputs)\r\n    print('Trace Complete')\r\n```\r\n2. Attempt to trace a model without training. (`python example.py`)\r\n3. Attempt to trace a model with training (set `_train = True`)\r\n\r\nAny GCN with sparse inputs **or** dense inputs with `torch.sparse.mm` fails to trace. Using `torch.sparse.mm` breaks training with exception:\r\n```\r\nTraceback (most recent call last):\r\n  File \".\\minimum_example.py\", line 46, in <module>\r\n    loss.backward()\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\tensor.py\", line 221, in backward\r\n    torch.autograd.backward(self, gradient, retain_graph, create_graph)\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\autograd\\__init__.py\", line 130, in backward\r\n    Variable._execution_engine.run_backward(\r\nRuntimeError: sparse_.is_sparse() INTERNAL ASSERT FAILED at \"..\\\\torch\\\\csrc\\\\autograd\\\\FunctionsManual.cpp\":560, please report a bug to PyTorch.\r\n```\r\n\r\n## Expected behavior\r\n\r\nI expect the model to train and trace without triggering any exceptions using `torch.sparse.mm`. Currently tracing always fails, and using `torch.sparse.mm` causes training to fail in the backward pass (which can be alleviated by using `torch.mm`.)\r\n\r\n## Environment\r\n\r\n```\r\nPyTorch version: 1.7.1+cpu\r\nIs debug build: False\r\nCUDA used to build PyTorch: Could not collect\r\nROCM used to build PyTorch: N/A\r\n\r\nOS: Microsoft Windows 10 Education\r\nGCC version: Could not collect\r\nClang version: Could not collect\r\nCMake version: Could not collect\r\n\r\nPython version: 3.8 (64-bit runtime)\r\nIs CUDA available: False\r\nCUDA runtime version: Could not collect\r\nGPU models and configuration: GPU 0: GeForce RTX 2070\r\nNvidia driver version: 456.71\r\ncuDNN version: Could not collect\r\nHIP runtime version: N/A\r\nMIOpen runtime version: N/A\r\n\r\nVersions of relevant libraries:\r\n[pip3] numpy==1.18.5\r\n[pip3] numpydoc==1.1.0\r\n[pip3] torch==1.7.1\r\n[conda] blas                      1.0                         mkl\r\n[conda] mkl                       2020.1                      216\r\n[conda] mkl-service               2.3.0            py38hb782905_0\r\n[conda] mkl_fft                   1.1.0            py38h45dec08_0\r\n[conda] mkl_random                1.1.1            py38h47e9c7a_0\r\n[conda] numpy                     1.18.5           py38h6530119_0\r\n[conda] numpy-base                1.18.5           py38hc3f5095_0\r\n[conda] numpydoc                  1.1.0                      py_0\r\n[conda] torch                     1.7.1                    pypi_0    pypi\r\n```\r\n\r\n## Additional context\r\n\r\nPlease let me know if more context/information/support is needed from my end.\r\n\n\ncc @gmagogsfm",
+        "Sample Code": "**.\r\n\r\nTracing gives the following warnings:\r\n```\r\n[W pybind_utils.h:521] Warning: Using sparse tensors in TorchScript is experimental. Many optimization pathways have not been thoroughly tested with sparse tensors. Please include the fact that the network is running sparse tensors in any bug reports submitted. (function operator ())\r\n[W pybind_utils.h:851] Warning: Using sparse tensors in TorchScript is experimental. Many optimization pathways have not been thoroughly tested with sparse tensors. Please include the fact that the network is running sparse tensors in any bug reports submitted. (function operator ())\r\n```\r\nbefore failing with the following exception:\r\n```\r\nTraceback (most recent call last):\r\n  File \".\\minimum_example.py\", line 55, in <module>\r\n    traced = torch.jit.trace(model, inputs)\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\jit\\_trace.py\", line 733, in trace\r\n    return trace_module(\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\jit\\_trace.py\", line 958, in trace_module\r\n    _check_trace(\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\autograd\\grad_mode.py\", line 26, in decorate_context\r\n    return func(*args, **kwargs)\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\jit\\_trace.py\", line 327, in _check_trace\r\n    copied_dict[name] = _clone_inputs(data)\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\jit\\_trace.py\", line 158, in _clone_inputs\r\n    return function._nested_map(\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\autograd\\function.py\", line 282, in _map\r\n    return type(obj)(mapped)\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\autograd\\function.py\", line 278, in <genexpr>\r\n    mapped = (_map(x) for x in obj)\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\autograd\\function.py\", line 274, in _map\r\n    return fn(obj)\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\jit\\_trace.py\", line 148, in clone_input\r\n    a.detach()\r\nRuntimeError: unsupported memory format option Preserve\r\n```\r\n\r\n<!-- A clear and concise description of what the bug is. -->\r\n\r\n## To Reproduce\r\n\r\nSteps to reproduce the behavior:\r\n\r\n1. Construct a basic gcn (example code below)\r\n```\r\nimport torch\r\n\r\n### LAYER and GCN DEFINITION\r\n\r\nclass HiddenLayerSparse(torch.nn.Module):\r\n    def __init__(self, dimf_in, dimf_out):\r\n        super().__init__()\r\n        self.weights = torch.nn.Parameter(torch.rand(dimf_in, dimf_out, dtype=float))\r\n\r\n    def forward(self, adj, x):\r\n        x = torch.mm(x, self.weights)\r\n        x = torch.mm(adj, x)\r\n        return x\r\n\r\nclass ExampleSparseGCN(torch.nn.Module):\r\n    def __init__(self, sizes):\r\n        super().__init__()\r\n        self.sizes = sizes\r\n        self.hidden_layers = torch.nn.ModuleList([HiddenLayerSparse(sizes[i], sizes[i+1]) for i in range(len(sizes)-1)])\r\n        self.nonlinear = torch.nn.ReLU()\r\n        self.softmax = torch.nn.Softmax(dim=1)\r\n\r\n    def forward(self, adj, x):\r\n        for h in self.hidden_layers:\r\n            x = self.nonlinear(h(adj, x))\r\n        return self.softmax(x)\r\n\r\n### EXAMPLE SPARSE INPUTS\r\n\r\nadjacency = torch.tensor([[1,0],[0,1]], dtype=float).to_sparse()\r\nfeatures = torch.tensor([[1,0,0,1,0],[0,1,0,0,1]],dtype=float).to_sparse()\r\nlabels = torch.tensor([[1,0,0], [0,1,0]],dtype=float)\r\ninputs = (adjacency, features)\r\n\r\nmodel = ExampleSparseGCN([5, 4, 3]) # training does not fail with [5,3]\r\nloss_fn =  torch.nn.L1Loss()\r\noptimizer = torch.optim.SGD(model.parameters(), lr=0.05)\r\n\r\n_train = False      # FLAG TO ENABLE TRAINING\r\n_trace = True      # FLAG TO ENABLE TRACING\r\n\r\n# TRAINING \r\nif _train:\r\n    model.train()\r\n    for t in range(50):\r\n        optimizer.zero_grad()\r\n        output = model(*inputs)\r\n        loss = loss_fn(output, labels)\r\n        loss.backward()\r\n        optimizer.step() \r\n    print('Train Complete')\r\n\r\n# TRACING\r\nif _trace:\r\n    model.eval()\r\n    with torch.no_grad():\r\n        #torch.onnx.export(model, inputs, path, do_constant_folding=True, verbose=True, export_params=True)\r\n        traced = torch.jit.trace(model, inputs)\r\n    print('Trace Complete')\r\n```\r\n2. Attempt to trace a model without training. (`python example.py`)\r\n3. Attempt to trace a model with training (set `_train = True`)\r\n\r\nAny GCN with sparse inputs **or** dense inputs with `torch.sparse.mm` fails to trace. Using `torch.sparse.mm` breaks training with exception:\r\n```\r\nTraceback (most recent call last):\r\n  File \".\\minimum_example.py\", line 46, in <module>\r\n    loss.backward()\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\tensor.py\", line 221, in backward\r\n    torch.autograd.backward(self, gradient, retain_graph, create_graph)\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\autograd\\__init__.py\", line 130, in backward\r\n    Variable._execution_engine.run_backward(\r\nRuntimeError: sparse_.is_sparse() INTERNAL ASSERT FAILED at \"..\\\\torch\\\\csrc\\\\autograd\\\\FunctionsManual.cpp\":560, please report a bug to PyTorch.\r\n```\r\n\r\n## Expected behavior\r\n\r\nI expect the model to train and trace without triggering any exceptions using `torch.sparse.mm`. Currently tracing always fails, and using `torch.sparse.mm` causes training to fail in the backward pass (which can be alleviated by using `torch.mm`.)\r\n\r\n## Environment\r\n\r\n```\r\nPyTorch version: 1.7.1+cpu\r\nIs debug build: False\r\nCUDA used to build PyTorch: Could not collect\r\nROCM used to build PyTorch: N/A\r\n\r\nOS: Microsoft Windows 10 Education\r\nGCC version: Could not collect\r\nClang version: Could not collect\r\nCMake version: Could not collect\r\n\r\nPython version: 3.8 (64-bit runtime)\r\nIs CUDA available: False\r\nCUDA runtime version: Could not collect\r\nGPU models and configuration: GPU 0: GeForce RTX 2070\r\nNvidia driver version: 456.71\r\ncuDNN version: Could not collect\r\nHIP runtime version: N/A\r\nMIOpen runtime version: N/A\r\n\r\nVersions of relevant libraries:\r\n[pip3] numpy==1.18.5\r\n[pip3] numpydoc==1.1.0\r\n[pip3] torch==1.7.1\r\n[conda] blas                      1.0                         mkl\r\n[conda] mkl                       2020.1                      216\r\n[conda] mkl-service               2.3.0            py38hb782905_0\r\n[conda] mkl_fft                   1.1.0            py38h45dec08_0\r\n[conda] mkl_random                1.1.1            py38h47e9c7a_0\r\n[conda] numpy                     1.18.5           py38h6530119_0\r\n[conda] numpy-base                1.18.5           py38hc3f5095_0\r\n[conda] numpydoc                  1.1.0                      py_0\r\n[conda] torch                     1.7.1                    pypi_0    pypi\r\n```\r\n\r\n## ",
+        "API Signature": "\n torch.jit. trace ( func ,  example_inputs ,  optimize=None ,  check_trace=True ,  check_inputs=None ,  check_tolerance=1e-05 ,  strict=True ,  _force_outplace=False ,  _module_class=None ,  _compilation_unit=<torch.jit.CompilationUnit ) [source] \u00b6",
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/54499",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nThe `MaxPool1d` takes an integer as its first argument. However, when I pass a big number to this function, I got an Runtime Errror. This error is quit normal but the log is interesting.\r\n`RuntimeError: Given input size: (16x1x50). Calculated output size: (16x1x-272823246). Output size is too small`\r\nthe calculated out put size, has a negative number. I think it meets an integer overflow. But I can't figure out what function going wrong right now.\r\n\r\n## To Reproduce\r\n\r\nSteps to reproduce the behavior:\r\n`import torch `\r\n`m=torch.nn.MaxPool1d(545646544,stride=2)`\r\n`input=input=torch.randn(20,16,50)`.\r\n`m(input)`\r\n\r\nthen I got the runtime error.\r\n`Traceback (most recent call last):\r\n  File \"<stdin>\", line 1, in <module>\r\n  File \"/usr/local/python3.7.5/lib/python3.7/site-packages/torch/nn/modules/module.py\", line 651, in __call__\r\n    result = self.forward(*input, **kwargs)\r\n  File \"/usr/local/python3.7.5/lib/python3.7/site-packages/torch/nn/modules/pooling.py\", line 76, in forward\r\n    self.return_indices)\r\n  File \"/usr/local/python3.7.5/lib/python3.7/site-packages/torch/_jit_internal.py\", line 209, in fn\r\n    return if_false(*args, **kwargs)\r\n  File \"/usr/local/python3.7.5/lib/python3.7/site-packages/torch/nn/functional.py\", line 496, in _max_pool1d\r\n    input, kernel_size, stride, padding, dilation, ceil_mode)\r\nRuntimeError: Given input size: (16x1x50). Calculated output size: (16x1x-272823246). Output size is too small\r\n`\r\n\r\n\r\n## ",
+        "Sample Code": "\r\n\r\nSteps to reproduce the behavior:\r\n`import torch `\r\n`m=torch.nn.MaxPool1d(545646544,stride=2)`\r\n`input=input=torch.randn(20,16,50)`.\r\n`m(input)`\r\n\r\nthen I got the runtime error.\r\n`Traceback (most recent call last):\r\n  File \"<stdin>\", line 1, in <module>\r\n  File \"/usr/local/python3.7.5/lib/python3.7/site-packages/torch/nn/modules/module.py\", line 651, in __call__\r\n    result = self.forward(*input, **kwargs)\r\n  File \"/usr/local/python3.7.5/lib/python3.7/site-packages/torch/nn/modules/pooling.py\", line 76, in forward\r\n    self.return_indices)\r\n  File \"/usr/local/python3.7.5/lib/python3.7/site-packages/torch/_jit_internal.py\", line 209, in fn\r\n    return if_false(*args, **kwargs)\r\n  File \"/usr/local/python3.7.5/lib/python3.7/site-packages/torch/nn/functional.py\", line 496, in _max_pool1d\r\n    input, kernel_size, stride, padding, dilation, ceil_mode)\r\nRuntime",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.12244897959183673,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/53407",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nI am getting the following error when running batched grad and gradgrad checks through OpInfo with empty input tensors\r\n\r\n```\r\nRuntimeError: While computing batched gradients, got: cannot reshape tensor of 0 elements into shape [-1, 0] because the unspecified dimension size -1 can be any value and is ambiguous\r\n```\r\n\r\n## ",
+        "Sample Code": "",
+        "API Signature": "\n torch. matmul ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.15306122448979592,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/53391",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "",
+        "API Signature": "\n torch. empty_strided ( size ,  stride ,  * ,  dtype ,  layout ,  device ,  requires_grad ,  pin_memory )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/51911",
+        "Issue title": "",
+        "Bug description": "\r\n\r\n`torch.nn.functional.grid_sample` outputs NaN if `grid` contains large value\r\n\r\n## To Reproduce\r\n~~~python\r\nimport torch\r\ntorch.nn.functional.grid_sample(input=torch.ones([1,1,1,5]), grid=torch.tensor([[[[ 2.9839e+38, -3.2406e+38]]]]))\r\n~~~\r\n\r\nOutput:\r\n~~~python\r\ntensor([[[[nan]]]])\r\n~~~\r\n## ",
+        "Sample Code": "\r\n~~~python\r\nimport torch\r\ntorch.nn.functional.grid_sample(input=torch.ones([1,1,1,5]), grid=torch.tensor([[[[ 2.9839e+38, -3.2406e+38]]]]))\r\n~~~\r\n\r\n",
+        "API Signature": "\n torch.nn.functional. grid_sample ( input ,  grid ,  mode ,  padding_mode ,  align_corners ) [source] \u00b6",
+        "Bug fix": "",
+        "Score": 0.11224489795918367,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/51906",
+        "Issue title": "",
+        "Bug description": "\r\n\r\n`torch.nn.functional.binary_cross_entropy_with_logits` outputs NaN when input is empty or large\r\n`torch.nn.functional.binary_cross_entropy` outputs NaN when input is empty\r\n\r\n\r\n## To Reproduce\r\n~~~python\r\nimport torch\r\ntorch.nn.functional.binary_cross_entropy(input=torch.tensor([]), target=torch.tensor([]))\r\n~~~\r\nOutput:\r\n~~~python\r\ntensor(nan)\r\n~~~\r\n\r\n~~~python\r\nimport torch\r\ntorch.nn.functional.binary_cross_entropy_with_logits(input=torch.tensor([]), target=torch.tensor([]))\r\n~~~\r\nOutput:\r\n~~~python\r\ntensor(nan)\r\n~~~\r\n\r\n~~~python\r\nimport torch\r\ntorch.nn.functional.binary_cross_entropy_with_logits(input=torch.tensor([-2.3135e+307,  6.6756e+307]), target=torch.ones((2)))\r\n~~~\r\n\r\nOutput:\r\n~~~python\r\ntensor(nan)\r\n~~~\r\n\r\n\r\n\r\n## ",
+        "Sample Code": "\r\n~~~python\r\nimport torch\r\ntorch.nn.functional.binary_cross_entropy(input=torch.tensor([]), target=torch.tensor([]))\r\n~~~\r\n",
+        "API Signature": "\n torch.nn.functional. binary_cross_entropy_with_logits ( input ,  target ,  weight ,  size_average ,  reduce ,  reduction ,  pos_weight ) [source] \u00b6",
+        "Bug fix": "",
+        "Score": 0.15306122448979592,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/51906",
+        "Issue title": "",
+        "Bug description": "\r\n\r\n`torch.nn.functional.binary_cross_entropy_with_logits` outputs NaN when input is empty or large\r\n`torch.nn.functional.binary_cross_entropy` outputs NaN when input is empty\r\n\r\n\r\n## To Reproduce\r\n~~~python\r\nimport torch\r\ntorch.nn.functional.binary_cross_entropy(input=torch.tensor([]), target=torch.tensor([]))\r\n~~~\r\nOutput:\r\n~~~python\r\ntensor(nan)\r\n~~~\r\n\r\n~~~python\r\nimport torch\r\ntorch.nn.functional.binary_cross_entropy_with_logits(input=torch.tensor([]), target=torch.tensor([]))\r\n~~~\r\nOutput:\r\n~~~python\r\ntensor(nan)\r\n~~~\r\n\r\n~~~python\r\nimport torch\r\ntorch.nn.functional.binary_cross_entropy_with_logits(input=torch.tensor([-2.3135e+307,  6.6756e+307]), target=torch.ones((2)))\r\n~~~\r\n\r\nOutput:\r\n~~~python\r\ntensor(nan)\r\n~~~\r\n\r\n\r\n\r\n## ",
+        "Sample Code": "\r\n~~~python\r\nimport torch\r\ntorch.nn.functional.binary_cross_entropy(input=torch.tensor([]), target=torch.tensor([]))\r\n~~~\r\n",
+        "API Signature": "\n torch.nn.functional. binary_cross_entropy_with_logits ( input ,  target ,  weight ,  size_average ,  reduce ,  reduction ,  pos_weight ) [source] \u00b6",
+        "Bug fix": "",
+        "Score": 0.15306122448979592,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/51803",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nI'm trying to use torch.fx.symbolic_trace to trace an `arange` call where the first argument to `arange` is part of the size of the input tensor:\r\n```\r\nl = x.size(1)\r\ntorch.arange(l, dtype=torch.long, device='cuda')\r\n```\r\nAnd it fails.\r\n\r\n## To Reproduce\r\n\r\n```\r\nimport torch\r\nfrom torch.fx import symbolic_trace\r\ndef test(x):\r\n    l = x.size(1)\r\n    return torch.arange(l, dtype=torch.long, device='cuda')\r\ntraced = symbolic_trace(test)\r\n```\r\nTrace:\r\n```\r\nTraceback (most recent call last):\r\n  File \"repro.py\", line 6, in <module>\r\n    traced = symbolic_trace(test)\r\n  File \"/opt/pytorch/pytorch/torch/fx/symbolic_trace.py\", line 606, in symbolic_trace\r\n    graph = tracer.trace(root, concrete_args)\r\n  File \"/opt/pytorch/pytorch/torch/fx/symbolic_trace.py\", line 355, in trace\r\n    self.create_node('output', 'output', (self.create_arg(fn(*args)),), {},\r\n  File \"repro.py\", line 5, in test\r\n    return torch.arange(l, dtype=torch.long, device='cuda')\r\nTypeError: arange() received an invalid combination of arguments - got (Proxy, device=str, dtype=torch.dtype), but expected one of:\r\n * (Number end, *, Tensor out, torch.dtype dtype, torch.layout layout, torch.device device, bool pin_memory, bool requires_grad)\r\n * (Number start, Number end, Number step, *, Tensor out, torch.dtype dtype, torch.layout layout, torch.device device, bool pin_memory, bool requires_grad)\r\n *\r\n```\r\n\r\n## ",
+        "Sample Code": "\r\n\r\n```\r\nimport torch\r\nfrom torch.fx import symbolic_trace\r\ndef test(x):\r\n    l = x.size(1)\r\n    return torch.arange(l, dtype=torch.long, device='cuda')\r\ntraced = symbolic_trace(test)\r\n```\r\nTrace:\r\n```\r\nTraceback (most recent call last):\r\n  File \"repro.py\", line 6, in <module>\r\n    traced = symbolic_trace(test)\r\n  File \"/opt/pytorch/pytorch/torch/fx/symbolic_trace.py\", line 606, in symbolic_trace\r\n    graph = tracer.trace(root, concrete_args)\r\n  File \"/opt/pytorch/pytorch/torch/fx/symbolic_trace.py\", line 355, in trace\r\n    self.create_node('output', 'output', (self.create_arg(fn(*args)),), {},\r\n  File \"repro.py\", line 5, in test\r\n    return torch.arange(l, dtype=torch.long, device='cuda')\r\nType",
+        "API Signature": "\n torch.nn.functional. binary_cross_entropy ( input ,  target ,  weight ,  size_average ,  reduce ,  reduction ) [source] \u00b6",
+        "Bug fix": "",
+        "Score": 0.15306122448979592,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/51732",
+        "Issue title": "",
+        "Bug description": "\r\n\r\n`torch.nn.functional.ctc_loss`  crash(segfault) when `input_lengths` contains large negative number.\r\n\r\n## To Reproduce\r\n~~~python\r\nimport torch \r\ntorch.nn.functional.ctc_loss(log_probs=torch.ones((1,2,1)), targets=torch.ones((2,1)), input_lengths=torch.tensor([-5570080269274466818, -1]), target_lengths=torch.tensor((1,1)))\r\n~~~\r\n\r\nOutput:\r\n~~~python\r\nSegmentation fault (core dumped)\r\n~~~\r\n\r\n## ",
+        "Sample Code": "\r\n~~~python\r\nimport torch \r\ntorch.nn.functional.ctc_loss(log_probs=torch.ones((1,2,1)), targets=torch.ones((2,1)), input_lengths=torch.tensor([-5570080269274466818, -1]), target_lengths=torch.tensor((1,1)))\r\n~~~\r\n\r\n",
+        "API Signature": "\n torch.nn.functional. ctc_loss ( log_probs ,  targets ,  input_lengths ,  target_lengths ,  blank ,  reduction ,  zero_infinity ) [source] \u00b6",
+        "Bug fix": "",
+        "Score": 0.11224489795918367,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/51134",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nsegmentation fault in `torch.nn.ReplicationPad3d` and `torch.nn.ReplicationPad2d` when `padding` is large\r\n\r\n## To Reproduce\r\n~~~python\r\nimport torch\r\nlayer = torch.nn.ReplicationPad3d(padding=498444555)\r\nmodel_input = torch.ones([1, 1, 1, 1, 1])\r\nlayer(model_input)\r\n~~~\r\n\r\n~~~python\r\nimport torch\r\nlayer = torch.nn.ReplicationPad2d(padding=1012756988)\r\nmodel_input = torch.ones([2,2,2,2])\r\nlayer(model_input)\r\n~~~\r\n\r\nOutput:\r\n~~~python\r\nSegmentation fault (core dumped)\r\n~~~\r\n\r\n## ",
+        "Sample Code": "\r\n~~~python\r\nimport torch\r\nlayer = torch.nn.ReplicationPad3d(padding=498444555)\r\nmodel_input = torch.ones([1, 1, 1, 1, 1])\r\nlayer(model_input)\r\n~~~\r\n\r\n~~~python\r\nimport torch\r\nlayer = torch.nn.ReplicationPad2d(padding=1012756988)\r\nmodel_input = torch.ones([2,2,2,2])\r\nlayer(model_input)\r\n~~~\r\n\r\n",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.12244897959183673,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/49520",
+        "Issue title": "",
+        "Bug description": " of what the bug is. -->\r\n\r\n## To Reproduce\r\n~~~python\r\nimport torch\r\ntorch.bincount(input =torch.tensor([9223372036854775807]))\r\n~~~\r\n\r\nThe code snippet gives \r\n~~~\r\nSegmentation fault (core dumped)\r\n~~~\r\n\r\n## Expected behavior\r\nexpect no crash\r\n\r\n## Environment\r\n\r\nPyTorch version: 1.5.0\r\nIs debug build: False\r\nCUDA used to build PyTorch: 10.1\r\nROCM used to build PyTorch: N/A\r\n\r\nOS: Ubuntu 18.04.4 LTS (x86_64)\r\nGCC version: Could not collect\r\nClang version: Could not collect\r\nCMake version: version 3.14.0\r\n\r\nPython version: 3.7 (64-bit runtime)\r\nIs CUDA available: False\r\nCUDA runtime version: No CUDA\r\nGPU models and configuration: No CUDA\r\nNvidia driver version: No CUDA\r\ncuDNN version: No CUDA\r\nHIP runtime version: N/A\r\nMIOpen runtime version: N/A",
+        "Sample Code": "\r\n~~~python\r\nimport torch\r\ntorch.bincount(input =torch.tensor([9223372036854775807]))\r\n~~~\r\n\r\nThe code snippet gives \r\n~~~\r\nSegmentation fault (core dumped)\r\n~~~\r\n\r\n## ",
+        "API Signature": null,
+        "Bug fix": "",
+        "Score": 0.12244897959183673,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/47610",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nThe input dimension check was dropped somewhere between PyTorch 1.5.1 and 1.6.\r\n\r\n## To Reproduce\r\n\r\nThe following code runs successfully. However, the `index` argument has incompatible dimensions and should raise an exception.\r\n\r\n```python\r\nimport torch\r\ntorch.manual_seed(0)\r\ninput = torch.rand(4, 2)\r\nindex = torch.randint(2, size=(4,)).unsqueeze(0)  # intended to be unsqueeze(1)\r\ndim = 1\r\noutput = torch.gather(input, dim, index)\r\nprint(\"input = \", input)\r\nprint(\"index = \", index)\r\nprint(\"output = \", output)\r\n```\r\n\r\n<!-- If you have a code sample, error messages, stack traces, please provide it here as well -->\r\n\r\n## ",
+        "Sample Code": "\r\n\r\nThe following code runs successfully. However, the `index` argument has incompatible dimensions and should raise an exception.\r\n\r\n```python\r\nimport torch\r\ntorch.manual_seed(0)\r\ninput = torch.rand(4, 2)\r\nindex = torch.randint(2, size=(4,)).unsqueeze(0)  # intended to be unsqueeze(1)\r\ndim = 1\r\noutput = torch.gather(input, dim, index)\r\nprint(\"input = \", input)\r\nprint(\"index = \", index)\r\nprint(\"output = \", output)\r\n```\r\n\r\n<!-- If you have a code sample, error messages, stack traces, please provide it here as well -->\r\n\r\n## Expected behavior\r\n\r\n`torch.gather` should raise an exception on receiving and index with incompatible dimension.\r\n\r\n## Environment\r\n\r\n```\r\nCollecting environment information...\r\nPyTorch version: 1.5.1\r\nIs debug build: False\r\nCUDA used to build PyTorch: 10.2\r\nROCM used to build PyTorch: N/A\r\n\r\nOS: Ubuntu 18.04.5 LTS (x86_64)\r\nGCC version: (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0\r\nClang version: Could not collect\r\nCMake version: version 3.10.2\r\n\r\nPython version: 3.8 (64-bit runtime)\r\nIs CUDA available: True\r\nCUDA runtime version: 10.2.89\r\nGPU models and configuration:\r\nGPU 0: GeForce RTX 2080\r\nGPU 1: GeForce RTX 2080\r\n\r\nNvidia driver version: 440.100\r\ncuDNN version: Probably one of the following:\r\n/usr/lib/x86_64-linux-gnu/libcudnn.so.7.6.5\r\n/usr/local/cuda-10.2/targets/x86_64-linux/lib/libcudnn.so.7.6.5\r\nHIP runtime version: N/A\r\nMIOpen runtime version: N/A\r\n\r\nVersions of relevant libraries:\r\n[pip3] numpy==1.19.0\r\n[pip3] pytorch-lightning==0.9.0rc5\r\n[pip3] torch==1.5.1\r\n[pip3] torchvision==0.6.0a0+35d732a\r\n[conda] blas                      1.0                         mkl\r\n[conda] cudatoolkit               10.2.89              hfd86e86_1\r\n[conda] mkl                       2019.4                      243\r\n[conda] mkl-service               2.3.0            py38h516909a_0    conda-forge\r\n[conda] mkl_fft                   1.1.0            py38hc1659b7_1    conda-forge\r\n[conda] mkl_random                1.1.0            py38hb3f55d8_0    conda-forge\r\n[conda] numpy                     1.19.0                    <pip>\r\n[conda] numpy                     1.18.5           py38ha1c710e_0\r\n[conda] numpy-base                1.18.5           py38hde5b4d6_0\r\n[conda] pytorch                   1.5.1           py3.8_cuda10.2.89_cudnn7.6.5_0    pytorch\r\n[conda] pytorch-lightning         0.9.0rc5                  <pip>\r\n[conda] torchvision               0.6.1                py38_cu102    pytorch\r\n```\r\n## ",
+        "API Signature": "\n torch. gather ( input ,  dim ,  index ,  * ,  sparse_grad ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.09183673469387756,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/46225",
+        "Issue title": "",
+        "Bug description": " of what you expected to happen. -->\r\n\r\n## Environment\r\n\r\nOutput of `collect_env.py`:\r\n```\r\nCollecting environment information...\r\nPyTorch version: 1.6.0\r\nIs debug build: False\r\nCUDA used to build PyTorch: 10.2\r\nROCM used to build PyTorch: N/A\r\n\r\nOS: Ubuntu 18.04.3 LTS (x86_64)\r\nGCC version: (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0\r\nClang version: Could not collect\r\nCMake version: version 3.10.2\r\n\r\nPython version: 3.7 (64-bit runtime)\r\nIs CUDA available: True\r\nCUDA runtime version: 10.0.130\r\nGPU models and configuration:\r\nGPU 0: TITAN RTX\r\nGPU 1: TITAN RTX\r\nGPU 2: GeForce RTX 2080 Ti\r\nGPU 3: GeForce GTX 1080 Ti\r\n\r\nNvidia driver version: 440.64.00\r\ncuDNN version: /usr/lib/x86_64-linux-gnu/libcudnn.so.7.6.5\r\nHIP runtime version: N/A\r\nMIOpen runtime version: N/A\r\n\r\nVersions of relevant libraries:\r\n[pip3] msgpack-numpy==0.4.4.3\r\n[pip3] numpy==1.16.1\r\n[pip3] numpy-quaternion==2020.10.2.17.17.31\r\n[pip3] numpy-stl==2.10.1\r\n[pip3] torch==1.6.0\r\n[pip3] torchvision==0.6.0\r\n[conda] msgpack-numpy             0.4.4.3                  pypi_0    pypi\r\n[conda] numpy                     1.16.1                   pypi_0    pypi\r\n[conda] numpy-quaternion          2020.10.2.17.17.31          pypi_0    pypi\r\n[conda] numpy-stl                 2.10.1                   pypi_0    pypi\r\n[conda] torch                     1.6.0                    pypi_0    pypi\r\n[conda] torchvision               0.6.0                    pypi_0    pypi\r\n```\r\n\r\n\n\ncc @brianjo @mruberry @rgommers @heitorschueroff @ezyang @gchanan @zou3519 @bdhirsh @ejguan @jlin27",
+        "Sample Code": "\r\n\r\n```python\r\ndef test(device):\r\n    x = torch.rand(1000).mul(5).long().to(device)\r\n    s = torch.bincount(x, minlength=5).argsort(descending=True)\r\n    \r\n    mode =  x.mode().values\r\n    print(f'w/o nans, got {mode}, expected {s[0]}')\r\n\r\n    y = x.clone().float()\r\n    y[y == mode] = np.nan\r\n    mode =  y.mode().values.long()\r\n    print(f'w nans, got {mode}, expected {s[1]}')\r\n```\r\n\r\nWhen running `test(\"cpu\")`, both lines always give the expected result:\r\n```\r\nIn [17]: test('cpu')\r\nw/o nans, got 3, expected 3\r\nw nans, got 0, expected 0\r\n```\r\n\r\nwhereas when running `test(\"cuda\")`, the first line always gives the expected result, but the second line gives something seemingly random:\r\n```\r\nIn [26]: test('cuda')\r\nw/o nans, got 2, expected 2\r\nw nans, got 4, expected 0\r\n```\r\n\r\n## Expected behavior\r\n\r\n<!-- A clear and concise description of what you expected to happen. -->\r\n\r\n## Environment\r\n\r\n",
+        "API Signature": "\n torch. mode ( input ,  dim ,  keepdim ,  * ,  out ) \u00b6",
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/43567",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nIn at least one case, `torch.svd()`'s CUDA implementation gives an incorrect result when the input contains a `nan` value.\r\n\r\nThis issue shows up when the input is `torch.tensor([[float('nan'), 1.0]])`.\r\n\r\n## To Reproduce\r\n\r\n```\r\n>>> import torch\r\n>>> torch.svd(torch.tensor([[float('nan'), 1.0]]))\r\ntorch.return_types.svd(\r\nU=tensor([[1.]]),\r\nS=tensor([nan]),\r\nV=tensor([[nan],\r\n        [nan]]))\r\n>>> torch.svd(torch.tensor([[float('nan'), 1.0]]).cuda())\r\ntorch.return_types.svd(\r\nU=tensor([[1.]], device='cuda:0'),\r\nS=tensor([1.4142], device='cuda:0'),\r\nV=tensor([[nan],\r\n        [nan]], device='cuda:0'))\r\n```\r\n\r\n## ",
+        "Sample Code": "\r\n\r\n```\r\n>>> import torch\r\n>>> torch.svd(torch.tensor([[float('nan'), 1.0]]))\r\ntorch.return_types.svd(\r\nU=tensor([[1.]]),\r\nS=tensor([nan]),\r\nV=tensor([[nan],\r\n        [nan]]))\r\n>>> torch.svd(torch.tensor([[float('nan'), 1.0]]).cuda())\r\ntorch.return_types.svd(\r\nU=tensor([[1.]], device='cuda:0'),\r\nS=tensor([1.4142], device='cuda:0'),\r\nV=tensor([[nan],\r\n        [nan]], device='cuda:0'))\r\n```\r\n\r\n## Expected behavior\r\n\r\nIn the above code snippet, the CUDA result is `S=1.4142`, but it should be `S=nan`. The CPU result is correct.\r\n\r\n## Environment\r\n\r\nPyTorch version: 1.7.0a0+5ff1ce3\r\nIs debug build: False\r\nCUDA used to build PyTorch: 10.2\r\n\r\nOS: Ubuntu 18.04.3 LTS (x86_64)\r\nGCC version: (crosstool-NG 1.24.0.123_1667d2b) 7.5.0\r\nClang version: Could not collect\r\nCMake version: version 3.18.0\r\n\r\nPython version: 3.8 (64-bit runtime)\r\nIs CUDA available: True\r\nCUDA runtime version: 10.2.89\r\nGPU models and configuration: \r\nGPU 0: TITAN RTX\r\nGPU 1: TITAN RTX\r\n\r\nNvidia driver version: 440.33.01\r\ncuDNN version: /usr/local/cuda-10.2.89/targets/x86_64-linux/lib/libcudnn.so.7\r\n\r\nVersions of relevant libraries:\r\n[pip3] numpy==1.19.1\r\n[pip3] torch==1.7.0a0+5ff1ce3\r\n[conda] magma-cuda101             2.5.2                         1    pytorch\r\n[conda] mkl                       2020.2                      256    conda-forge\r\n[conda] mkl-include               2020.2                      256    conda-forge\r\n[conda] numpy                     1.19.1           py38h8854b6b_0    conda-forge\r\n[conda] torch                     1.7.0a0+5ff1ce3           dev_0    <develop>\r\n\r\n## ",
+        "API Signature": "\n torch. svd ( input ,  some ,  compute_uv ,  * ,  out ) \u00b6",
+        "Bug fix": "",
+        "Score": 0.030612244897959183,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/43115",
+        "Issue title": "",
+        "Bug description": "\r\n\r\n`torch.multinomial` with `replacement=True` produces very inaccurate results when number of categories is large (and/or probabilities have very different values)\r\n\r\n## ",
+        "Sample Code": "\r\nOne of the ways to reproduce (there could be multiple ways to construct adversarial examples):\r\n```\r\nimport torch\r\nfor ncat in (2**8, 2**22, 2**24):\r\n    probs=torch.empty(ncat) \r\n    half = ncat//2    \r\n    probs[half:]=1\r\n    probs[:half-1]=2\r\n    out=torch.multinomial(probs, num_samples=10**5, replacement=True) \r\n    print(\"number of categories {:10}, number of samples in upper half {:8} \".format(ncat, (out>=half).sum().item())) #would expect 1/3 (~33333) of generated values to be >=half, true for ncat 2**8, 2**22, 0 for ncat 2**24\r\n```\r\n## ",
+        "API Signature": "\n torch. multinomial ( input ,  num_samples ,  replacement ,  * ,  generator ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.12244897959183673,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/37556",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "\r\n\r\nSteps to reproduce the behavior:\r\n```\r\na = [[1,1], [2,3], [3,5]]\r\n\r\nb = [[4, 5], [3,6]]\r\n\r\nprint(list(itertools.product(a, b)))\r\n\r\ntensor_a = torch.tensor(a)\r\n\r\ntensor_b = torch.tensor(b)\r\n\r\n#torch.cartesian_prod(tensor_a, tensor_b)\r\n\r\ntorch.cartesian_prod(tensor_a, tensor_b)\r\n\r\n```\r\n\r\n## Error:\r\n\r\n```\r\n[([1, 1], [4, 5]), ([1, 1], [3, 6]), ([2, 3], [4, 5]), ([2, 3], [3, 6]), ([3, 5], [4, 5]), ([3, 5], [3, 6])]\r\n---------------------------------------------------------------------------\r\nRuntimeError                              Traceback (most recent call last)\r\n<ipython-input-346-78fb1274668d> in <module>\r\n      4 tensor_a = torch.tensor(a)\r\n      5 tensor_b = torch.tensor(b)\r\n----> 6 torch.cartesian_prod(tensor_a, tensor_b)\r\n\r\nc:\\users\\hbb9279\\appdata\\local\\programs\\python\\python37\\lib\\site-packages\\torch\\functional.py in cartesian_prod(*tensors)\r\n    603                 [3, 5]])\r\n    604     \"\"\"\r\n--> 605     return torch._C._VariableFunctions.cartesian_prod(tensors)\r\n    606 \r\n    607 \r\n\r\nRuntimeError: Expect a 1D vector, but got shape [3, 2]\r\n```\r\n\r\n## Expected behavior\r\n\r\n`torch.cartesian_prod` does not work like itertools.product when you have more than one dimension\r\n\r\n## Environment\r\n\r\nPlease copy and paste the output from our\r\n[environment collection script](https://raw.githubusercontent.com/pytorch/pytorch/master/torch/utils/collect_env.py)\r\n(or fill out the checklist below manually).\r\n\r\nYou can get the script and run it with:\r\n```\r\nwget https://raw.githubusercontent.com/pytorch/pytorch/master/torch/utils/collect_env.py\r\n# For security purposes, please check the contents of collect_env.py before running it.\r\npython collect_env.py\r\n```\r\n\r\n Collecting environment information...\r\nPyTorch version: 1.3.0\r\nIs debug build: No\r\nCUDA used to build PyTorch: 10.1\r\n\r\nOS: Microsoft Windows 10 Enterprise\r\nGCC version: Could not collect\r\nCMake version: Could not collect\r\n\r\nPython version: 3.7\r\nIs CUDA available: Yes\r\nCUDA runtime version: 10.0.130\r\nGPU models and configuration: GPU 0: Quadro P6000\r\nNvidia driver version: 426.00\r\ncuDNN version: Could not collect\r\n\r\nVersions of relevant libraries:\r\n[pip3] numpy==1.17.3\r\n[pip3] pytorch-transformers==1.2.0\r\n[pip3] torch==1.3.0\r\n[pip3] torchvision==0.4.1\r\n[conda] Could not collect\r\n\r\n## ",
+        "API Signature": "\n torch. cartesian_prod ( * ) [source] \u00b6",
+        "Bug fix": "",
+        "Score": 0.05102040816326531,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/29372",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nnp.std(4) returns 0 whereas torch.std(torch.tensor(4)) returns NaN. This causes numerical instabilities in certain situations.\r\n\r\n## To Reproduce\r\n\r\nimport numpy as np\r\nnp.std(4)  # returns 0\r\n\r\nimport torch\r\ntorch.std(torch.tensor(4.))  # returns NaN\r\n\r\n## ",
+        "Sample Code": "\r\n\r\nimport numpy as np\r\nnp.std(4)  # returns 0\r\n\r\nimport torch\r\ntorch.std(torch.tensor(4.))  # returns NaN\r\n\r\n## ",
+        "API Signature": "\n torch. std ( input ,  dim ,  unbiased ,  keepdim ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.02040816326530612,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/25648",
+        "Issue title": "",
+        "Bug description": "",
+        "Sample Code": "",
+        "API Signature": "\n torch. cat ( tensors ,  dim ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.05102040816326531,
+        "Category": "Integer"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/24823",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nThe `grid_sample` function does not have proper handling of `NaN` values for in its grid input.\r\n\r\nThe 2D CPU version segfaults under certain conditions and parameters, as described in https://github.com/pytorch/pytorch/issues/19826, and with simplified examples below.\r\n\r\nThe other `grid_sample` kernels (3D CPU, and 2D/3D CUDA) do not segfault, but produce incorrect results under certain conditions when the grid contains a `NaN` value.\r\n\r\nProper handling would place a `NaN` in the output for every grid location that has a `NaN`.\r\n\r\n### ",
+        "Sample Code": "\r\n\r\nThis is covered and diagnosed by @SsnL at https://github.com/pytorch/pytorch/issues/19826, but I want to provide a simple example to reproduce the segfault behavior, and expand on the exact conditions in which it occurs.\r\n\r\n- Here is a simple example to reproduce the segmentation fault:\r\n```python\r\n>>> image = torch.rand(1, 1, 3, 3, device='cpu')\r\n>>> grid = torch.rand(1, 3, 3, 2, device='cpu')\r\n>>> grid[:,1,1,0] = float('nan')\r\n>>> torch.nn.functional.grid_sample(image, grid, padding_mode='border')\r\nSegmentation fault (core dumped)\r\n```\r\n\r\n- This segfault does not, however, happen if both components of a grid point are `NaN`.\r\nExample:\r\n```python\r\n>>> image = torch.rand(1, 1, 3, 3, device='cpu')\r\n>>> grid = torch.rand(1, 3, 3, 2, device='cpu')\r\n>>> grid[:,1,1,:] = float('nan')\r\n>>> torch.nn.functional.grid_sample(image, grid, padding_mode='border')\r\ntensor([[[[0.2587, 0.1807, 0.2114],\r\n          [0.1993,    nan, 0.2673],\r\n          [0.2065, 0.1258, 0.2002]]]])\r\n```\r\nwhich is, in fact, the correct and desired behavior.\r\n\r\n- The segfault occurs for padding modes `border` and `reflection`, but not for `zeros` (where it works correctly).\r\n\r\n\r\n### ",
+        "API Signature": "\n torch.nn.functional. grid_sample ( input ,  grid ,  mode ,  padding_mode ,  align_corners ) [source] \u00b6",
+        "Bug fix": "",
+        "Score": 0.01020408163265306,
+        "Category": "List"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/23061",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nI found that the speed of `torch.einsum` when using fp16 is much slower than using fp32.\r\n\r\nwhen the shapes of inputs are (a,b,c) and (a,c,d), `matmul` became much slower as well.\r\n\r\n## To Reproduce\r\n```python\r\nimport os\r\nos.environ['CUDA_VISIBLE_DEVICES']='0'\r\nimport torch\r\nfrom time import time\r\n\r\na = torch.empty(24,32,40,48, dtype=torch.float32).to('cuda')\r\nb = torch.empty(64,32,40,48, dtype=torch.float32).to('cuda')\r\nc = torch.empty(40,80,24, dtype=torch.float32).to('cuda')\r\nd = torch.empty(40,24,16, dtype=torch.float32).to('cuda')\r\n\r\nst = time()\r\nfor _ in range(1000):\r\n    c.matmul(d)\r\nprint(time()-st)\r\n\r\nst = time()\r\nfor _ in range(1000):\r\n    torch.einsum('ibnd,jbnd->ijbn', a, b)\r\nprint(time()-st)\r\n\r\na = torch.empty(24,32,40,48, dtype=torch.float16).to('cuda')\r\nb = torch.empty(64,32,40,48, dtype=torch.float16).to('cuda')\r\nc = torch.empty(40,80,24, dtype=torch.float16).to('cuda')\r\nd = torch.empty(40,24,16, dtype=torch.float16).to('cuda')\r\n\r\nst = time()\r\nfor _ in range(1000):\r\n    torch.matmul(c,d)\r\nprint(time()-st)\r\n\r\nst = time()\r\nfor _ in range(1000):\r\n    torch.einsum('ibnd,jbnd->ijbn', a, b)\r\nprint(time()-st)\r\n```\r\nSteps to reproduce the behavior:\r\n\r\njust run it\r\n\r\n\r\n## ",
+        "Sample Code": "\r\n```python\r\nimport os\r\nos.environ['CUDA_VISIBLE_DEVICES']='0'\r\nimport torch\r\nfrom time import time\r\n\r\na = torch.empty(24,32,40,48, dtype=torch.float32).to('cuda')\r\nb = torch.empty(64,32,40,48, dtype=torch.float32).to('cuda')\r\nc = torch.empty(40,80,24, dtype=torch.float32).to('cuda')\r\nd = torch.empty(40,24,16, dtype=torch.float32).to('cuda')\r\n\r\nst = time()\r\nfor _ in range(1000):\r\n    c.matmul(d)\r\nprint(time()-st)\r\n\r\nst = time()\r\nfor _ in range(1000):\r\n    torch.einsum('ibnd,jbnd->ijbn', a, b)\r\nprint(time()-st)\r\n\r\na = torch.empty(24,32,40,48, dtype=torch.float16).to('cuda')\r\nb = torch.empty(64,32,40,48, dtype=torch.float16).to('cuda')\r\nc = torch.empty(40,80,24, dtype=torch.float16).to('cuda')\r\nd = torch.empty(40,24,16, dtype=torch.float16).to('cuda')\r\n\r\nst = time()\r\nfor _ in range(1000):\r\n    torch.matmul(c,d)\r\nprint(time()-st)\r\n\r\nst = time()\r\nfor _ in range(1000):\r\n    torch.einsum('ibnd,jbnd->ijbn', a, b)\r\nprint(time()-st)\r\n```\r\nSteps to reproduce the behavior:\r\n\r\njust run it\r\n\r\n\r\n## ",
+        "API Signature": "\n torch. einsum ( equation ,  * )   \u2192 [source] \u00b6",
+        "Bug fix": "",
+        "Score": 0.02040816326530612,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/22788",
+        "Issue title": "",
+        "Bug description": "\r\n\r\nPytorch hangs indefinitely when using distributed multiprocessing with Pytorch 1.1.0 after 77k iterations (77939 and 77940 iterations). In Pytorch 1.0.1.post2, there is no such bug.\r\n\r\nIt appears to be deadlock.\r\n\r\nThe following distributed modules combine together in a very nasty way for some reason:\r\n```\r\nimport torch.distributed as dist\r\ntrain_sampler = torch.utils.data.distributed.DistributedSampler(train_data)\r\ndist.init_process_group(backend=args.dist_backend, init_method=args.dist_url, world_size=args.world_size, rank=args.rank)\r\napex.parallel.DistributedDataParallel(model)\r\nmodel, optimizer = apex.amp.initialize(model.cuda(), optimizer, opt_level=args.opt_level, keep_batchnorm_fp32=args.keep_batchnorm_fp32, loss_scale=args.loss_scale)\r\n model = apex.parallel.DistributedDataParallel(model)\r\n```\r\n\r\n## To Reproduce\r\n\r\nSteps to reproduce the behavior:\r\n\r\n1. Clone the following repo: [semseg](https://github.com/hszhao/semseg)\r\n2. Use the following config:\r\n3. Run the training script [train.py](https://github.com/hszhao/semseg/blob/master/tool/train.py)\r\n4. Observe that Pytorch will hang indefinitely after the 77,939th iteration. \r\n\r\n## ",
+        "Sample Code": "\r\n\r\nSteps to reproduce the behavior:\r\n\r\n1. Clone the following repo: [semseg](https://github.com/hszhao/semseg)\r\n2. Use the following config:\r\n3. Run the training script [train.py](https://github.com/hszhao/semseg/blob/master/tool/train.py)\r\n4. Observe that Pytorch will hang indefinitely after the 77,939th iteration. \r\n\r\n## Expected behavior\r\n\r\nPytorch should not hang.\r\n\r\n## Environment\r\n\r\nPyTorch version: 1.1.0\r\nIs debug build: No\r\nCUDA used to build PyTorch: 10.0.130\r\n\r\nOS: Ubuntu 18.04.2 LTS\r\nGCC version: (Ubuntu 7.4.0-1ubuntu1~18.04.1) 7.4.0\r\nCMake version: version 3.10.2\r\n\r\nPython version: 3.6\r\nIs CUDA available: No\r\nCUDA runtime version: 10.0.130\r\nGPU models and configuration: many\r\nNvidia driver version: \r\ncuDNN version: \r\n\r\nVersions of relevant libraries:\r\n[pip] numpy==1.16.3\r\n[pip] torch==1.1.0\r\n[pip] torchvision==0.3.0\r\n[conda] blas                      1.0                         mkl\r\n[conda] mkl                       2019.3                      199\r\n[conda] mkl_fft                   1.0.12           py36ha843d7b_0\r\n[conda] mkl_random                1.0.2            py36hd81dba3_0\r\n[conda] pytorch                   1.1.0           py3.6_cuda10.0.130_cudnn7.5.1_0    pytorch\r\n[conda] torchvision               0.3.0           py36_cu10.0.130_1    pytorch\r\n\r\n## ",
+        "API Signature": "\n torch. matmul ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.02040816326530612,
+        "Category": "Tensor"
+    },
+    {
+        "Link": "https://api.github.com/repos/pytorch/pytorch/issues/17897",
+        "Issue title": "",
+        "Bug description": "\r\n\r\n`torch.mv` causes an \"illegal memory access\" when multiplying a matrix with more than 2^31-1 elements. Note that each dim of the first matrix can fit in an `int`.\r\n\r\nThis is likely a bug in cuBLAS. Either cuBLAS should be fixed or PyTorch should issue multiple calls to `cublasSgemv`.\r\n\r\n## ",
+        "Sample Code": "\r\n\r\nNote: you need ~10 GB on your GPU to run this example\r\n\r\n```python\r\nx = torch.ones(35783, 65133, device='cuda')\r\ny = torch.randn(65133, device='cuda')\r\nz = torch.mv(x, y)\r\ntorch.cuda.synchronize()  # report asynchronous error\r\n```\r\n\r\n## ",
+        "API Signature": "\n torch. mv ( input ,  vec ,  * ,  out )   \u2192 \u00b6",
+        "Bug fix": "",
+        "Score": 0.11224489795918367,
+        "Category": "Tensor"
+    }
+]

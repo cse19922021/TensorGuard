@@ -208,6 +208,11 @@ def miner(hash_table):
         if issue_flag:
             issue_title_ = data_['title']
 
+            issue_title_ = ""
+            issue_description = ""
+            issue_code = ""
+            target_api = ""
+            
             if re.findall(r'Summary((.|\n)*?)Segmentation fault in the CPU 2D kernel', data_['body']):
                 issue_description = re.findall(
                     r'Summary((.|\n)*?)Segmentation fault in the CPU 2D kernel', data_['body'])[0][0]
@@ -314,8 +319,7 @@ def miner(hash_table):
 
             target_api = search(hash_table, target_api=item['API'])
 
-            try:
-                data_ = {'Issue link': branchLink,
+            data_ = {'Issue link': branchLink,
                          'Issue title': issue_title_,
                          'Bug description': issue_description,
                          'Sample Code': issue_code,
@@ -323,16 +327,6 @@ def miner(hash_table):
                          'Bug fix': '',
                          'Score': score_,
                          'Category': _cat}
-            except Exception as e:
-                if 'issue_description' in e.args:
-                    data_ = {'Issue link': branchLink,
-                             'Issue title': issue_title_,
-                             'Bug description': '',
-                             'Sample Code': issue_code,
-                             'API Signature': target_api,
-                             'Bug fix': '',
-                             'Score': score_,
-                             'Category': _cat}
 
             issue_flag = False
 
@@ -358,7 +352,8 @@ def miner(hash_table):
                      'Bug fix': changes,
                      'Score': score_,
                      'Anomaly': _anomaly,
-                     'Category': _cat}
+                     'Categoery': _cat
+                     }
 
         data_list.append(data_)
 
@@ -370,6 +365,6 @@ def miner(hash_table):
 if __name__ == "__main__":
     lib_name = 'torch'
     with open(f'API signatures/{lib_name}_API_table.json') as json_file:
-        hash_table = json.load(json_file)
+        api_hash_table = json.load(json_file)
 
-    data = miner(hash_table)
+    data = miner(api_hash_table)

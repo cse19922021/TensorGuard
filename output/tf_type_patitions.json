@@ -1,0 +1,68 @@
+{
+    "Partition 1": "tensor = tf.constant([], dtype=tf.float32)",
+    "Partition 2": "tensor = tf.constant([1, 2, 3], dtype=tf.float32)",
+    "Partition 3": "tensor = tf.constant([[1, 2], [3, 4]], dtype=tf.float32)",
+    "Partition 4": "tensor = tf.constant([[1, 2], [3, '4']], dtype=tf.float32)",
+    "Partition 5": "tensor = tf.constant([[1, 2, 3], [4, 5, 6]], dtype=tf.float32)",
+    "Partition 6": "tensor = None",
+    "Arg type": "ArgType.Tensor"
+},
+{
+    "Partition 1": "Argument is a positive integer",
+    "Partition 2": "Argument is zero",
+    "Partition 3": "Argument is a negative integer",
+    "Partition 4": "Argument is not an integer",
+    "Arg type": "ArgType.INT"
+},
+{
+    "Partition 1": "Strings with length less than or equal to 0",
+    "Partition 2": "Strings with length greater than 0 and less than or equal to 255",
+    "Partition 3": "Strings with length greater than 255",
+    "Arg type": "ArgType.STR"
+},
+{
+    "Partition 1": "x < float('-inf')",
+    "Partition 2": "x == float('-inf')",
+    "Partition 3": "float('-inf') < x < float('inf') and x == -0.0",
+    "Partition 4": "float('-inf') < x < float('inf') and x == +0.0",
+    "Partition 5": "x > float('inf')",
+    "Partition 6": "x == float('inf')",
+    "Partition 7": "float('-inf') < x < float('inf') and x is Normalized non-zero value",
+    "Partition 8": "float('-inf') < x < float('inf') and x is Normalized zero value",
+    "Partition 9": "x is Nan",
+    "Arg type": "ArgType.FLOAT"
+},
+{
+    "Partition 1": "test_input = []",
+    "Partition 2": "test_input = [None]",
+    "Partition 3": "test_input = [True]",
+    "Partition 4": "test_input = [False]",
+    "Partition 5": "test_input = [1]",
+    "Partition 6": "test_input = [0]",
+    "Partition 7": "test_input = [-1]",
+    "Partition 8": "test_input = ['']",
+    "Partition 9": "test_input = ['string']",
+    "Partition 10": "test_input = [[]]",
+    "Partition 11": "test_input = [[None]]",
+    "Partition 12": "test_input = [[True]]",
+    "Partition 13": "test_input = [[False]]",
+    "Partition 14": "test_input = [[1]]",
+    "Partition 15": "test_input = [[0]]",
+    "Partition 16": "test_input = [[-1]]",
+    "Partition 17": "test_input = [['']]",
+    "Partition 18": "test_input = [['string']]",
+    "Partition 19": "test_input = [{}, {}]",
+    "Partition 20": "test_input = [{}, {'key': 'value'}]",
+    "Arg type": "ArgType.LIST"
+},
+{
+    "Partition 1": "x = (), y = (), z = ()",
+    "Partition 2": "x = (1,), y = (), z = ()",
+    "Partition 3": "x = (), y = (1,), z = ()",
+    "Partition 4": "x = (), y = (), z = (1,)",
+    "Partition 5": "x = (1,), y = (1,), z = ()",
+    "Partition 6": "x = (1,), y = (), z = (1,)",
+    "Partition 7": "x = (), y = (1,), z = (1,)",
+    "Partition 8": "x = (1,), y = (1,), z = (1,)",
+    "Arg type": "ArgType.TUPLE"
+},

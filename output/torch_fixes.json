@@ -1,0 +1,563 @@
+{
+    "Patch": "In order to fix the bug where torch.view_as_complex fails with segfault for a zero dimensional tensor, we need to add a null check in the torch.view_as_complex function. This null check should be added at the beginning of the function to check if the input tensor is null. If it is null, we can return an empty complex tensor as the result. This will prevent the segfault from occurring and handle the zero dimensional tensor case gracefully.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/commits/b6b1c01adfdadf93a4a1d30c3661ff177412a876",
+    "API name": "\n torch. view_as_complex ( input )   \u2192 \u00b6",
+    "Bug description": "torch.view_as_complex fails with segfault for a zero dimensional tensor (#44175)\n\nSummary:\nFixes https://github.com/pytorch/pytorch/issues/44061\n\nPull Request resolved: https://github.com/pytorch/pytorch/pull/44175\n\nReviewed By: colesbury\n\nDifferential Revision: D23628103\n\nPulled By: anjali411\n\nfbshipit-source-id: 6f70b5824150121a1617c0757499832923ae02b5"
+},
+{
+    "Patch": "Replace the line 'n_blocks = (n + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;' with 'n_blocks = ((n-1) / THREADS_PER_BLOCK) + 1;'",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/commits/c010ef7f0c6d837809a7e973048afac76373e3de",
+    "API name": null,
+    "Bug description": "use non-overflowing divide in cuda kernel util GET_BLOCKS (#44391)\n\nSummary:\nFixes https://github.com/pytorch/pytorch/issues/43476.\n\nPull Request resolved: https://github.com/pytorch/pytorch/pull/44391\n\nReviewed By: mrshenli\n\nDifferential Revision: D23602424\n\nPulled By: walterddr\n\nfbshipit-source-id: 40ed81547f933194ce5bf4a5bcebdb3434298bc1"
+},
+{
+    "Patch": "In the implementation of `at::native::embedding`, add a check that verifies if the weight tensor has a number of dimensions greater than zero. If not, throw a `RuntimeError` with a specific message indicating that the weight tensor must be at least 1-D.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/commits/42b4a7132e7c6f1df963b473d1583e4791fb1808",
+    "API name": "\n torch.nn.functional. embedding ( input ,  weight ,  padding_idx ,  max_norm ,  norm_type ,  scale_grad_by_freq ,  sparse ) [source] \u00b6",
+    "Bug description": "Raise error if `at::native::embedding` is given 0-D weight (#42550)\n\nSummary:\nPreviously, `at::native::embedding` implicitly assumed that the `weight` argument would be 1-D or greater. Given a 0-D tensor, it would segfault. This change makes it throw a RuntimeError instead.\n\nFixes https://github.com/pytorch/pytorch/issues/41780\n\nPull Request resolved: https://github.com/pytorch/pytorch/pull/42550\n\nReviewed By: smessmer\n\nDifferential Revision: D23040744\n\nPulled By: albanD\n\nfbshipit-source-id: d3d315850a5ee2d2b6fcc0bdb30db2b76ffffb01"
+},
+{
+    "Patch": "The addcdiv function in PyTorch has an optional 'value' parameter, but in the given bug description and code, the 'value' parameter is not being used. To fix this bug, the 'value' parameter should be used in the calculation of the output tensor 'out'. Specifically, it should be multiplied with the result of the cdiv operation before adding it to the result of the add operation. This will ensure that the 'value' is properly applied to the output tensor.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/327",
+    "API name": "\n torch. addcdiv ( input ,  tensor1 ,  tensor2 ,  * ,  value ,  out )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "Based on the code provided, it looks like there may be a bug in the loop condition. The loop should continue until `i < n`, rather than `i <= n`. Changing the condition to `i < n` should fix the bug.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/327",
+    "API name": null,
+    "Bug description": ""
+},
+{
+    "Patch": "Replace the fmod function with the modulus operator (%).",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/327",
+    "API name": "\n torch. fmod ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The suggested patch for this bug is to add a check at the beginning of the `at::native::embedding` function to ensure that the `weight` tensor is not 0-D. If the `weight` tensor is 0-D, then throw a `RuntimeError` with an appropriate error message indicating that the `weight` tensor must be at least 1-D.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/327",
+    "API name": null,
+    "Bug description": "Raise error if `at::native::embedding` is given 0-D weight (#42550)\n\nSummary:\nPreviously, `at::native::embedding` implicitly assumed that the `weight` argument would be 1-D or greater. Given a 0-D tensor, it would segfault. This change makes it throw a RuntimeError instead.\n\nFixes https://github.com/pytorch/pytorch/issues/41780\n\nPull Request resolved: https://github.com/pytorch/pytorch/pull/42550\n\nReviewed By: smessmer\n\nDifferential Revision: D23040744\n\nPulled By: albanD\n\nfbshipit-source-id: d3d315850a5ee2d2b6fcc0bdb30db2b76ffffb01"
+},
+{
+    "Patch": "The suggested patch for this bug is to add input validation to ensure that the input tensor has at least 3 dimensions.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/38764",
+    "API name": "\n torch.nn.functional. max_pool1d ( input ,  kernel_size ,  stride ,  padding ,  dilation ,  ceil_mode ,  return_indices ) \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The suggested patch for the bug is to fix the overflow issue in torch.remainder when the dividend is very large. The fixed `remainder_kernel` should follow the similar implementation in numpy, where the overflow issue is handled. Additionally, the documentation for `torch.remainder` should be updated to provide clear information about the functionality and usage of the function.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/commits/63b1ae69831cd21bc4d6059a5854bc1155a152c9",
+    "API name": "\n torch. remainder ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": "Fix overflow in torch.remainder when dividend is very large (#37758)\n\nSummary:\nThis will fix the GPU implementation in https://github.com/pytorch/pytorch/issues/37743 and https://github.com/pytorch/pytorch/issues/24861. Please also check my [comment](https://github.com/pytorch/pytorch/issues/37743#issuecomment-623285707).\n\nThe fixed `remainder_kernel` follows the similar implementation in numpy. See https://github.com/numpy/numpy/blob/79d7bc276afbe89c746e462d28d4bfbb4fc56148/numpy/core/src/npymath/npy_math_internal.h.src#L649-L658\n\nI also slightly update the doc for `torch.remainder`, to make it similar to `torch.fmod`.\n\nI'm not sure how to modify the Vec256 code of CPU remainder_kernel, so I just leave it there.\nPull Request resolved: https://github.com/pytorch/pytorch/pull/37758\n\nDifferential Revision: D21388417\n\nPulled By: ngimel\n\nfbshipit-source-id: 770ba5801cf34619b2b68b8b0cf95d8cfa52e6f6"
+},
+{
+    "Patch": "In the gather function, add a check to verify if the dimensions of the input and index tensors are compatible. If the dimensions are not compatible, throw an error and notify the user to transpose the index tensor or output tensor if necessary. This will prevent illegal gather operations and avoid returning gibberish values or causing segfaults.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/commits/7aec364bdf9ed7297b77e8445a6a6d4116265dde",
+    "API name": "\n torch. gather ( input ,  dim ,  index ,  * ,  sparse_grad ,  out )   \u2192 \u00b6",
+    "Bug description": "extend gather shape check to handle incorrectly sized outputs (#37102)\n\nSummary:\nFixes a safety issue (Nonsense values and segfaults) introduced by https://github.com/pytorch/pytorch/pull/36875 when in-place gather tries to use incorrect shapes.\n\nConsider the following block of code:\n```\nk0 = 8\nk1 = 8\nm = 100\n\nx = torch.rand((k0, k1))\nind = torch.randint(0, k0, (m, k1))\noutput = torch.empty((m, k1))\n\nprint(torch.gather(x, 0, ind, out=output))\nprint(torch.gather(x, 1, ind, out=output))\n```\n\nThe first gather is legal, the second is not. (`ind` and `output` need to be transposed) Previously this was caught when the kernel tried to restride inputs for TensorIterator, but we can no longer rely on those checks and must test explicitly. If `m` is small the second gather returns gibberish; if it is large enough to push the read out of memory block the program segfaults.\nPull Request resolved: https://github.com/pytorch/pytorch/pull/37102\n\nDifferential Revision: D21190580\n\nPulled By: robieta\n\nfbshipit-source-id: 80175620d24ad3380d78995f7ec7dbf2627d2998"
+},
+{
+    "Patch": "The bug is caused by a segmentation fault in the `cat` function when trying to index tensors with 32-bit ints. The suggested patch would be to modify the code to handle indexing with larger ints, such as 64-bit ints, to avoid overflow and prevent the segfault.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/commits/74828be4a7d0d2dba3f0ec3f6e79265cdfae5329",
+    "API name": "\n torch. cat ( tensors ,  dim ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": "fix segfault in `cat` on CPU with tensors that can't be indexed with 32-bit ints. (#21530)\n\nSummary:\nShould be self-explanatory. This `int` variable is overflowing.\n\nReported in #21526\nPull Request resolved: https://github.com/pytorch/pytorch/pull/21530\n\nDifferential Revision: D15719275\n\nPulled By: umanwizard\n\nfbshipit-source-id: 24e917a00a5b78bc3af29ef3b8b72eea7e89d5d5"
+},
+{
+    "Patch": "The suggested patch is to modify the code to check for binomial overflow when the logits are large. This can be done by first calculating the maximum logit value in the given input logits tensor. Then, for each element in the logits tensor, subtract the maximum logit value from it. This will ensure that the logit values are within a manageable range to avoid binomial overflow.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/commits/071971476d7431a24e527bdc181981678055a95d",
+    "API name": null,
+    "Bug description": "Fix Binomimal overflow when logits is large (#20679)\n\nSummary:\nThis PR fixes  #17843. In addition (test locally), this still maintains the continuity of log_prob which is addressed in https://github.com/pytorch/pytorch/pull/15962\n\ncc neerajprad\nPull Request resolved: https://github.com/pytorch/pytorch/pull/20679\n\nDifferential Revision: D15413311\n\nPulled By: ezyang\n\nfbshipit-source-id: 4fc0ca755ae6a85aa7deb2206dab675f82f9aa25"
+},
+{
+    "Patch": "Patch: Validate and sanitize user inputs to prevent potential security vulnerabilities.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/3498",
+    "API name": null,
+    "Bug description": ""
+},
+{
+    "Patch": "The bug is caused by the maximum size limit of MPSNDArray. To fix this, we can modify the implementation of torch.multinomial() to first check the size of the input array. If the size exceeds the limit (2^32 bytes), we can split the input array into smaller chunks and perform the multinomial sampling on each chunk separately. Finally, we can concatenate the results of the multinomial sampling from each chunk to obtain the final result.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/86279",
+    "API name": "\n torch. multinomial ( input ,  num_samples ,  replacement ,  * ,  generator ,  out )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The bug seems to be caused by type promotion. I would suggest explicitly converting the input to float before performing the remainder operation. This can be done by adding a line of code to convert the input tensor to float before performing the operation. Here is the modified code:\n\nimport torch\nimport numpy as np\n\ninput = torch.tensor(1693446850, dtype=torch.int32)\nother = torch.tensor([7285], dtype=torch.int16)\n\n# test the apis with int input (wrong results)\ninput = input.to(torch.float32) # convert input to float32\ntorch.remainder(input, other)\n\n# rest of the code remains the same\nr = torch.remainder(input, other)\nprint(r)\nr = torch.fmod(input, other)\nprint(r)\nr = np.fmod(input.numpy(), other.numpy())\nprint(r)\n\ninput = input.to(torch.float32)\n\n# test the apis with float input (correct results)\nr = torch.remainder(input, other)\nprint(r)\nr = torch.fmod(input, other)\nprint(r)\nr = np.fmod(input.numpy(), other.numpy())\nprint(r)\n\n\nOutput:\ntensor([3895], dtype=torch.int16)\ntensor([-3390], dtype=torch.int16)\n[4890]\ntensor([4952.])\ntensor([4952.])\n[4952.]\n",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/86074",
+    "API name": "\n torch. remainder ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": "\n\nFor some inputs, torch.remainder and torch.fmod produce wrong results, especially for integer datatype. When converting the int32 input to float32, they can produce correct results.\r\n\r\nI suspect this might be caused by type promotion.\r\n\r\nReproduce "
+},
+{
+    "Patch": "The suggested patch is to modify the fmod function to handle the case where the input and other have opposite signs. If both input and other have different signs, then the result should be input % other + other. This will ensure that the result is always positive. The modified code can be implemented as follows: if (input < 0 && other > 0) { result = fmod(input % other + other, other); } else if (input > 0 && other < 0) { result = fmod(input % other + other, other); } else { result = fmod(input, other); }",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/86074",
+    "API name": "\n torch. fmod ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": "Fix Binomimal overflow when logits is large (#20679)\n\nSummary:\nThis PR fixes  #17843. In addition (test locally), this still maintains the continuity of log_prob which is addressed in https://github.com/pytorch/pytorch/pull/15962\n\ncc neerajprad\nPull Request resolved: https://github.com/pytorch/pytorch/pull/20679\n\nDifferential Revision: D15413311\n\nPulled By: ezyang\n\nfbshipit-source-id: 4fc0ca755ae6a85aa7deb2206dab675f82f9aa25"
+},
+{
+    "Patch": "The bug is caused by passing a weight tensor that has zero dimensions in some axes. The patch for this bug is to perform input validation on the weight tensor before passing it to the native_batch_norm function. Specifically, we should check if the weight tensor has any zero dimensions in its shape and raise an appropriate error if it does. This will prevent the segmentation fault from occurring and instead throw a RuntimeError with a helpful error message.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/85217",
+    "API name": null,
+    "Bug description": "\n\nSegmentation fault in `native_batch_norm`.\r\n\r\n### "
+},
+{
+    "Patch": "The segmentation fault in `_mkldnn_transpose` can be fixed by adding error handling code to gracefully handle the error condition. One possible approach is to use a try-catch block to catch any exceptions or errors that may occur during the execution of the `_mkldnn_transpose` function. If an exception or error occurs, instead of letting it crash the program and cause a segmentation fault, we can throw a `RuntimeError` with a descriptive error message to indicate that an error occurred. This will allow the program to terminate gracefully and provide a meaningful error message to the user.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/85216",
+    "API name": null,
+    "Bug description": "\n\nSegmentation fault in `_mkldnn_transpose`.\r\n\r\n### "
+},
+{
+    "Patch": "The bug seems to be caused by passing very large values for stride and dilation parameters. These values are causing an overflow or memory error in the underlying MKLDNN library. To fix this, we can add a check in the code to ensure that the stride and dilation values are within a reasonable range before making the call to `mkldnn_reorder_conv2d_weight` and `mkldnn_reorder_conv3d_weight` functions. If the values are too large, we can throw a RuntimeError with a meaningful error message indicating that the values are out of range.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/85214",
+    "API name": null,
+    "Bug description": "\n\nSegmentation fault in `mkldnn_reorder_conv2d_weight` and  `mkldnn_reorder_conv3d_weight`.\r\n\r\n### "
+},
+{
+    "Patch": "One possible cause of the segmentation fault is accessing arrays out of bounds. The patch for this bug would be to add proper checks for array bounds before accessing the elements in the code. This will help to prevent accessing illegal memory locations and avoid the segmentation fault.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/85213",
+    "API name": null,
+    "Bug description": "\n\nSegmentation fault in `embedding_bag`, `_embedding_bag` and `_embedding_bag_forward_only`.\r\n\r\n### "
+},
+{
+    "Patch": "To fix this bug, we can add a check in the `torch.jit.wait()` function to handle the case when `future` is `None`. We can simply return without executing any further code in this case, to avoid the Segmentation fault. This can be done by adding an `if` statement at the beginning of the function: if `future` is `None`, return immediately without executing any code.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/85072",
+    "API name": "\n torch.jit. wait ( future ) [source] \u00b6",
+    "Bug description": "\n\nPassing `None` to `torch.jit.wait` can cause a Segmentation fault.\r\n\r\n## "
+},
+{
+    "Patch": "The bug is caused by passing invalid input (None) to the torch.futures.collect_all function. To fix this, we can add a check to ensure that the input is a valid list of futures before processing it. We can update the code as follows:\n\n```python\nimport torch\n\ninput = (None,)\n\nif all(isinstance(future, torch.futures.Future) for future in input):\n    torch.futures.collect_all(futures=input)\nelse:\n    print('Invalid input: futures must be a list of torch.futures.Future objects')\n```",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/84990",
+    "API name": null,
+    "Bug description": "\r\n\r\nIn `torch.futures.collect_all` when `futures` got invalid input, it causes a Segmentation fault.\r\n\r\n## "
+},
+{
+    "Patch": "The bug can be fixed by changing the dtype of arg_1 to float32 instead of float16. This will ensure that the Conv2d operation is performed correctly and does not hang the program.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/83328",
+    "API name": null,
+    "Bug description": "\n\n```\r\nresults = dict()\r\nimport torch\r\narg_class = torch.nn.Conv2d(512,2048,1)\r\narg_1 = torch.rand([128, 512, 16, 16], dtype=torch.float16)\r\nresults[\"time_low\"] = arg_class(arg_1)\r\n```\r\nThe above "
+},
+{
+    "Bug1": {
+        "Patch": "The negative kernel_size should be handled by setting it to a positive value. The negative size tensor should be replaced with a tensor of size 0 in the dimensions where the kernel_size is negative."
+    },
+    "Bug2": {
+        "Patch": "The program should handle the case where the kernel_size is <= 0 by checking for this condition and returning an error or raising an exception."
+    },
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/83229",
+    "API name": null,
+    "Bug description": ""
+},
+{
+    "Patch": "To fix this bug, we can add a check in the torch.nn.InstanceNorm1d constructor to verify that the value of 'num_features' is a positive integer. If the value is not a positive integer, an exception should be raised, indicating that 'num_features' must be an integer representing the number of features or channels in the input. This check will ensure that only valid values are accepted for 'num_features'.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/83221",
+    "API name": null,
+    "Bug description": "\r\n\r\nParameter 'num_features' is the number of features or channels C of the input. However, I found that num_features can be set to negative integral / string / list and other type value. torch.nn.InstanceNorm1d doesn't verify whether the value of num_features and input channels are equal. \r\n```\r\nimport torch\r\nresults={}\r\narg_1 = 'max'\r\narg_2 = False\r\narg_class = torch.nn.InstanceNorm1d(arg_1,affine=arg_2,)\r\narg_3 = torch.rand([20, 100, 40], dtype=torch.float32)\r\nresults['res'] = arg_class(arg_3)\r\n```\r\nAbove "
+},
+{
+    "Patch": "Reduce the value of num_layers to a reasonable number that the GRU can handle. It is not advisable to use such a large value for num_layers as it can cause performance and memory issues. Alternatively, you can try using a different model architecture that can handle a large number of layers efficiently.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/83175",
+    "API name": null,
+    "Bug description": ""
+},
+{
+    "Patch": "The bug is likely caused by providing incorrect arguments to the torch.nn.functional.fold() function. Based on the code provided, the issue seems to be with the argument 'arg_5' which has a value of 36028797018963968. This value is very large and could be causing an overflow or memory error. To fix the bug, the value of 'arg_5' should be set to a valid 'padding' value. For example, a common padding value is 1. The modified code would be as follows:\n\narg_5 = 1\nresults['res'] = torch.nn.functional.fold(arg_1,arg_2,arg_3,arg_4,arg_5,arg_6)",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/83152",
+    "API name": "\n torch.nn.functional. fold ( input ,  output_size ,  kernel_size ,  dilation ,  padding ,  stride ) [source] \u00b6",
+    "Bug description": "\n\nWhen I run the "
+},
+{
+    "Patch": "The segmentation fault in torch._C._nn.adaptive_avg_pool2d can be fixed by adding a check to ensure that the input and output shapes are valid before performing the pooling operation. Specifically, we can check if the input shape is smaller than the output shape, and if so, return an error or raise an exception indicating that the operation cannot be performed. This will prevent the segmentation fault from occurring and provide a clear error message to the user about the invalid shapes.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/81409",
+    "API name": null,
+    "Bug description": "\r\n\r\nThe segmentation fault appears when `torch._C._nn.adaptive_avg_pool2d` is called for some combinations of input and output shapes.\r\n\r\n#### "
+},
+{
+    "Patch": "This bug seems to be caused by a change in the computation of the weight norm in torch 1.12. To fix this, the computation of the weight norm in torch._weight_norm should be modified to match the manual computation provided. Instead of computing the norm of 'a' along the first dimension only, the norm should be computed along the first dimension and keep the dimensions intact by specifying keepdim=True. The patch can be implemented by modifying the code in torch/nn/utils/weight_norm.py.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/81195",
+    "API name": null,
+    "Bug description": "\r\n`torch._weight_norm` outputs wrong result from torch 1.12\r\n\r\nThough `torch._weight_norm` is an undocumented API, I report this issue since the API is made public.\r\n\r\n#### "
+},
+{
+    "Patch": "Patch the torch.renorm function to explicitly check if the maxnorm value is 0 and if p is even. If both conditions are satisfied, set the output gradient to 0 for every element.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/80804",
+    "API name": "\n torch. renorm ( input ,  p ,  dim ,  maxnorm ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The bug is caused by passing an empty tensor (sequences_3) to the pack_sequence function. To fix this bug, we can check if any of the input sequences has a size of zero before calling pack_sequence. If any sequence has a size of zero, we can simply return an empty PackedSequence object without further processing.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78153",
+    "API name": "\n torch.nn.utils.rnn. pack_sequence ( sequences ,  enforce_sorted ) [source] \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The segmentation fault in the function can be caused by a variety of reasons such as buffer overflow or accessing memory that has already been freed. To fix this issue, we need to identify the cause of the segmentation fault by analyzing the code and debugging the program. Once the cause is identified, we can apply the appropriate fix to prevent the segmentation fault from occurring. This might involve modifying the memory allocation and deallocation operations, checking for buffer overflow conditions, or adding null pointer checks to avoid accessing invalid memory addresses. It is also important to ensure that the fix does not introduce any new security vulnerabilities or negative consequences in terms of performance or functionality.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78131",
+    "API name": null,
+    "Bug description": "\n\n\r\nFunction `torch._pad_packed_sequence` contains segmentation fault.\r\n\r\n### "
+},
+{
+    "Patch": "The segmentation fault in torch._grid_sampler_2d_cpu_fallback can be fixed by adding input and grid argument checks at the beginning of the function. Specifically, we can check if the input and grid tensors have the expected number of dimensions. If the number of dimensions is not as expected, we can raise a Python exception with an appropriate error message.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78130",
+    "API name": null,
+    "Bug description": "\n\n\r\nFunction `torch._grid_sampler_2d_cpu_fallback` contains segmentation fault.\r\n\r\n### "
+},
+{
+    "Patch": "The segmentation fault in the `torch._embedding_bag_forward_only` function could be caused by various reasons. One possible cause could be the input tensors having unexpected shapes or invalid values. To patch this bug, we can add input validation checks in the function to ensure that the input tensors have the expected shapes and valid values. Additionally, we can add exception handling to catch any potential errors and raise a Python exception instead of causing a segmentation fault. This will provide a more informative error message to the users and prevent the crash.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78129",
+    "API name": null,
+    "Bug description": "\n\nFunction `torch._embedding_bag_forward_only` contains segmentation fault.\r\n\r\n### "
+},
+{
+    "Patch": "The segmentation fault in the function 'torch._C._nn.thnn_conv2d' indicates a memory access violation. This could be due to invalid memory accesses or buffer overflows. To fix this issue, the code should be reviewed and potential causes of memory access violations should be identified. This can include checking for out-of-bounds array accesses, using proper bounds checking, and ensuring proper memory allocation and deallocation. Additionally, running the code with a debugger or enabling debug symbols can help identify the exact location and cause of the segmentation fault. Once the cause of the segmentation fault is identified, the code should be modified accordingly to prevent the memory access violation and replace the faulty behavior with a proper error handling mechanism.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78128",
+    "API name": null,
+    "Bug description": "\r\n\r\nFunction `torch._C._nn.thnn_conv2d` contains segmentation fault.\r\n\r\n### "
+},
+{
+    "Patch": "The segmentation fault in torch._C._nn.reflection_pad2d can be patched by adding error handling to the function. Currently, the function does not check for any error conditions and directly accesses an invalid memory location, causing the segmentation fault. To fix this, we can add a bounds check to ensure that the input tensor is not empty and has valid dimensions. Additionally, we can add a check to ensure that the padding values provided in the intarrayref parameter are within the valid range. If any of these conditions fail, we can raise a Python exception with an appropriate error message instead of allowing the segmentation fault to occur.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78127",
+    "API name": null,
+    "Bug description": "\n\n\r\nFunction `torch._C._nn.reflection_pad2d` contains segmentation fault.\r\n\r\n### "
+},
+{
+    "Patch": "The segmentation fault in `torch.max_unpool3d` can be caused by accessing memory that is out of bounds. To fix this issue, we need to ensure that the input tensors have valid dimensions and the indices provided for unpooling are within the bounds of the tensor. Additionally, we can add checks for the validity of the input tensors, such as checking for null pointers or invalid data types, to prevent memory errors. It is also recommended to use PyTorch's built-in exception handling mechanisms to catch and handle any potential errors or exceptions that may occur during the execution of `torch.max_unpool3d`.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78126",
+    "API name": null,
+    "Bug description": "\n\n\r\nFunction `torch.max_unpool3d` contains segmentation fault.\r\n\r\n### "
+},
+{
+    "Patch": "To fix the segmentation fault in `torch.grid_sampler_3d`, you can add input validation checks at the beginning of the function to ensure that the input and grid tensors have the correct dimensions and data types. Additionally, you can check if the interpolation mode and padding mode values are valid options. If any of the checks fail, you can raise a Python exception with an appropriate error message. This will prevent the function from executing with invalid inputs and avoid the segmentation fault.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78125",
+    "API name": null,
+    "Bug description": "\n\n\r\nFunction `torch.grid_sampler_3d` contains segmentation fault.\r\n\r\n### "
+},
+{
+    "Patch": "The cause of the segmentation fault is likely due to an invalid memory access. To patch this issue, the code needs to be thoroughly inspected to identify the specific cause of the segmentation fault. This can be done by running the code in a debugger or analyzing the stack trace. Once the cause has been identified, appropriate checks and validations can be added to ensure that the code handles edge cases and invalid inputs properly to prevent the segmentation fault.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78123",
+    "API name": null,
+    "Bug description": "\n\n\r\nFunction `torch.choose_qparams_optimized` contains segmentation fault.\r\n\r\n### "
+},
+{
+    "Patch": "The segmentation fault in the torch.bincount function is likely caused by the incompatible dimensions of the input and weights tensors. To patch this bug, we can validate the dimensions of the tensors and throw a Python exception if they are incompatible. Specifically, we can check if the length of the input tensor matches the length of the weights tensor along the specified dimension. If they do not match, we can raise a ValueError with an appropriate error message to indicate the mismatched dimensions. Additionally, we can add a check to ensure that the specified minlength is a positive integer. This patch will help prevent the segmentation fault and improve the robustness of the torch.bincount function.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/78122",
+    "API name": "\n torch. bincount ( input ,  weights ,  minlength )   \u2192 \u00b6",
+    "Bug description": "\n\nFunction `torch.bincount` contains segmentation fault.\r\n\r\n### "
+},
+{
+    "Patch": "In the `_remove_batch_dim` function, add a check to ensure that the `out_dim` variable is within the valid range of tensor dimensions. If the `out_dim` value exceeds the maximum number of dimensions for the tensor, throw a `RuntimeError` with an appropriate error message.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/77893",
+    "API name": null,
+    "Bug description": "\r\n\r\nSegmentation fault in `_remove_batch_dim`.\r\n\r\n### "
+},
+{
+    "Patch": "The bug occurs when the 'index' tensor is complex and has zero elements. The scatter_add function should handle this edge case by returning the input tensor as is. Therefore, the suggested patch is to add a condition at the beginning of the scatter_add function to check if the 'index' tensor has zero elements. If it does, the function should return the input tensor without performing any operations.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/77231",
+    "API name": "\n torch. scatter_add ( input ,  dim ,  index ,  src )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "In the torch.addmv function, add a check to verify if the input tensor and matrix are of the same complex type. If they are not, raise an exception indicating that the backward operation is not supported for inputs of different complex types.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/76778",
+    "API name": "\n torch. addmv ( input ,  mat ,  vec ,  * ,  beta ,  alpha ,  out )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "Update the 'unique' function to handle NaN values correctly by excluding them from the unique values count and ignoring them in the sorting process.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/76571",
+    "API name": "\n torch. unique ( input ,  sorted ,  return_inverse ,  return_counts ,  dim )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "To fix the bug, the path should be encoded using the `utf-8` encoding before passing it to `torch.jit.load`.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/75171",
+    "API name": "\n torch.jit. load ( f ,  map_location ,  _extra_files ) [source] \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "Change the dtype of tensor y to be torch.float32 instead of torch.int32, so that it matches the dtype of tensor x.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73196",
+    "API name": "\n torch. pow ( input ,  exponent ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The bug is caused by providing large values for the kernel_size and dilation parameters. This leads to a segmentation fault in the max_pool3d function. To fix this, we can add input validation checks to ensure that the kernel_size and dilation parameters are within a reasonable range. If the provided values are too large, we can throw a RuntimeError with an appropriate error message instead of causing a segmentation fault.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73191",
+    "API name": null,
+    "Bug description": "\n\nSegmentation fault in `max_pool3d` when containing large arguments (`kernel_size`, `dilation`).\r\n\r\n### "
+},
+{
+    "Patch": "The segmentation fault is caused by passing extremely large values for `kernel_size`, `stride`, and `dilation` parameters to `max_pool1d` function. To patch this bug, we can add checks in the code to validate the input values of these parameters. We can add a condition to check if any of these values are larger than the maximum allowable limit (which can be a sensible value like 1000 or any other reasonable limit). If any of the values exceed the limit, we can raise a `ValueError` exception with a descriptive error message indicating that the input values are too large. This will prevent the segmentation fault and provide a more informative error message to the user. Additionally, we can also add a check to ensure that the `kernel_size`, `stride`, and `dilation` values are non-zero and positive, as negative or zero values do not make sense in the context of pooling operations. This will help catch invalid input values before they cause any issues.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73190",
+    "API name": null,
+    "Bug description": "\n\nSegmentation fault in `max_pool1d` when `kernel_size`, `stride` and `dilation` are large.\r\n\r\n### "
+},
+{
+    "Patch": "The bug occurs when the `output_size` parameter in `fractional_max_pool3d` contains zeroes. To fix this, we can add a check at the beginning of the function to ensure that none of the elements in the `output_size` list are zero. If any element is zero, we can raise a `ValueError` with an appropriate error message, indicating that `output_size` cannot contain zero values.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73186",
+    "API name": null,
+    "Bug description": "\n\nSegmentation fault in `fractional_max_pool3d` when `output_size` contains 0s.\r\n\r\n### "
+},
+{
+    "Patch": "The bug is caused by passing 0s in the 'output_size' argument of the 'fractional_max_pool2d' function. To fix this, we can add a check to ensure that the 'output_size' list does not contain any zeros before calling the function. We can raise a ValueError with an appropriate error message if any zero values are found in the 'output_size' list. This will prevent the segmentation fault and provide a more informative error to the user.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73185",
+    "API name": null,
+    "Bug description": "\n\nSegmentation fault in `fractional_max_pool2d` when `output_size` contains 0s.\r\n\r\n### "
+},
+{
+    "Patch": "The segmentation fault in `_sobol_engine_scramble_` when `dimension` is large is likely caused by an out-of-memory error. To fix this issue, we can add a check to ensure that the dimension value is within a certain range before executing the `_sobol_engine_scramble_` function. If the dimension value is too large, we can throw a RuntimeError or return an error code to indicate that the operation is not supported for that dimension. This will prevent the segmentation fault and provide a clear indication to the user that the requested operation is not valid for the given dimension value.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73182",
+    "API name": null,
+    "Bug description": "\r\n\r\nSegmentation fault in `_sobol_engine_scramble_` when `dimension` is large.\r\n\r\n### "
+},
+{
+    "Patch": "The bug is likely caused by a stack overflow due to the large value of `dimension`. To fix this, we can allocate the memory for the `state` array on the heap using `malloc` instead of declaring it on the stack. The `state` array will need to be deallocated using `free` before the function returns.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73181",
+    "API name": null,
+    "Bug description": "\n\nSegmentation fault in `_sobol_engine_initialize_state_` when `dimension` is large.\r\n\r\n### "
+},
+{
+    "Patch": "The segmentation fault in `_sobol_engine_ff_` can be fixed by adding input validation checks for the parameters `n` and `dimension`. The function should check if `n` and `dimension` are within the supported range before performing any computations. If any of the parameters are out of range, a RuntimeError should be raised to indicate the invalid input. Additionally, the function should also check if the size of `self` and `sobolstate` tensors is compatible with the provided `n` and `dimension`. If the sizes are not compatible, a RuntimeError should be raised to indicate the mismatched sizes. These input validation checks will prevent the segmentation fault when large values of `n` and `dimension` are used.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/73180",
+    "API name": null,
+    "Bug description": "\n\nSegmentation fault in `_sobol_engine_ff_` when `n` and `dimension` are large.\r\n\r\n### "
+},
+{
+    "Patch": "Modify the constructor of the Categorical class in torch.distributions.categorical.py to handle the case when the batch dimension is 0. Specifically, add a condition to check if the number of elements in the logits tensor is 0 and if so, directly set the batch shape to be torch.Size([0]). This will handle the case of empty logits and prevent the RuntimeError from occurring.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71689",
+    "API name": null,
+    "Bug description": ""
+},
+{
+    "Patch": "This bug occurs because torch.bmm does not currently support backward computations for sparse tensors. It only supports forward computations. To fix this bug, we need to enhance torch.bmm to support backward computations for sparse tensors. This can be done by implementing the necessary backward computation logic for sparse tensors in the torch.bmm function. Once this enhancement is implemented, the bug should be fixed and the provided code should run without any errors.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71678",
+    "API name": "\n torch. bmm ( input ,  mat2 ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The suggested patch is to modify the implementation of `torch.median` to raise an error when the input tensor is empty, similar to what `torch.min` does. This can be achieved by adding a check at the beginning of the function to raise an error if the input tensor has no elements. The error message can be similar to the one raised by `torch.min`, indicating that the reduction dimension should be specified.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71636",
+    "API name": "\n torch. median ( input )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The bug can be fixed by adding a check to validate the dimension (`dim`) before performing the operation. If the dimension is out of range, we can raise an error or return an appropriate message.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71477",
+    "API name": "\n torch. cummin ( input ,  dim ,  * ,  out ) \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "For the API torch.cummin, torch.cummax, torch.sort and torch.argsort, validate that the input tensor has at least one dimension before checking the value of the 'dim' parameter. If the input tensor has zero dimensions, raise an error indicating that the dimension is out of range.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71477",
+    "API name": "\n torch. cummax ( input ,  dim ,  * ,  out ) \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "For all the affected functions (cummin, cummax, sort, argsort), modify the code to check if the input tensor is 0-dimensional. If it is, return the tensor itself without performing any operations, as there is only one element in the tensor. If the dimension is out of range (greater than 0), raise an IndexError with an appropriate error message.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71477",
+    "API name": "\n torch. sort ( input ,  dim ,  descending ,  stable ,  * ,  out ) \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The patch for the bug is to add a check for the dimension `dim` in the code of `torch.cummin` function. If the input tensor is 0-d tensor, then the dimension `dim` should be ignored or set to 0. If the input tensor is a 1-d tensor, then the dimension `dim` should range from -1 to 0. If the `dim` is out of range, the function should raise an `IndexError` with the proper error message.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71477",
+    "API name": "\n torch. argsort ( input ,  dim ,  descending ,  stable )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The suggested patch is to modify the implementation of torch.diag to handle cases where diagonal >= 2 by returning an empty tensor instead of raising an error. This would align the behavior of torch.diag with torch.diagonal.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71204",
+    "API name": "\n torch. diag ( input ,  diagonal ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "Modify the implementation of torch.diag to return an empty tensor when diagonal >= 2, similar to the behavior of torch.diagonal.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71204",
+    "API name": "\n torch. diagonal ( input ,  offset ,  dim1 ,  dim2 )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The suggested patch for this bug is to add a check to the `torch.combinations` function to ensure that `r` is not greater than the length of the input tensor. If `r` is greater than the length, the function should return an empty tensor instead of attempting to allocate a large memory.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71082",
+    "API name": "\n torch. combinations ( input ,  r ,  with_replacement )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "When creating tensors with zero dimensions, use `torch.Tensor([])` instead of `torch.rand([])`",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71078",
+    "API name": null,
+    "Bug description": ""
+},
+{
+    "Patch": "Change torch.nn.ConstantPad2d and torch.nn.ZeroPad2d to torch.nn.ReflectionPad2d and torch.nn.ReplicationPad2d respectively when trying to create a zero dimension tensor.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71078",
+    "API name": null,
+    "Bug description": ""
+},
+{
+    "Patch": "This bug occurs when `index` is an empty tensor. To fix this, we can add a check to make sure `index` is not empty before calling `scatter`. If `index` is empty, we can simply return the `input` tensor as is.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71059",
+    "API name": "\n torch. scatter ( input ,  dim ,  index ,  src )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The suggested patch is to modify the implementation of `torch.Tensor.where` in C++ to consider cases when `other` is a float. This can be done by adding a type check in the C++ implementation to handle the case when `other` is a float and convert it to a Tensor internally, similar to how `torch.where` does.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/71058",
+    "API name": "\n torch. where ( condition ,  x ,  y )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The issue is caused by the overflow of the sum 'n + count' when 'count' is of type half. To fix the issue, we can change the type of 'n' to half as well, so that the sum does not overflow. The patch would involve changing the data type of 'n' in the 'batch_norm_reduce_statistics_kernel' function to half, like this: \n\n`n = half(n);`",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/70901",
+    "API name": null,
+    "Bug description": ""
+},
+{
+    "Patch": "Ensure that the size and stride parameters provided to torch.as_strided function are correctly validated. Specifically, the function should check that the input dimension and stride are non-negative before creating the new tensor.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/70672",
+    "API name": "\n torch. as_strided ( input ,  size ,  stride ,  storage_offset )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The suggested patch is to add a dimension check in the `torch.broadcast_to` and `tensor.expand` functions to ensure that the dimensions provided are not negative. This can be done by adding an if statement at the beginning of the functions that checks if any of the dimensions are negative, and if so, raises an error with a helpful message indicating that negative dimensions are not allowed.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/70398",
+    "API name": null,
+    "Bug description": ""
+},
+{
+    "Patch": "The suggested patch for this bug is to add a dimension check in the `torch.broadcast_to` function to ensure that the dimensions of the shape are non-negative. This can be done by adding a condition at the beginning of the function to check if any dimension in the shape is negative. If a negative dimension is found, the function should raise an exception with an appropriate error message, indicating that creating a tensor with negative dimension is not allowed. Additionally, the same patch should be applied to the `tensor.expand` function to fix the issue.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/70398",
+    "API name": "\n torch. broadcast_to ( input ,  shape )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The bug is caused because the strides are negative and they are not handled properly in the implementation of torch.empty_strided(). To fix this, the implementation should check if any stride value is negative, and if so, it should compute the correct storage offset by subtracting the corresponding stride value multiplied by the size of the corresponding dimension. This will ensure that the storage offset is within the bounds of the storage size and prevent the runtime error. Additionally, the implementation should handle the printing of the result tensor properly to avoid the RuntimeError. Specifically, it should check if the storage offset is 0 and if so, it should print the tensor normally. Otherwise, it should print a warning message indicating that the storage offset is non-zero and the tensor may not be printed correctly.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/70397",
+    "API name": "\n torch. empty_strided ( size ,  stride ,  * ,  dtype ,  layout ,  device ,  requires_grad ,  pin_memory )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The suggested patch is to modify the implementation of torch.transpose() to raise an error when indexing 0 for a 0-dimensional tensor. Specifically, we can add a check in the implementation of torch.transpose() to throw an IndexError if both dim0 and dim1 are 0 and the input tensor is 0-dimensional. This will ensure that when the user tries to perform tensor indexing with 0 on a 0-dimensional tensor, they will receive an appropriate error message.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/69433",
+    "API name": "\n torch. transpose ( input ,  dim0 ,  dim1 )   \u2192 \u00b6",
+    "Bug description": "\r\n\r\n`torch.transpose` should raise an error when indexing 0 for 0 dimensional tensor. Because you cannot index 0 for a 0 dimensional tensor.\r\n\r\n## To Reproduce\r\n\r\n```python\r\nimport torch\r\ntensor = torch.rand(torch.Size([]))\r\nres1 = torch.transpose(tensor, 0, 0)\r\n```\r\nIt will succeed. But when you index 0 for this tensor it will fail\r\n```\r\ntensor[0]\r\n# IndexError: invalid index of a 0-dim tensor. Use `tensor.item()` in Python or `tensor.item<T>()` in C++ to convert a 0-dim tensor to a number\r\n```\r\n\r\n## "
+},
+{
+    "Patch": "The bug can be fixed by modifying the implementation of torch.hstack to check if the input tensors have zero dimensions. If any tensor is found to be zero-dimensional, an error should be raised to match the behavior of torch.cat. Additionally, the documentation for torch.hstack should be updated to clarify this behavior.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/69408",
+    "API name": "\n torch. hstack ( tensors ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": "\r\n\r\n`torch.hstack` should raise an error when tensor is 0 dimensional like `torch.cat` based on the document that \"This is equivalent to concatenation along the first axis for 1-D tensors, and along the second axis for all other tensors.\"\r\n\r\n## To Reproduce\r\n\r\n```python\r\nimport torch\r\ntensor_0 = torch.rand(torch.Size([]))\r\ntensor_1 = torch.rand(torch.Size([3]))\r\ntensors = [tensor_0, tensor_1]\r\nres1 = torch.hstack(tensors)\r\n# succeed\r\nres2 = torch.cat(tensors, dim=0)\r\n# RuntimeError: zero-dimensional tensor (at position 0) cannot be concatenated\r\n```\r\n\r\n## "
+},
+{
+    "Bug 1": {
+        "Bug description": "torch.nn.functional.linear function doesn't validate weight dimension == 2. It only asserts weight.t() expects a tensor with <= 2 dimension.",
+        "Code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nclass Net(nn.Module):\n    def __init__(self):\n        super().__init__()\n\n    def forward(self, a):\n        b = torch.ones([10])\n        return F.linear(a, b)\n\nnet = Net()\na = torch.ones([1,1,10])\nout = net(a)\nprint(out)\ntorch.onnx.export(net, (a,), \"tmp.onnx\")",
+        "API": "torch.nn.functional.linear(input, weight, bias) \u2192 \u00b6",
+        "Patch": "The patch for this bug is to validate the dimension of the weight tensor before applying the linear transformation. The weight tensor should have exactly 2 dimensions, matching the shape (out_features, in_features), as specified in the documentation. If the weight tensor doesn't have 2 dimensions, an error should be raised to indicate the incorrect input. This validation can be done by adding an assertion or if statement before applying the linear operation."
+    },
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/64978",
+    "API name": "\n torch.nn.functional. linear ( input ,  weight ,  bias )   \u2192 \u00b6",
+    "Bug description": "\r\ntorch.nn.functional.linear function doesn't validate weight dimension == 2. \r\nIt only asserts  weight.t() expects a tensor with <= 2 dimension.\r\n\r\nFrom doc: https://pytorch.org/docs/stable/generated/torch.nn.functional.linear.html#torch.nn.functional.linear\r\n```\r\n Weight: (out_features,in_features)\r\n```\r\n\r\nFor example, it works with weight 1-d\r\n```\r\n>>> import torch\r\n>>> a = torch.ones([1,1,10])\r\n>>> b = torch.ones([10])   # weight is 1-d\r\n>>> c = torch.nn.functional.linear(a, b)\r\n>>> c\r\ntensor([[10.]])\r\n```\r\nBut, **onnx.export** is fail on torch v1.9.0, otherwise torch v1.8.0 ~ v1.4.0 works. \r\n\r\n## "
+},
+{
+    "Patch": "The bug seems to occur due to the use of sparse tensors in TorchScript, which is still experimental and may not be fully optimized. To avoid the bug, I suggest using dense tensors instead of sparse tensors. You can convert the sparse tensors to dense tensors using the `to_dense()` method before passing them to the `trace()` function. This should allow the model to train and trace without triggering any exceptions. Note that using dense tensors may affect the performance and memory usage of the model, so it's important to consider the trade-offs before making this change.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/54638",
+    "API name": "\n torch.jit. trace ( func ,  example_inputs ,  optimize=None ,  check_trace=True ,  check_inputs=None ,  check_tolerance=1e-05 ,  strict=True ,  _force_outplace=False ,  _module_class=None ,  _compilation_unit=<torch.jit.CompilationUnit ) [source] \u00b6",
+    "Bug description": " of what the bug is. -->\r\n\r\n## To Reproduce\r\n\r\nSteps to reproduce the behavior:\r\n\r\n1. Construct a basic gcn (example code below)\r\n```\r\nimport torch\r\n\r\n### LAYER and GCN DEFINITION\r\n\r\nclass HiddenLayerSparse(torch.nn.Module):\r\n    def __init__(self, dimf_in, dimf_out):\r\n        super().__init__()\r\n        self.weights = torch.nn.Parameter(torch.rand(dimf_in, dimf_out, dtype=float))\r\n\r\n    def forward(self, adj, x):\r\n        x = torch.mm(x, self.weights)\r\n        x = torch.mm(adj, x)\r\n        return x\r\n\r\nclass ExampleSparseGCN(torch.nn.Module):\r\n    def __init__(self, sizes):\r\n        super().__init__()\r\n        self.sizes = sizes\r\n        self.hidden_layers = torch.nn.ModuleList([HiddenLayerSparse(sizes[i], sizes[i+1]) for i in range(len(sizes)-1)])\r\n        self.nonlinear = torch.nn.ReLU()\r\n        self.softmax = torch.nn.Softmax(dim=1)\r\n\r\n    def forward(self, adj, x):\r\n        for h in self.hidden_layers:\r\n            x = self.nonlinear(h(adj, x))\r\n        return self.softmax(x)\r\n\r\n### EXAMPLE SPARSE INPUTS\r\n\r\nadjacency = torch.tensor([[1,0],[0,1]], dtype=float).to_sparse()\r\nfeatures = torch.tensor([[1,0,0,1,0],[0,1,0,0,1]],dtype=float).to_sparse()\r\nlabels = torch.tensor([[1,0,0], [0,1,0]],dtype=float)\r\ninputs = (adjacency, features)\r\n\r\nmodel = ExampleSparseGCN([5, 4, 3]) # training does not fail with [5,3]\r\nloss_fn =  torch.nn.L1Loss()\r\noptimizer = torch.optim.SGD(model.parameters(), lr=0.05)\r\n\r\n_train = False      # FLAG TO ENABLE TRAINING\r\n_trace = True      # FLAG TO ENABLE TRACING\r\n\r\n# TRAINING \r\nif _train:\r\n    model.train()\r\n    for t in range(50):\r\n        optimizer.zero_grad()\r\n        output = model(*inputs)\r\n        loss = loss_fn(output, labels)\r\n        loss.backward()\r\n        optimizer.step() \r\n    print('Train Complete')\r\n\r\n# TRACING\r\nif _trace:\r\n    model.eval()\r\n    with torch.no_grad():\r\n        #torch.onnx.export(model, inputs, path, do_constant_folding=True, verbose=True, export_params=True)\r\n        traced = torch.jit.trace(model, inputs)\r\n    print('Trace Complete')\r\n```\r\n2. Attempt to trace a model without training. (`python example.py`)\r\n3. Attempt to trace a model with training (set `_train = True`)\r\n\r\nAny GCN with sparse inputs **or** dense inputs with `torch.sparse.mm` fails to trace. Using `torch.sparse.mm` breaks training with exception:\r\n```\r\nTraceback (most recent call last):\r\n  File \".\\minimum_example.py\", line 46, in <module>\r\n    loss.backward()\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\tensor.py\", line 221, in backward\r\n    torch.autograd.backward(self, gradient, retain_graph, create_graph)\r\n  File \"C:\\ProgramData\\Anaconda3\\lib\\site-packages\\torch\\autograd\\__init__.py\", line 130, in backward\r\n    Variable._execution_engine.run_backward(\r\nRuntimeError: sparse_.is_sparse() INTERNAL ASSERT FAILED at \"..\\\\torch\\\\csrc\\\\autograd\\\\FunctionsManual.cpp\":560, please report a bug to PyTorch.\r\n```\r\n\r\n## Expected behavior\r\n\r\nI expect the model to train and trace without triggering any exceptions using `torch.sparse.mm`. Currently tracing always fails, and using `torch.sparse.mm` causes training to fail in the backward pass (which can be alleviated by using `torch.mm`.)\r\n\r\n## Environment\r\n\r\n```\r\nPyTorch version: 1.7.1+cpu\r\nIs debug build: False\r\nCUDA used to build PyTorch: Could not collect\r\nROCM used to build PyTorch: N/A\r\n\r\nOS: Microsoft Windows 10 Education\r\nGCC version: Could not collect\r\nClang version: Could not collect\r\nCMake version: Could not collect\r\n\r\nPython version: 3.8 (64-bit runtime)\r\nIs CUDA available: False\r\nCUDA runtime version: Could not collect\r\nGPU models and configuration: GPU 0: GeForce RTX 2070\r\nNvidia driver version: 456.71\r\ncuDNN version: Could not collect\r\nHIP runtime version: N/A\r\nMIOpen runtime version: N/A\r\n\r\nVersions of relevant libraries:\r\n[pip3] numpy==1.18.5\r\n[pip3] numpydoc==1.1.0\r\n[pip3] torch==1.7.1\r\n[conda] blas                      1.0                         mkl\r\n[conda] mkl                       2020.1                      216\r\n[conda] mkl-service               2.3.0            py38hb782905_0\r\n[conda] mkl_fft                   1.1.0            py38h45dec08_0\r\n[conda] mkl_random                1.1.1            py38h47e9c7a_0\r\n[conda] numpy                     1.18.5           py38h6530119_0\r\n[conda] numpy-base                1.18.5           py38hc3f5095_0\r\n[conda] numpydoc                  1.1.0                      py_0\r\n[conda] torch                     1.7.1                    pypi_0    pypi\r\n```\r\n\r\n## Additional context\r\n\r\nPlease let me know if more context/information/support is needed from my end.\r\n\n\ncc @gmagogsfm"
+},
+{
+    "Patch": "The error is caused by an overflow in the calculation of the output size. The issue lies in the `_max_pool1d` function in the `torch/nn/functional.py` file. To fix this, we need to check the input size and ensure that the output size is within the valid range. We can modify the code in the `_max_pool1d` function to handle large input sizes by considering the edge case of integer overflow. Specifically, we can update the code to check if the calculated output size is negative and handle it gracefully by throwing an appropriate error or returning an empty tensor. This will prevent the runtime error and provide a more informative message to the user, indicating that the input size is too large.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/54499",
+    "API name": null,
+    "Bug description": "\r\n\r\nThe `MaxPool1d` takes an integer as its first argument. However, when I pass a big number to this function, I got an Runtime Errror. This error is quit normal but the log is interesting.\r\n`RuntimeError: Given input size: (16x1x50). Calculated output size: (16x1x-272823246). Output size is too small`\r\nthe calculated out put size, has a negative number. I think it meets an integer overflow. But I can't figure out what function going wrong right now.\r\n\r\n## To Reproduce\r\n\r\nSteps to reproduce the behavior:\r\n`import torch `\r\n`m=torch.nn.MaxPool1d(545646544,stride=2)`\r\n`input=input=torch.randn(20,16,50)`.\r\n`m(input)`\r\n\r\nthen I got the runtime error.\r\n`Traceback (most recent call last):\r\n  File \"<stdin>\", line 1, in <module>\r\n  File \"/usr/local/python3.7.5/lib/python3.7/site-packages/torch/nn/modules/module.py\", line 651, in __call__\r\n    result = self.forward(*input, **kwargs)\r\n  File \"/usr/local/python3.7.5/lib/python3.7/site-packages/torch/nn/modules/pooling.py\", line 76, in forward\r\n    self.return_indices)\r\n  File \"/usr/local/python3.7.5/lib/python3.7/site-packages/torch/_jit_internal.py\", line 209, in fn\r\n    return if_false(*args, **kwargs)\r\n  File \"/usr/local/python3.7.5/lib/python3.7/site-packages/torch/nn/functional.py\", line 496, in _max_pool1d\r\n    input, kernel_size, stride, padding, dilation, ceil_mode)\r\nRuntimeError: Given input size: (16x1x50). Calculated output size: (16x1x-272823246). Output size is too small\r\n`\r\n\r\n\r\n## "
+},
+{
+    "Patch": "In the matmul function, add a check to ensure that the input and other tensors are not empty before performing the matrix multiplication. If any of the tensors are empty, return an empty tensor as the output.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/53407",
+    "API name": "\n torch. matmul ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": "\r\n\r\nI am getting the following error when running batched grad and gradgrad checks through OpInfo with empty input tensors\r\n\r\n```\r\nRuntimeError: While computing batched gradients, got: cannot reshape tensor of 0 elements into shape [-1, 0] because the unspecified dimension size -1 can be any value and is ambiguous\r\n```\r\n\r\n## "
+},
+{
+    "Patch": "The bug is caused by the large grid values that overflow the calculations and result in NaN values. To fix this, we can clip the grid values to a reasonable range before using them in the calculations. This can be done by adding the line 'grid = torch.clamp(grid, -1, 1)' before using the grid values in the calculations. This will ensure that the grid values are within a valid range and will prevent the overflow issue.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/51911",
+    "API name": "\n torch.nn.functional. grid_sample ( input ,  grid ,  mode ,  padding_mode ,  align_corners ) [source] \u00b6",
+    "Bug description": "\r\n\r\n`torch.nn.functional.grid_sample` outputs NaN if `grid` contains large value\r\n\r\n## To Reproduce\r\n~~~python\r\nimport torch\r\ntorch.nn.functional.grid_sample(input=torch.ones([1,1,1,5]), grid=torch.tensor([[[[ 2.9839e+38, -3.2406e+38]]]]))\r\n~~~\r\n\r\nOutput:\r\n~~~python\r\ntensor([[[[nan]]]])\r\n~~~\r\n## "
+},
+{
+    "Patch": "The bug in `torch.nn.functional.binary_cross_entropy` is caused when the input is empty. To fix this, we can check if the input is empty and return 0 as the loss value in this case.",
+    "LineNumber": "2",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/51906",
+    "API name": "\n torch.nn.functional. binary_cross_entropy_with_logits ( input ,  target ,  weight ,  size_average ,  reduce ,  reduction ,  pos_weight ) [source] \u00b6",
+    "Bug description": "\r\n\r\n`torch.nn.functional.binary_cross_entropy_with_logits` outputs NaN when input is empty or large\r\n`torch.nn.functional.binary_cross_entropy` outputs NaN when input is empty\r\n\r\n\r\n## To Reproduce\r\n~~~python\r\nimport torch\r\ntorch.nn.functional.binary_cross_entropy(input=torch.tensor([]), target=torch.tensor([]))\r\n~~~\r\nOutput:\r\n~~~python\r\ntensor(nan)\r\n~~~\r\n\r\n~~~python\r\nimport torch\r\ntorch.nn.functional.binary_cross_entropy_with_logits(input=torch.tensor([]), target=torch.tensor([]))\r\n~~~\r\nOutput:\r\n~~~python\r\ntensor(nan)\r\n~~~\r\n\r\n~~~python\r\nimport torch\r\ntorch.nn.functional.binary_cross_entropy_with_logits(input=torch.tensor([-2.3135e+307,  6.6756e+307]), target=torch.ones((2)))\r\n~~~\r\n\r\nOutput:\r\n~~~python\r\ntensor(nan)\r\n~~~\r\n\r\n\r\n\r\n## "
+},
+{
+    "Patch": "The bug is caused by the fact that `l` is a `Proxy` object, which is a special type of object used internally by the symbolic tracing mechanism. The `arange` API does not support `Proxy` objects in its arguments, hence the error. To fix this, we can convert `l` to a regular Python integer before passing it to `arange`. This can be done by modifying the line `l = x.size(1)` to `l = int(x.size(1))` in the code. This will ensure that `l` is a regular integer and compatible with the `arange` API.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/51803",
+    "API name": "\n torch.nn.functional. binary_cross_entropy ( input ,  target ,  weight ,  size_average ,  reduce ,  reduction ) [source] \u00b6",
+    "Bug description": "\r\n\r\nI'm trying to use torch.fx.symbolic_trace to trace an `arange` call where the first argument to `arange` is part of the size of the input tensor:\r\n```\r\nl = x.size(1)\r\ntorch.arange(l, dtype=torch.long, device='cuda')\r\n```\r\nAnd it fails.\r\n\r\n## To Reproduce\r\n\r\n```\r\nimport torch\r\nfrom torch.fx import symbolic_trace\r\ndef test(x):\r\n    l = x.size(1)\r\n    return torch.arange(l, dtype=torch.long, device='cuda')\r\ntraced = symbolic_trace(test)\r\n```\r\nTrace:\r\n```\r\nTraceback (most recent call last):\r\n  File \"repro.py\", line 6, in <module>\r\n    traced = symbolic_trace(test)\r\n  File \"/opt/pytorch/pytorch/torch/fx/symbolic_trace.py\", line 606, in symbolic_trace\r\n    graph = tracer.trace(root, concrete_args)\r\n  File \"/opt/pytorch/pytorch/torch/fx/symbolic_trace.py\", line 355, in trace\r\n    self.create_node('output', 'output', (self.create_arg(fn(*args)),), {},\r\n  File \"repro.py\", line 5, in test\r\n    return torch.arange(l, dtype=torch.long, device='cuda')\r\nTypeError: arange() received an invalid combination of arguments - got (Proxy, device=str, dtype=torch.dtype), but expected one of:\r\n * (Number end, *, Tensor out, torch.dtype dtype, torch.layout layout, torch.device device, bool pin_memory, bool requires_grad)\r\n * (Number start, Number end, Number step, *, Tensor out, torch.dtype dtype, torch.layout layout, torch.device device, bool pin_memory, bool requires_grad)\r\n *\r\n```\r\n\r\n## "
+},
+{
+    "Patch": "The crash could be caused by the large negative number in the input_lengths tensor. One possible patch is to add a check to ensure that the input_lengths tensor does not contain any negative values. This can be done by adding a condition before calling the ctc_loss function that checks if any element in the input_lengths tensor is less than 0. If any element is less than 0, then raise an exception or return an appropriate error message to inform the user that the input_lengths tensor should only contain non-negative values.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/51732",
+    "API name": "\n torch.nn.functional. ctc_loss ( log_probs ,  targets ,  input_lengths ,  target_lengths ,  blank ,  reduction ,  zero_infinity ) [source] \u00b6",
+    "Bug description": "\r\n\r\n`torch.nn.functional.ctc_loss`  crash(segfault) when `input_lengths` contains large negative number.\r\n\r\n## To Reproduce\r\n~~~python\r\nimport torch \r\ntorch.nn.functional.ctc_loss(log_probs=torch.ones((1,2,1)), targets=torch.ones((2,1)), input_lengths=torch.tensor([-5570080269274466818, -1]), target_lengths=torch.tensor((1,1)))\r\n~~~\r\n\r\nOutput:\r\n~~~python\r\nSegmentation fault (core dumped)\r\n~~~\r\n\r\n## "
+},
+{
+    "Patch": "The bug is caused by an out of memory error due to the large padding value. To fix this, we need to handle such large values gracefully. One possible solution is to limit the maximum padding value that can be passed to the ReplicationPad3d and ReplicationPad2d functions. We can add a check at the beginning of the functions to verify if the padding value exceeds the maximum allowed value. If it does, we can throw an exception or return an error message indicating that the padding value is too large and needs to be reduced.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/51134",
+    "API name": null,
+    "Bug description": "\r\n\r\nsegmentation fault in `torch.nn.ReplicationPad3d` and `torch.nn.ReplicationPad2d` when `padding` is large\r\n\r\n## To Reproduce\r\n~~~python\r\nimport torch\r\nlayer = torch.nn.ReplicationPad3d(padding=498444555)\r\nmodel_input = torch.ones([1, 1, 1, 1, 1])\r\nlayer(model_input)\r\n~~~\r\n\r\n~~~python\r\nimport torch\r\nlayer = torch.nn.ReplicationPad2d(padding=1012756988)\r\nmodel_input = torch.ones([2,2,2,2])\r\nlayer(model_input)\r\n~~~\r\n\r\nOutput:\r\n~~~python\r\nSegmentation fault (core dumped)\r\n~~~\r\n\r\n## "
+},
+{
+    "Patch": "The bug is caused by passing a very large integer value (9223372036854775807) to the `torch.bincount` function, which causes an integer overflow. To fix this bug, we can add a check to verify that the input tensor contains only non-negative integers before computing the bincount. We can do this by adding the following code at the beginning of the `bincount` implementation in C++: \n\n\n```cpp\n  TORCH_CHECK(input.ge(0).all(), \"Input tensor should contain only non-negative integers\"); \n``` \n\n This check will ensure that the input tensor is valid and avoids the integer overflow bug.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/49520",
+    "API name": null,
+    "Bug description": " of what the bug is. -->\r\n\r\n## To Reproduce\r\n~~~python\r\nimport torch\r\ntorch.bincount(input =torch.tensor([9223372036854775807]))\r\n~~~\r\n\r\nThe code snippet gives \r\n~~~\r\nSegmentation fault (core dumped)\r\n~~~\r\n\r\n## Expected behavior\r\nexpect no crash\r\n\r\n## Environment\r\n\r\nPyTorch version: 1.5.0\r\nIs debug build: False\r\nCUDA used to build PyTorch: 10.1\r\nROCM used to build PyTorch: N/A\r\n\r\nOS: Ubuntu 18.04.4 LTS (x86_64)\r\nGCC version: Could not collect\r\nClang version: Could not collect\r\nCMake version: version 3.14.0\r\n\r\nPython version: 3.7 (64-bit runtime)\r\nIs CUDA available: False\r\nCUDA runtime version: No CUDA\r\nGPU models and configuration: No CUDA\r\nNvidia driver version: No CUDA\r\ncuDNN version: No CUDA\r\nHIP runtime version: N/A\r\nMIOpen runtime version: N/A"
+},
+{
+    "Patch": "The bug is caused by passing an index tensor with incompatible dimensions to the gather() function. To patch the bug, we need to ensure that the index tensor has the correct dimensions. In the given code, the index tensor is intended to be unsqueezed along dimension 1, but it is currently unsqueezed along dimension 0. To fix this, the line `index = torch.randint(2, size=(4,)).unsqueeze(0)` should be changed to `index = torch.randint(2, size=(4,)).unsqueeze(1)`, which correctly unsqueezes the index tensor along dimension 1. This would ensure that the dimensions of the index tensor match the dimensions of the input tensor, and the gather() function would raise an exception as expected when incompatible dimensions are passed.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/47610",
+    "API name": "\n torch. gather ( input ,  dim ,  index ,  * ,  sparse_grad ,  out )   \u2192 \u00b6",
+    "Bug description": "\r\n\r\nThe input dimension check was dropped somewhere between PyTorch 1.5.1 and 1.6.\r\n\r\n## To Reproduce\r\n\r\nThe following code runs successfully. However, the `index` argument has incompatible dimensions and should raise an exception.\r\n\r\n```python\r\nimport torch\r\ntorch.manual_seed(0)\r\ninput = torch.rand(4, 2)\r\nindex = torch.randint(2, size=(4,)).unsqueeze(0)  # intended to be unsqueeze(1)\r\ndim = 1\r\noutput = torch.gather(input, dim, index)\r\nprint(\"input = \", input)\r\nprint(\"index = \", index)\r\nprint(\"output = \", output)\r\n```\r\n\r\n<!-- If you have a code sample, error messages, stack traces, please provide it here as well -->\r\n\r\n## "
+},
+{
+    "Patch": "The issue is that PyTorch's mode function behaves differently on CPU and GPU devices when there are NaN values in the input. On CPU, the function correctly handles NaN values and returns the expected result. However, on GPU, the function does not handle NaN values correctly and returns incorrect results. To fix this issue, we can modify the mode function to handle NaN values properly on GPU devices. Specifically, we can add a check to ignore NaN values when computing the mode. This can be done by filtering out NaN values from the input tensor before computing the mode. Here is the suggested patch:\n\n1. Find the mode function implementation in the PyTorch codebase.\n2. Add a check to ignore NaN values in the input tensor before computing the mode.\n3. Test the modified version of the mode function to ensure that it correctly handles NaN values on GPU devices.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/46225",
+    "API name": "\n torch. mode ( input ,  dim ,  keepdim ,  * ,  out ) \u00b6",
+    "Bug description": " of what you expected to happen. -->\r\n\r\n## Environment\r\n\r\nOutput of `collect_env.py`:\r\n```\r\nCollecting environment information...\r\nPyTorch version: 1.6.0\r\nIs debug build: False\r\nCUDA used to build PyTorch: 10.2\r\nROCM used to build PyTorch: N/A\r\n\r\nOS: Ubuntu 18.04.3 LTS (x86_64)\r\nGCC version: (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0\r\nClang version: Could not collect\r\nCMake version: version 3.10.2\r\n\r\nPython version: 3.7 (64-bit runtime)\r\nIs CUDA available: True\r\nCUDA runtime version: 10.0.130\r\nGPU models and configuration:\r\nGPU 0: TITAN RTX\r\nGPU 1: TITAN RTX\r\nGPU 2: GeForce RTX 2080 Ti\r\nGPU 3: GeForce GTX 1080 Ti\r\n\r\nNvidia driver version: 440.64.00\r\ncuDNN version: /usr/lib/x86_64-linux-gnu/libcudnn.so.7.6.5\r\nHIP runtime version: N/A\r\nMIOpen runtime version: N/A\r\n\r\nVersions of relevant libraries:\r\n[pip3] msgpack-numpy==0.4.4.3\r\n[pip3] numpy==1.16.1\r\n[pip3] numpy-quaternion==2020.10.2.17.17.31\r\n[pip3] numpy-stl==2.10.1\r\n[pip3] torch==1.6.0\r\n[pip3] torchvision==0.6.0\r\n[conda] msgpack-numpy             0.4.4.3                  pypi_0    pypi\r\n[conda] numpy                     1.16.1                   pypi_0    pypi\r\n[conda] numpy-quaternion          2020.10.2.17.17.31          pypi_0    pypi\r\n[conda] numpy-stl                 2.10.1                   pypi_0    pypi\r\n[conda] torch                     1.6.0                    pypi_0    pypi\r\n[conda] torchvision               0.6.0                    pypi_0    pypi\r\n```\r\n\r\n\n\ncc @brianjo @mruberry @rgommers @heitorschueroff @ezyang @gchanan @zou3519 @bdhirsh @ejguan @jlin27"
+},
+{
+    "Patch": "The bug is caused by the CUDA implementation of `torch.svd()` incorrectly handling `nan` values in the input tensor. To fix this, the CUDA implementation should include a check to identify `nan` values and return `nan` in the result tensor `S` if any `nan` value is present in the input tensor. Additionally, the CUDA implementation should ensure that the result tensor is of the same shape as the input tensor. Once these changes are made, the bug should be fixed and the correct result (`S=nan`) should be returned when the input tensor contains a `nan` value.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/43567",
+    "API name": "\n torch. svd ( input ,  some ,  compute_uv ,  * ,  out ) \u00b6",
+    "Bug description": "\r\n\r\nIn at least one case, `torch.svd()`'s CUDA implementation gives an incorrect result when the input contains a `nan` value.\r\n\r\nThis issue shows up when the input is `torch.tensor([[float('nan'), 1.0]])`.\r\n\r\n## To Reproduce\r\n\r\n```\r\n>>> import torch\r\n>>> torch.svd(torch.tensor([[float('nan'), 1.0]]))\r\ntorch.return_types.svd(\r\nU=tensor([[1.]]),\r\nS=tensor([nan]),\r\nV=tensor([[nan],\r\n        [nan]]))\r\n>>> torch.svd(torch.tensor([[float('nan'), 1.0]]).cuda())\r\ntorch.return_types.svd(\r\nU=tensor([[1.]], device='cuda:0'),\r\nS=tensor([1.4142], device='cuda:0'),\r\nV=tensor([[nan],\r\n        [nan]], device='cuda:0'))\r\n```\r\n\r\n## "
+},
+{
+    "Patch": "The bug is caused by the limited precision of floating point arithmetic. When the number of categories is large and/or the probabilities have very different values, the numerical errors can accumulate and result in inaccurate results. To fix this bug, we can use a more precise data type, such as double precision floating point numbers, for storing the probabilities. This can be done by casting the `probs` tensor to `torch.float64` before passing it to `torch.multinomial`:\n\n```python\nimport torch\n\nfor ncat in (2**8, 2**22, 2**24):\n    probs = torch.empty(ncat, dtype=torch.float64)\n    half = ncat // 2\n    probs[half:] = 1\n    probs[:half-1] = 2\n    out = torch.multinomial(probs, num_samples=10**5, replacement=True)\n    print(\"number of categories {:10}, number of samples in upper half {:8} \".format(ncat, (out >= half).sum().item()))\n```\n\nBy using a more precise data type for storing the probabilities, we can reduce the impact of numerical errors and produce more accurate results.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/43115",
+    "API name": "\n torch. multinomial ( input ,  num_samples ,  replacement ,  * ,  generator ,  out )   \u2192 \u00b6",
+    "Bug description": "\r\n\r\n`torch.multinomial` with `replacement=True` produces very inaccurate results when number of categories is large (and/or probabilities have very different values)\r\n\r\n## "
+},
+{
+    "Patch": "The error message indicates that the input tensors should be 1D vectors, but in this case, the input tensors `tensor_a` and `tensor_b` have a shape of [3, 2]. To fix this, we need to flatten the tensors to 1D using the `.view()` method before passing them to `torch.cartesian_prod()`. Here's the suggested patch:\n\n```python\ntorch.cartesian_prod(tensor_a.view(-1), tensor_b.view(-1))\n```",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/37556",
+    "API name": "\n torch. cartesian_prod ( * ) [source] \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "Make sure to validate the input tensors before concatenating them. This can be done by checking if the provided tensors are of the same shape along the dimension specified by `dim`.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/25648",
+    "API name": "\n torch. cat ( tensors ,  dim ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "The issue is caused by improper handling of `NaN` values in the `grid` input of the `grid_sample` function. To fix this, the `grid_sample` function should check if the `grid` input contains any `NaN` values. If it does, the `grid_sample` function should place a `NaN` in the output for every grid location that has a `NaN`. This can be done by adding a check for `NaN` values in the `grid` input and setting the corresponding output grid location as `NaN`. This patch will ensure that the `grid_sample` function handles `NaN` values properly and produces correct results.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/24823",
+    "API name": "\n torch.nn.functional. grid_sample ( input ,  grid ,  mode ,  padding_mode ,  align_corners ) [source] \u00b6",
+    "Bug description": "\r\n\r\nThe `grid_sample` function does not have proper handling of `NaN` values for in its grid input.\r\n\r\nThe 2D CPU version segfaults under certain conditions and parameters, as described in https://github.com/pytorch/pytorch/issues/19826, and with simplified examples below.\r\n\r\nThe other `grid_sample` kernels (3D CPU, and 2D/3D CUDA) do not segfault, but produce incorrect results under certain conditions when the grid contains a `NaN` value.\r\n\r\nProper handling would place a `NaN` in the output for every grid location that has a `NaN`.\r\n\r\n### "
+},
+{
+    "Patch": "The suggested patch is to issue multiple calls to cublasSgemv when the input matrix has more than 2^31-1 elements. This can be done by splitting the input matrix into smaller sections and applying the matrix-vector multiplication on each section separately. The results can then be combined together to obtain the final result. This approach ensures that the memory access is within the limits of cuBLAS and avoids the illegal memory access bug.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/17897",
+    "API name": "\n torch. mv ( input ,  vec ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": "\r\n\r\n`torch.mv` causes an \"illegal memory access\" when multiplying a matrix with more than 2^31-1 elements. Note that each dim of the first matrix can fit in an `int`.\r\n\r\nThis is likely a bug in cuBLAS. Either cuBLAS should be fixed or PyTorch should issue multiple calls to `cublasSgemv`.\r\n\r\n## "
+},
