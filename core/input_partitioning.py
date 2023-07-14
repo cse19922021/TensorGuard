@@ -57,6 +57,99 @@ def gpt_conversation(prompt, model="gpt-3.5-turbo"):
     return response
 
 
+
+history_based_partitions = {
+    "<integer>": 
+    {
+        'Integer argument that have negative values': 'max_output_size=-1,',
+        'Integer argument that have zero values': 'batch_size = 0',
+        'Integer argument that have large values': 'out_dim = 1250999896764',
+        'Integer argument that have negative and large values': 'out_dim = -1250999896764',
+        'Integer argument that are empty': 'dim= []',
+
+    },
+    "<float>": {
+        'Float argument that have negative values': 'max_output_size=-1.9',
+        'Float argument that have zero values': 'max_output_size=-0.0',
+        'Float argument that have larges': 'max_output_size=1250999896764.1',
+        'Float argument that have negative and large values': 'max_output_size=-1250999896764.1',
+        'Empty float arguments': 'dim= []',
+    },
+    '<string: 2>':
+    {
+        "Invalid string": '流星暴雨',
+        "Empty string": 'logdir=''',
+    },
+    '<Python list: 6>': {
+        'A list containing large integer or float elements': 'limits=[10.0,1e20]',
+        'A list containing integer or float zero elements': 'arg = [3, 1, 0, 3]',
+        'A list containing negative integer or float elements': 'row_pooling_sequence=[-10,1,2,3]',
+        'An empty list': 'indices=[[],[],[]],',
+        'A list that contains invalid string values': 'handle=["\x12\x1a\x07"]',
+        'A list containing nan elements': 'limits=[np.nan,1e20]',
+        'A list containing None elements': 'limits=[None,1e20]',
+        'A list containing invalid elements':'handle=["\x12\x1a\x07", 1, 2]'
+    },
+    '<Python tuple: 5>': {
+        'A tuple containing large integer or float elements': 'limits=(10.0,1e20)',
+        'A tuple containing integer or float zero elements': 'arg = (3, 1, 0, 3)',
+        'A tuple containing negative integer or float elements': 'row_pooling_sequence=(-10,1,2,3)',
+        'An empty tuple': 'indices=((),(),())',
+        'A tuple that contains invalid string values': 'handle=("\x12\x1a\x07", 1, 2)',
+        'A tuple with nan elements': 'limits=(np.nan,1e20)',
+        'A tuple with None elements': 'limits=(None,1e20)',
+        'A tuple with invalid elements':'limits=("\x12\x1a\x07",1e20)'
+    },
+    '<tensor: 9>': {
+        "Input tensor that is not scalars": 'num_bits = tf.constant([], shape=[0], dtype=tf.int32)',
+        "tensors with large values and shape": 'arg_0=tf.random.uniform(shape=(4,), dtype=tf.int32, maxval=65536)',
+        'tensors with negative shapes and values': 'orig_input_shape = tf.constant(-536870912, shape=[4], dtype=tf.int32)',
+        'tensors with scalar values': 'dataset = tf.data.Dataset.range(3)',
+        'tensors with nan values': 'x = torch.tensor(float(np.nan)).cuda()',
+        'tensors with zero values and ranks': 'b = torch.IntTensor([0,1])',
+        'tensors with empty values': 'total_length = torch.full([], -9937, dtype=torch.int64, requires_grad=False)',
+    },
+}
+
+def create_prompt_generate_samples_for_history_partitions(partition, arg, ex):
+    prompt_ = f"""
+    You are an experienced software developer. 
+    You are great at understanding software securities and bugs that are caused by feeding malicious inputs to Python APIs. 
+    When you don't know how to generate malicious samples for fuzzing, you admit that you don't know. 
+
+    Your task is to generate malicious samples in a systematic manner for each partition {partition} of the argument type {arg} for API-level fuzzing.
+    
+    Here is an example {ex}.
+    Generate as many malicious samples as you can. Do not generate duplicate samples.
+    
+    Please note that API level fuzzing is for TensorFLow and PyTorch.
+    
+    Please output the samples in given json format:
+        
+    <answer json start>,
+    "Sample 1":"Sample 1",
+    "Sample 2":"Sample 2",
+    ...
+    "Sample n":"Sample n",
+
+    """
+    return prompt_
+
+def create_prompt_convert_partition_to_code(partition, arg, api):
+    prompt_ = f"""
+    You are an experienced TensorFlow backend software developer. You are also great at converting natural language to source code. When you don't know how convert a natual languae to code, you admit that you don't know.
+    
+    Your task is to convert the given parition{partition} of the argument {arg} of the API {api} to Python code example.
+    
+    Please generate only one example code for the parition. 
+
+    Please output the partitions in given json format:
+        
+    <answer json start>,
+    "Partition":"Example python client code",
+    """
+    return prompt_
+
 def create_prompt_fix_sugesstion():
     prompt_ = f"""
     You are an experienced software developer in API-level fuzz testing. You are great at understanding software security and bugs that are caused by feeding malicious inputs to APIs. When you don't know how to do input space partitioning, you admit that you don't know. 
@@ -78,12 +171,11 @@ def create_prompt_fix_sugesstion():
 
     return prompt_
 
-def create_prompt(api_name, record):
+def create_prompt_argument_partitioning(api_name, record):
     prompt_ = f"""
     You are an experienced software developer in API-level fuzz testing. You are great at understanding software security and bugs that are caused by feeding malicious inputs to APIs. When you don't know how to do input space partitioning, you admit that you don't know. 
 
-    Your task is to perform input space partitioning for each parameter in {api_name}. The arguments and their values are:
-    Arguments: {record}
+    Your task is to perform input space partitioning on the argument {record} of the API {api_name}.
     
     Generate as many partitions as you can for each argument.  
     
@@ -96,7 +188,6 @@ def create_prompt(api_name, record):
     "Partition n":"Explain partition n",
 
     """
-
     return prompt_
 
 
@@ -178,9 +269,31 @@ def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
     return response
 
 
-def exec_input_sp():
-    lib_name = 'torch'
-    rules_path = f"parition_rules/{lib_name}_fixes.json"
+def load_json(_path):
+    f = open(_path)
+    data = json.load(f)
+    return data
+
+def argument_partition_l2():
+    tf_parts = load_json("output/tf_partitions_per_api.json")
+    for item in tf_parts:
+        api_holder = {}
+        for api_k, api_args in item.items():
+            param_holder = {}
+            for param_k, param_v in api_args.items():
+                part_holder = {}
+                for part_k, part_v in param_v.items():
+                    prompt_ = create_prompt_convert_partition_to_code(part_v, param_k, api_k)
+                    conversations = completions_with_backoff(prompt_)
+                    rule_ = conversations.choices[0].message.content
+                    part_holder[part_k] = rule_
+                param_holder[param_k] = part_holder
+            api_holder[api_k] = param_holder
+                    
+
+def argument_partition_l1():
+    lib_name = 'tf'
+    rules_path = f"output/{lib_name}_partitions_per_api.json"
 
     hisotry_file = f"logs/parsed_apis.txt"
 
@@ -192,30 +305,53 @@ def exec_input_sp():
         if api_name not in hist:
             write_list_to_txt4(api_name, hisotry_file)
             print(api_name)
-
             record = get_api_seed(api_name)
-            record_json = json.dumps(record)
-            prompt_ = create_prompt(api_name, record_json)
-            t_count = get_token_count(prompt_)
-            if t_count <= 4097:
-                conversations = completions_with_backoff(prompt_)
-                rule_ = conversations.choices[0].message.content
+            #record.pop("source")
+            arg_per_part = {}
+            for k, v in record.items():
+                if k != 'input_signature' and k != 'output_signature':
+                    record_json = json.dumps(v)
+                    prompt_ = create_prompt_argument_partitioning(api_name, record_json)
+                    t_count = get_token_count(prompt_)
+                    if t_count <= 4097:
+                        conversations = completions_with_backoff(prompt_)
+                        rule_ = conversations.choices[0].message.content
+                        try:
+                            x = json.loads(rule_)
+                            arg_per_part[k] = x
+                        except Exception as e:
+                                print(e)
+            x = {}
+            x[api_name] = arg_per_part
+            with open(rules_path, "a") as json_file:
+                json.dump(x, json_file, indent=4)
+                json_file.write(',')
+                json_file.write('\n')
+   
 
-                try:
-                    x = json.loads(rule_)
-                    x.update({'API name': api_name})
-                    x.update({'API params': record_json})
-                    
-
-                    with open(rules_path, "a") as json_file:
-                        json.dump(x, json_file, indent=4)
-                        json_file.write(',')
-                        json_file.write('\n')
-                except Exception as e:
-                    print(e)
-            else:
-                print("Your messages exceeded the limit.")
-
+def gen_samples_for_history_partitions():
+    rules_path = "/media/nimashiri/DATA/vsprojects/llmrules/output/general_part_samples.json"
+    
+    for k, v in history_based_partitions.items():
+        type_holder = {}
+        part_holder = {}
+        for part_k, part_v in v.items():
+            print(f"Working on {k}:{part_k}")
+            prompt_ = create_prompt_generate_samples_for_history_partitions(part_k, k, part_v)
+            conversations = completions_with_backoff(prompt_)
+            rule_ = conversations.choices[0].message.content
+            rule_ = rule_.replace('{', '')
+            rule_ = rule_.replace('}', '')
+            rule_ = rule_.split('\n')
+            rule_ = [x for x in rule_ if x != '']
+            part_holder[part_k] = rule_
+        type_holder[k] = part_holder
+        
+        with open(rules_path, "a") as json_file:
+            json.dump(type_holder, json_file, indent=4)
+            json_file.write(',')
+            json_file.write('\n')
+   
 
 if __name__ == '__main__':
-    exec_input_sp_type()
+    gen_samples_for_history_partitions()

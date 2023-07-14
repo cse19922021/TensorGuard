@@ -1,0 +1,357 @@
+{
+    "<integer>": {
+        "Integer argument that have negative values": [
+            "  \"Sample 1\": -1,",
+            "  \"Sample 2\": -2,",
+            "  \"Sample 3\": -3,",
+            "  \"Sample 4\": -4,",
+            "  ..."
+        ],
+        "Integer argument that have zero values": [
+            "\"Sample 1\": 0"
+        ],
+        "Integer argument that have large values": [
+            "   \"Sample 1\": \"1250999896764\",",
+            "   \"Sample 2\": \"1250999896765\",",
+            "   \"Sample 3\": \"1250999896766\",",
+            "   ...",
+            "   \"Sample n\": \"1250999900000\""
+        ],
+        "Integer argument that have negative and large values": [
+            "\"Negative Sample 1\": -1250999896764,",
+            "\"Negative Sample 2\": -1000000000000,",
+            "\"Negative Sample 3\": -999999999999,",
+            "\"Negative Sample 4\": -123456789,",
+            "\"Negative Sample 5\": -1000000,",
+            "\"Negative Sample 6\": -10000,",
+            "\"Negative Sample 7\": -1000,",
+            "\"Negative Sample 8\": -100,",
+            "\"Negative Sample 9\": -10,",
+            "\"Negative Sample 10\": -1,",
+            "\"Negative Sample 11\": -100000000,",
+            "\"Negative Sample 12\": -1234567890,",
+            "\"Negative Sample 13\": -987654321,",
+            "\"Negative Sample 14\": -12345678910,",
+            "\"Negative Sample 15\": -100000000000,",
+            "\"Negative Sample 16\": -999999999999,",
+            "\"Negative Sample 17\": -10000000000000,",
+            "\"Negative Sample 18\": -12345678987654321,",
+            "\"Negative Sample 19\": -98765432123456789,",
+            "\"Negative Sample 20\": -100000000000000,",
+            "\"Negative Sample 21\": -9999999999999999,",
+            "\"Negative Sample 22\": -10000000000000000,",
+            "\"Negative Sample 23\": -123456789876543210,",
+            "\"Negative Sample 24\": -987654321234567890,",
+            "\"Negative Sample 25\": -1000000000000000,",
+            "\"Negative Sample 26\": -99999999999999999"
+        ],
+        "Integer argument that are empty": [
+            "    \"Sample 1\": \"\",",
+            "    \"Sample 2\": \"x\",",
+            "    \"Sample 3\": \"0\",",
+            "    \"Sample 4\": \"-1\",",
+            "    \"Sample 5\": \"1.23\",",
+            "    \"Sample 6\": \"abc\",",
+            "    \"Sample 7\": \"True\",",
+            "    \"Sample 8\": \"False\",",
+            "    \"Sample 9\": \"None\""
+        ]
+    }
+},
+{
+    "<float>": {
+        "Float argument that have negative values": [
+            "    \"Sample 1\": -1.9,",
+            "    \"Sample 2\": -1.8,",
+            "    \"Sample 3\": -1.7,",
+            "    \"Sample 4\": -1.6,",
+            "    \"Sample 5\": -1.5,",
+            "    \"Sample 6\": -1.4,",
+            "    \"Sample 7\": -1.3,",
+            "    \"Sample 8\": -1.2,",
+            "    \"Sample 9\": -1.1,",
+            "    \"Sample 10\": -1.0"
+        ],
+        "Float argument that have zero values": [
+            "\"Sample 1\": \"-0.0\""
+        ],
+        "Float argument that have larges": [
+            "\"Sample 1\": 3.402823e+38, \"Sample 2\": -3.402823e+38"
+        ],
+        "Float argument that have negative and large values": [
+            "    \"Sample 1\": -1.0,",
+            "    \"Sample 2\": -100.0,",
+            "    \"Sample 3\": -1000.0,",
+            "    \"Sample 4\": -10000.0,",
+            "    \"Sample 5\": -100000.0,",
+            "    \"Sample 6\": -1000000.0,",
+            "    \"Sample 7\": -10000000.0,",
+            "    \"Sample 8\": -100000000.0,",
+            "    \"Sample 9\": -1000000000.0"
+        ],
+        "Empty float arguments": [
+            "    \"Sample 1\": \"\",",
+            "    \"Sample 2\": \"-1.0\",",
+            "    \"Sample 3\": \"0.0\",",
+            "    \"Sample 4\": \"1.0\",",
+            "    \"Sample 5\": \"1e16\",",
+            "    \"Sample 6\": \"1e-16\",",
+            "    \"Sample 7\": \"inf\",",
+            "    \"Sample 8\": \"-inf\",",
+            "    \"Sample 9\": \"nan\""
+        ]
+    }
+},
+{
+    "<string: 2>": {
+        "Invalid string": [
+            "    \"Sample 1\": \"'; DROP TABLE users; --\",",
+            "    \"Sample 2\": \"<script>alert('XSS');</script>\",",
+            "    \"Sample 3\": \"SELECT * FROM users WHERE username='admin' OR '1'='1'\",",
+            "    \"Sample 4\": \"<?php echo shell_exec('cat /etc/passwd');?>\",",
+            "    \"Sample 5\": \"rm -rf /\",",
+            "    \"Sample 6\": \"1'; DROP TABLE users; -- \",",
+            "    \"Sample 7\": \"\\\" OR 1=1; DROP TABLE users; --\",",
+            "    \"Sample 8\": \"<script>alert(document.cookie)</script>\",",
+            "    \"Sample 9\": \"<?php system($_GET['cmd']); ?>\",",
+            "    \"Sample 10\": \"../../../../../../etc/passwd\",",
+            "    \"Sample 11\": \"') OR '1'='1'; --\",",
+            "    \"Sample 12\": \"<img src='x' onerror='alert(document.cookie)'>\""
+        ],
+        "Empty string": [
+            "    \"Sample 1\": \"\",",
+            "    \"Sample 2\": \"\",",
+            "    \"Sample 3\": \"\",",
+            "    ...",
+            "    \"Sample n\": \"\""
+        ]
+    }
+},
+{
+    "<Python list: 6>": {
+        "A list containing large integer or float elements": [
+            "    \"Sample 1\": [1e100, 1e100, 1e100],",
+            "    \"Sample 2\": [1e100, 1e100, 1e100, 1e100],",
+            "    \"Sample 3\": [1e100, 1e100, 1e100, 1e100, 1e100],",
+            "    \"Sample 4\": [1e100, 1e100, 1e100, 1e100, 1e100, 1e100],",
+            "    \"Sample 5\": [9.999999999e19, 1e20, 1e20],",
+            "    \"Sample 6\": [10.0, 9.999999999e19, 1e20],",
+            "    \"Sample 7\": [1e20, 9.999999999e19, 10.0],",
+            "    \"Sample 8\": [1e20, 1e20, 9.999999999e19]"
+        ],
+        "A list containing integer or float zero elements": [
+            "    \"Sample 1\": [0, 0, 0, 0],",
+            "    \"Sample 2\": [0, 0, 0, 0, 0],",
+            "    \"Sample 3\": [0, 0, 0, 0, 0, 0],",
+            "    \"Sample 4\": [0],",
+            "    \"Sample 5\": [0, 0],",
+            "    \"Sample 6\": [0, 0, 0],",
+            "    \"Sample 7\": [0, 0, 0, 0, 0, 0, 0],",
+            "    \"Sample 8\": [0, 0, 0, 0, 0, 0, 0, 0],",
+            "    \"Sample 9\": [0, 0, 0, 0, 0, 0, 0, 0, 0],",
+            "    \"Sample 10\": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]"
+        ],
+        "A list containing negative integer or float elements": [
+            "    \"Sample 1\": \"[-10.5, 1, 2, 3]\",",
+            "    \"Sample 2\": \"[-10, 1.5, 2, 3]\",",
+            "    \"Sample 3\": \"[-10, 1, 2.5, 3]\",",
+            "    \"Sample 4\": \"[-10, 1, 2, 3.5]\",",
+            "    \"Sample 5\": \"[-10.1, 1, 2, 3]\",",
+            "    \"Sample 6\": \"[-10, 1.1, 2, 3]\",",
+            "    \"Sample 7\": \"[-10, 1, 2.1, 3]\",",
+            "    \"Sample 8\": \"[-10, 1, 2, 3.1]\""
+        ],
+        "An empty list": [
+            "\"Sample 1\":[1]"
+        ],
+        "A list that contains invalid string values": [
+            "    \"Sample 1\": [1, 2, 3, 4, 5],",
+            "    \"Sample 2\": [True, False],",
+            "    \"Sample 3\": [None],",
+            "    \"Sample 4\": [\"abc\", \"def\", \"ghi\"],",
+            "    \"Sample 5\": [1.2345, 6.7890],",
+            "    \"Sample 6\": [1, 2, 3, \"abc\"],",
+            "    \"Sample 7\": [1, 2, [3, 4], 5],",
+            "    \"Sample 8\": [1, None, 3, 4, None]"
+        ],
+        "A list containing nan elements": [
+            "    \"Sample 1\": [float('nan'), float('nan'), float('nan'), float('nan'), float('nan'), float('nan')],",
+            "    \"Sample 2\": [float('nan'), float('nan'), float('nan'), float('nan'), float('nan'), float('nan')],",
+            "    ...",
+            "    \"Sample n\": [float('nan'), float('nan'), float('nan'), float('nan'), float('nan'), float('nan')]"
+        ],
+        "A list containing None elements": [
+            "    \"Sample 1\": [None, None, None, None, None, None],",
+            "    \"Sample 2\": [None, None, None, None, None, None],",
+            "    \"Sample 3\": [None, None, None, None, None, None],",
+            "    \"Sample 4\": [None, None, None, None, None, None],",
+            "    \"Sample 5\": [None, None, None, None, None, None]"
+        ],
+        "A list containing invalid elements": [
+            "    \"Sample 1\": [\"\\u0002\\u000e\\u0013\", 1, 2],",
+            "    \"Sample 2\": [\"\\u0014\\u0013\\t\", 1, 2],",
+            "    \"Sample 3\": [\"\\u0010\\u0015\\u001b\", 1, 2],",
+            "    \"Sample 4\": [\"\\u001d\\u0004\\u000f\", 1, 2],",
+            "    \"Sample 5\": [\"\\u0001\\u0015\\u000f\", 1, 2]"
+        ]
+    }
+},
+{
+    "<Python tuple: 5>": {
+        "A tuple containing large integer or float elements": [
+            "    \"Sample 1\": \"(1.7976931348623157e+308, 1.7976931348623157e+308, 1.7976931348623157e+308, 1.7976931348623157e+308, 1.7976931348623157e+308)\",",
+            "    \"Sample 2\": \"(2.2250738585072014e-308, 2.2250738585072014e-308, 2.2250738585072014e-308, 2.2250738585072014e-308, 2.2250738585072014e-308)\",",
+            "    \"Sample 3\": \"(1.7976931348623157e+308, -1.7976931348623157e+308, 1.7976931348623157e+308, -1.7976931348623157e+308, 1.7976931348623157e+308)\",",
+            "    \"Sample 4\": \"(2.2250738585072014e-308, -2.2250738585072014e-308, 2.2250738585072014e-308, -2.2250738585072014e-308, 2.2250738585072014e-308)\""
+        ],
+        "A tuple containing integer or float zero elements": [
+            "\"Sample 1\": \"()\",",
+            " \"Sample 2\": \"(0, 0, 0, 0, 0)\",",
+            " \"Sample 3\": \"(0, 0, 0, 0, 0)\",",
+            " \"Sample 4\": \"(0, 0, 0, 0, 0)\",",
+            " \"Sample 5\": \"(0, 0, 0, 0, 0)\",",
+            " \"Sample 6\": \"(0, 0, 0, 0, 0)\",",
+            " \"Sample 7\": \"(0, 0, 0, 0, 0)\",",
+            " \"Sample 8\": \"(0, 0, 0, 0, 0)\",",
+            " \"Sample 9\": \"(0, 0, 0, 0, 0)\",",
+            " \"Sample 10\": \"(0, 0, 0, 0, 0)\""
+        ],
+        "A tuple containing negative integer or float elements": [
+            "\"Sample 1\": \"(-1.0, -2, -3, -4, -5)\",",
+            "\"Sample 2\": \"(-1.0, -2.0, -3.0, -4.0, -5.0)\",",
+            "\"Sample 3\": \"(-1, -2, -3, -4, -5)\",",
+            "\"Sample 4\": \"(-1, -2, -3.0, -4.0, -5)\",",
+            "\"Sample 5\": \"(-1, -2, -3, -4, -5.0)\""
+        ],
+        "An empty tuple": [
+            "    \"Sample 1\": [],",
+            "    \"Sample 2\": [(), (), ()],",
+            "    \"Sample 3\": [(), (), (), ()],",
+            "    \"Sample 4\": [(), (), (), (), ()]"
+        ],
+        "A tuple that contains invalid string values": [
+            "    \"Sample 1\": \"('\u0012\u001a\\\\x07', 1, 2)\",",
+            "    \"Sample 2\": \"(None, 1, 2)\",",
+            "    \"Sample 3\": \"('\u0012\u001a\\\\x07', None, 2)\",",
+            "    \"Sample 4\": \"('\u0012\u001a\\\\x07', 1, None)\",",
+            "    \"Sample 5\": \"('invalid', 1, 2)\",",
+            "    \"Sample 6\": \"(1, 1, 2)\",",
+            "    \"Sample 7\": \"('\u0012\u001a\\\\x07', [], 2)\",",
+            "    \"Sample 8\": \"('\u0012\u001a\\\\x07', , 2)\",",
+            "    \"Sample 9\": \"('\u0012\u001a\\\\x07', 1, ())\",",
+            "    \"Sample 10\": \"('\u0012\u001a\\\\x07', 1, )\""
+        ],
+        "A tuple with nan elements": [
+            "    \"Sample 1\": (np.nan, 0, np.nan, 0, np.nan),",
+            "    \"Sample 2\": (np.nan, 1, np.nan, 1, np.nan),",
+            "    \"Sample 3\": (np.nan, -1, np.nan, -1, np.nan),",
+            "    \"Sample 4\": (np.nan, 100, np.nan, 100, np.nan),",
+            "    \"Sample 5\": (np.nan, -100, np.nan, -100, np.nan),",
+            "    ..."
+        ],
+        "A tuple with None elements": [
+            "    \"Sample 1\": [None, None, None, None, None],",
+            "    \"Sample 2\": [None, None, None, None, None],",
+            "    \"Sample 3\": [None, None, None, None, None],",
+            "    ...",
+            "    \"Sample n\": [None, None, None, None, None]"
+        ],
+        "A tuple with invalid elements": [
+            "    \"Sample 1\": \"(1,)\",",
+            "    \"Sample 2\": \"(1, '2', 3)\",",
+            "    \"Sample 3\": \"(1.5, 2, 3)\",",
+            "    \"Sample 4\": \"('a', 'b', 'c')\",",
+            "    \"Sample 5\": \"(True, False, None)\",",
+            "    \"Sample 6\": \"(1, 2, 3, 4, 5)\",",
+            "    \"Sample 7\": \"(1, 2, 3, 4, 5, 6, 7, 8, 9)\",",
+            "    \"Sample 8\": \"(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50)\""
+        ]
+    }
+},
+{
+    "<tensor: 9>": {
+        "Input tensor that is not scalars": [
+            "    \"Sample 1\": \"tf.constant([], shape=[-1], dtype=tf.int32)\",",
+            "    \"Sample 2\": \"tf.constant([], shape=[1, 1], dtype=tf.int32)\",",
+            "    \"Sample 3\": \"tf.constant([[1, 2], [3, 4]], shape=[2, 2], dtype=tf.int32)\",",
+            "    \"Sample 4\": \"tf.constant([1.5, 2.5], shape=[2], dtype=tf.int32)\",",
+            "    \"Sample 5\": \"tf.constant([-1.5, -2.5], shape=[2], dtype=tf.int32)\""
+        ],
+        "tensors with large values and shape": [
+            "  \"Sample 1\": \"tf.constant(9999)\",",
+            "  \"Sample 2\": \"tf.fill([9], 100)\",",
+            "  \"Sample 3\": \"tf.ones([9], dtype=tf.float32) * 999999\",",
+            "  \"Sample 4\": \"tf.zeros([9], dtype=tf.float32)\",",
+            "  \"Sample 5\": \"tf.clip_by_value(tf.random.uniform([9], dtype=tf.float32), 1000, 9999)\",",
+            "  \"Sample 6\": \"tf.random.normal([9], mean=10000, stddev=100)\",",
+            "  \"Sample 7\": \"tf.random.normal([9], mean=1000, stddev=100)\",",
+            "  \"Sample 8\": \"tf.random.uniform([9], minval=1000, maxval=10000, dtype=tf.float32)\""
+        ],
+        "tensors with negative shapes and values": [
+            "    \"Sample 1\": \"tf.constant(-1, shape=[-1], dtype=tf.int32)\",",
+            "    \"Sample 2\": \"tf.constant(0, shape=[0], dtype=tf.int32)\",",
+            "    \"Sample 3\": \"tf.constant(-1, shape=[-1, -1], dtype=tf.int32)\",",
+            "    \"Sample 4\": \"tf.constant(-1, shape=[-1, 0], dtype=tf.int32)\",",
+            "    \"Sample 5\": \"tf.constant(-1, shape=[0, -1], dtype=tf.int32)\",",
+            "    \"Sample 6\": \"tf.constant(-1, shape=[-1, -1, -1], dtype=tf.int32)\",",
+            "    \"Sample 7\": \"tf.constant(-1, shape=[-1, 0, -1], dtype=tf.int32)\",",
+            "    \"Sample 8\": \"tf.constant(-1, shape=[-1, -1, 0], dtype=tf.int32)\",",
+            "    \"Sample 9\": \"tf.constant(-1, shape=[-1, 0, 0], dtype=tf.int32)\",",
+            "    \"Sample 10\": \"tf.constant(-1, shape=[0, -1, 0], dtype=tf.int32)\",",
+            "    \"Sample 11\": \"tf.constant(-1, shape=[0, 0, -1], dtype=tf.int32)\",",
+            "    \"Sample 12\": \"tf.constant(-1, shape=[-1, -1, -1, -1], dtype=tf.int32)\",",
+            "    \"Sample 13\": \"tf.constant(-1, shape=[-1, -1, 0, -1], dtype=tf.int32)\",",
+            "    \"Sample 14\": \"tf.constant(-1, shape=[-1, 0, -1, -1], dtype=tf.int32)\",",
+            "    \"Sample 15\": \"tf.constant(-1, shape=[-1, 0, 0, -1], dtype=tf.int32)\""
+        ],
+        "tensors with scalar values": [
+            "    \"Sample 1\": \"1\",",
+            "    \"Sample 2\": \"2\",",
+            "    \"Sample 3\": \"3\""
+        ],
+        "tensors with nan values": [
+            "    \"Sample 1\": \"torch.tensor(float('nan'))\",",
+            "    \"Sample 2\": \"torch.tensor(float('nan')).cuda()\",",
+            "    \"Sample 3\": \"torch.tensor([float('nan')])\",",
+            "    \"Sample 4\": \"torch.tensor([float('nan'), 1, 2, 3])\",",
+            "    \"Sample 5\": \"torch.tensor([[float('nan'), 1], [2, 3]])\",",
+            "    \"Sample 6\": \"torch.tensor([[[float('nan'), 1], [2, 3]], [[4, 5], [6, 7]]])\",",
+            "    \"Sample 7\": \"torch.tensor(float('nan'), dtype=torch.int32)\",",
+            "    \"Sample 8\": \"torch.tensor(float('nan'), dtype=torch.float16)\",",
+            "    \"Sample 9\": \"torch.tensor(float('nan'), requires_grad=True)\",",
+            "    \"Sample 10\": \"torch.tensor(float('nan'), device='cuda')\",",
+            "    \"Sample 11\": \"torch.tensor(float('nan'), device='cuda', requires_grad=True)\",",
+            "    \"Sample 12\": \"torch.tensor(float('nan'), device='cuda', dtype=torch.float16)\",",
+            "    \"Sample 13\": \"torch.tensor(float('nan')).to('cuda')\",",
+            "    \"Sample 14\": \"torch.tensor(float('nan')).view(2, 2)\",",
+            "    \"Sample 15\": \"torch.tensor(float('nan')).view(2, -1)\",",
+            "    \"Sample 16\": \"torch.tensor(float('nan')).squeeze()\",",
+            "    \"Sample 17\": \"torch.tensor(float('nan')).unsqueeze(dim=1)\",",
+            "    \"Sample 18\": \"torch.tensor(float('nan')).unsqueeze(dim=(1,2))\",",
+            "    \"Sample 19\": \"torch.tensor(float('nan')).permute(1, 0)\",",
+            "    \"Sample 20\": \"torch.tensor(float('nan')).T\""
+        ],
+        "tensors with zero values and ranks": [
+            "    \"Sample 1\": \"torch.IntTensor([0,0])\",",
+            "    \"Sample 2\": \"torch.IntTensor([0,2])\",",
+            "    \"Sample 3\": \"torch.IntTensor([0,-1])\",",
+            "    \"Sample 4\": \"torch.IntTensor([0,0,0])\",",
+            "    \"Sample 5\": \"torch.IntTensor([0,0,1])\",",
+            "    \"Sample 6\": \"torch.IntTensor([0,0,-1])\",",
+            "    \"Sample 7\": \"torch.IntTensor([0,0,0,0])\",",
+            "    \"Sample 8\": \"torch.IntTensor([0,0,0,1])\",",
+            "    \"Sample 9\": \"torch.IntTensor([0,0,0,-1])\""
+        ],
+        "tensors with empty values": [
+            "  \"Sample 1\": \"torch.full([], '', dtype=torch.int64, requires_grad=False)\",",
+            "  \"Sample 2\": \"torch.tensor([], dtype=torch.int64, requires_grad=False)\",",
+            "  \"Sample 3\": \"torch.zeros([], dtype=torch.int64, requires_grad=False)\",",
+            "  \"Sample 4\": \"torch.ones([], dtype=torch.int64, requires_grad=False)\",",
+            "  \"Sample 5\": \"torch.empty([], dtype=torch.int64, requires_grad=False)\",",
+            "  \"Sample 6\": \"torch.arange([], dtype=torch.int64, requires_grad=False)\",",
+            "  \"Sample 7\": \"torch.linspace([], dtype=torch.int64, requires_grad=False)\",",
+            "  \"Sample 8\": \"torch.eye([], dtype=torch.int64, requires_grad=False)\",",
+            "  \"Sample 9\": \"torch.randn([], dtype=torch.int64, requires_grad=False)\""
+        ]
+    }
+},

@@ -62,21 +62,21 @@ def create_prompt_fix_sugesstion(item):
     You are an expert software development and have a lot of knowledge in software security. 
     You are also a developer in PyTorch team where you can develop most functionality of PyTorch which is written in C++. 
     You are great at understanding software security and bugs that are caused by feeding malicious inputs to APIs.
-    When you don't know how to suggest a patch for each bug, you admit that you don't know.
+    When you don't know how to generate a patch for each bug, you admit that you don't know.
     
 
-    Your task is to suggest patches to the given bugs. 
+    Your task is to generate patches for the given bugs. 
     For each bug, you have the following information:
     Bug description: {item['Bug description']}
     Code that reproduce the bug: {item['Sample Code']}
     The API that cause the bug: {item['API Signature']}
     
-    Do not explain the bug, just suggest a patch based on the information that is given to you. 
+    Do not explain what the bug is, just generate a patch based on the information that is given to you. 
     
-    Please output the patches in given json format:
+    Please generate the patches in given json format:
         
     <answer json start>,
-    "Patch":"Explain the suggested patch"
+    "Patch":"Generated patch"
 
     """
 
@@ -104,7 +104,7 @@ def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
 
 def exec_fix_suggestion():
     lib_name = 'torch'
-    rules_path = f"output/{lib_name}_fixes.json"
+    rules_path = f"output/{lib_name}_patches_new.json"
 
     with open(f'data/{lib_name}_bug_data.json') as json_file:
         data = json.load(json_file)
