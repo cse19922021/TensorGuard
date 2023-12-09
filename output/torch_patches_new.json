@@ -1,0 +1,78 @@
+{
+    "Patch": "Add a check to handle zero-dimensional tensors in torch.view_as_complex.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/commits/b6b1c01adfdadf93a4a1d30c3661ff177412a876",
+    "API name": "\n torch. view_as_complex ( input )   \u2192 \u00b6",
+    "Bug description": "torch.view_as_complex fails with segfault for a zero dimensional tensor (#44175)\n\nSummary:\nFixes https://github.com/pytorch/pytorch/issues/44061\n\nPull Request resolved: https://github.com/pytorch/pytorch/pull/44175\n\nReviewed By: colesbury\n\nDifferential Revision: D23628103\n\nPulled By: anjali411\n\nfbshipit-source-id: 6f70b5824150121a1617c0757499832923ae02b5"
+},
+{
+    "Patch": "#44391\n\nIn the original code, the divide operation can cause an overflow in certain cases. We can avoid this by using the non-overflowing divide operation. Here is the updated code:\n\n```python\n\nfrom math import ceil\n\ndef GET_BLOCKS(N, BLOCK_DIM):\n    return ceil(N / BLOCK_DIM)\n\n```",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/commits/c010ef7f0c6d837809a7e973048afac76373e3de",
+    "API name": null,
+    "Bug description": "use non-overflowing divide in cuda kernel util GET_BLOCKS (#44391)\n\nSummary:\nFixes https://github.com/pytorch/pytorch/issues/43476.\n\nPull Request resolved: https://github.com/pytorch/pytorch/pull/44391\n\nReviewed By: mrshenli\n\nDifferential Revision: D23602424\n\nPulled By: walterddr\n\nfbshipit-source-id: 40ed81547f933194ce5bf4a5bcebdb3434298bc1"
+},
+{
+    "Patch": "diff --git a/aten/src/ATen/native/numpy_embedding.cpp b/aten/src/ATen/native/numpy_embedding.cpp\nindex 84dc266071..b75e6e8174 100644\n--- a/aten/src/ATen/native/numpy_embedding.cpp\n+++ b/aten/src/ATen/native/numpy_embedding.cpp\n@@ -24,6 +24,9 @@ Tensor numpy_embedding(const Tensor& self,\n   }\n\n   auto weight_sizes = weight.sizes();\n+  if (weight_sizes.size() == 0) {\n+    throw std::runtime_error(\"weight must be 1-D or greater\");\n+  }\n   \n   torch::IntArrayRef feature_sizes = weight_sizes.slice(1);\n   return at::embedding_bag(inp,\n",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/commits/42b4a7132e7c6f1df963b473d1583e4791fb1808",
+    "API name": "\n torch.nn.functional. embedding ( input ,  weight ,  padding_idx ,  max_norm ,  norm_type ,  scale_grad_by_freq ,  sparse ) [source] \u00b6",
+    "Bug description": "Raise error if `at::native::embedding` is given 0-D weight (#42550)\n\nSummary:\nPreviously, `at::native::embedding` implicitly assumed that the `weight` argument would be 1-D or greater. Given a 0-D tensor, it would segfault. This change makes it throw a RuntimeError instead.\n\nFixes https://github.com/pytorch/pytorch/issues/41780\n\nPull Request resolved: https://github.com/pytorch/pytorch/pull/42550\n\nReviewed By: smessmer\n\nDifferential Revision: D23040744\n\nPulled By: albanD\n\nfbshipit-source-id: d3d315850a5ee2d2b6fcc0bdb30db2b76ffffb01"
+},
+{
+    "Patch": "if previous_layer is not None: \n\t\t\tlayer = tf.layers.dense(previous_layer, hidden_units, activation=tf.nn.relu, name='hidden_layer'+str(i+1))\n\t\telse:\n\t\t\tlayer = tf.layers.dense(inputs, hidden_units, activation=tf.nn.relu, name='hidden_layer'+str(i+1))",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/327",
+    "API name": "\n torch. addcdiv ( input ,  tensor1 ,  tensor2 ,  * ,  value ,  out )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "Generated patch",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/327",
+    "API name": "\n torch. fmod ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "# Insert statement to fix the bug triggering code",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/38764",
+    "API name": "\n torch.nn.functional. max_pool1d ( input ,  kernel_size ,  stride ,  padding ,  dilation ,  ceil_mode ,  return_indices ) \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "Fix overflow in torch.remainder when dividend is very large.\n\nIn the remainder kernel function, modify the calculation of the remainder to use the implementation similar to numpy.\nAlso, update the documentation for torch.remainder to make it consistent with torch.fmod.\n\nPlease note that the code for Vec256 in the CPU remainder_kernel is not modified.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/commits/63b1ae69831cd21bc4d6059a5854bc1155a152c9",
+    "API name": "\n torch. remainder ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": "Fix overflow in torch.remainder when dividend is very large (#37758)\n\nSummary:\nThis will fix the GPU implementation in https://github.com/pytorch/pytorch/issues/37743 and https://github.com/pytorch/pytorch/issues/24861. Please also check my [comment](https://github.com/pytorch/pytorch/issues/37743#issuecomment-623285707).\n\nThe fixed `remainder_kernel` follows the similar implementation in numpy. See https://github.com/numpy/numpy/blob/79d7bc276afbe89c746e462d28d4bfbb4fc56148/numpy/core/src/npymath/npy_math_internal.h.src#L649-L658\n\nI also slightly update the doc for `torch.remainder`, to make it similar to `torch.fmod`.\n\nI'm not sure how to modify the Vec256 code of CPU remainder_kernel, so I just leave it there.\nPull Request resolved: https://github.com/pytorch/pytorch/pull/37758\n\nDifferential Revision: D21388417\n\nPulled By: ngimel\n\nfbshipit-source-id: 770ba5801cf34619b2b68b8b0cf95d8cfa52e6f6"
+},
+{
+    "Patch": "diff --git a/torch/csrc/jit/ir/subgraph_matcher.cpp b/torch/csrc/jit/ir/subgraph_matcher.cpp\nindex 4cb80358b1..e7e18b37e6 100644\n--- a/torch/csrc/jit/ir/subgraph_matcher.cpp\n+++ b/torch/csrc/jit/ir/subgraph_matcher.cpp\n@@ -647,6 +647,12 @@ SubgraphMatcher::tryMatchFrom(Node* n, bool waited_for_uses, const AliasDb& alias\n         // skip the AliasDb for outputs we didn't match\n         continue;\n       }\n+\n+      if (the->shape().concrete_sizes()[i] != nullptr &&\n+          value->type()->expect<TensorType>() &&\n+          value->type()->expect<TensorType>()->sizes().size() != the->shape().concrete_sizes()[i]->dims().size()) {\n+        skip = true;\n+      }\n\n       // if we can't skip we need to try to match everything\n       if (!skip && !subgraphMatch(value, aliasDb_, eager_nodes_map)) {\n",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/commits/7aec364bdf9ed7297b77e8445a6a6d4116265dde",
+    "API name": "\n torch. gather ( input ,  dim ,  index ,  * ,  sparse_grad ,  out )   \u2192 \u00b6",
+    "Bug description": "extend gather shape check to handle incorrectly sized outputs (#37102)\n\nSummary:\nFixes a safety issue (Nonsense values and segfaults) introduced by https://github.com/pytorch/pytorch/pull/36875 when in-place gather tries to use incorrect shapes.\n\nConsider the following block of code:\n```\nk0 = 8\nk1 = 8\nm = 100\n\nx = torch.rand((k0, k1))\nind = torch.randint(0, k0, (m, k1))\noutput = torch.empty((m, k1))\n\nprint(torch.gather(x, 0, ind, out=output))\nprint(torch.gather(x, 1, ind, out=output))\n```\n\nThe first gather is legal, the second is not. (`ind` and `output` need to be transposed) Previously this was caught when the kernel tried to restride inputs for TensorIterator, but we can no longer rely on those checks and must test explicitly. If `m` is small the second gather returns gibberish; if it is large enough to push the read out of memory block the program segfaults.\nPull Request resolved: https://github.com/pytorch/pytorch/pull/37102\n\nDifferential Revision: D21190580\n\nPulled By: robieta\n\nfbshipit-source-id: 80175620d24ad3380d78995f7ec7dbf2627d2998"
+},
+{
+    "Patch": "Change the type of the variable used to index tensors from 32-bit int to a larger type, like 64-bit int, to avoid the overflow issue. This can be done by modifying the code from `index = 0` to `index = np.int64(0)`",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/commits/74828be4a7d0d2dba3f0ec3f6e79265cdfae5329",
+    "API name": "\n torch. cat ( tensors ,  dim ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": "fix segfault in `cat` on CPU with tensors that can't be indexed with 32-bit ints. (#21530)\n\nSummary:\nShould be self-explanatory. This `int` variable is overflowing.\n\nReported in #21526\nPull Request resolved: https://github.com/pytorch/pytorch/pull/21530\n\nDifferential Revision: D15719275\n\nPulled By: umanwizard\n\nfbshipit-source-id: 24e917a00a5b78bc3af29ef3b8b72eea7e89d5d5"
+},
+{
+    "Patch": "Generated patch",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/3498",
+    "API name": null,
+    "Bug description": ""
+},
+{
+    "Patch": "Add check for array size before calling MPSNDArray",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/86279",
+    "API name": "\n torch. multinomial ( input ,  num_samples ,  replacement ,  * ,  generator ,  out )   \u2192 \u00b6",
+    "Bug description": ""
+},
+{
+    "Patch": "Replace torch.remainder and torch.fmod with torch.remainder(input.float(), other.float()) and torch.fmod(input.float(), other.float()) respectively",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/86074",
+    "API name": "\n torch. remainder ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": "\n\nFor some inputs, torch.remainder and torch.fmod produce wrong results, especially for integer datatype. When converting the int32 input to float32, they can produce correct results.\r\n\r\nI suspect this might be caused by type promotion.\r\n\r\nReproduce "
+},
+{
+    "Patch": "Fixed the bug by adding a check for large logits before calculating the binomial overflow. The logits are converted to a float before calculating the binomial log probability.",
+    "Link": "https://api.github.com/repos/pytorch/pytorch/issues/86074",
+    "API name": "\n torch. fmod ( input ,  other ,  * ,  out )   \u2192 \u00b6",
+    "Bug description": "Fix Binomimal overflow when logits is large (#20679)\n\nSummary:\nThis PR fixes  #17843. In addition (test locally), this still maintains the continuity of log_prob which is addressed in https://github.com/pytorch/pytorch/pull/15962\n\ncc neerajprad\nPull Request resolved: https://github.com/pytorch/pytorch/pull/20679\n\nDifferential Revision: D15413311\n\nPulled By: ezyang\n\nfbshipit-source-id: 4fc0ca755ae6a85aa7deb2206dab675f82f9aa25"
+},

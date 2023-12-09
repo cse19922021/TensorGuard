@@ -229,7 +229,7 @@
         "API Signature": "\n torch.jit. wait ( future ) [source] \u00b6",
         "Bug fix": "",
         "Score": 0.030612244897959183,
-        "Category": NaN
+        "Category": "NaN"
     },
     {
         "Link": "https://api.github.com/repos/pytorch/pytorch/issues/84990",

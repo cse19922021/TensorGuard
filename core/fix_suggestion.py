@@ -1,18 +1,22 @@
 import pandas as pd
 from collections import Counter
-import pymongo
 import json
 import os
 import tiktoken
 import openai
+from openai import OpenAI
 import backoff
 from dotenv import load_dotenv
 load_dotenv()
 
-openai.organization = os.getenv("ORG_ID")
-openai.api_key = os.getenv("API_KEY")
+client = OpenAI(
+    api_key=os.environ.get(".env")
+)
 
-DB = pymongo.MongoClient(host='127.0.0.1', port=27017)['freefuzz-tf']
+# openai.organization = os.getenv("ORG_ID")
+# openai.api_key = os.getenv("API_KEY")
+
+# DB = pymongo.MongoClient(host='127.0.0.1', port=27017)['freefuzz-tf']
 
 
 def read_txt(fname):
@@ -45,12 +49,15 @@ def main():
         print('')
 
 
-def gpt_conversation(prompt, model="gpt-3.5-turbo"):
+def gpt_conversation(prompt, model="gpt-4"):
 
     response = openai.ChatCompletion.create(
         model=model,
         messages=[
-            {"role": "user", "content": prompt}
+            {
+                "role": "user", 
+                "content": prompt
+            }
         ]
     )
 
@@ -59,19 +66,10 @@ def gpt_conversation(prompt, model="gpt-3.5-turbo"):
 
 def create_prompt_fix_sugesstion(item):
     prompt_ = f"""
-    You are an expert software development and have a lot of knowledge in software security. 
-    You are also a developer in PyTorch team where you can develop most functionality of PyTorch which is written in C++. 
-    You are great at understanding software security and bugs that are caused by feeding malicious inputs to APIs.
-    When you don't know how to generate a patch for each bug, you admit that you don't know.
-    
-
-    Your task is to generate patches for the given bugs. 
+    You are a chatbot responsible for suggesting patches that fixing bugs in deep learning pipeline codes written in Python.
     For each bug, you have the following information:
     Bug description: {item['Bug description']}
-    Code that reproduce the bug: {item['Sample Code']}
-    The API that cause the bug: {item['API Signature']}
-    
-    Do not explain what the bug is, just generate a patch based on the information that is given to you. 
+    Bug triggering code: {item['Sample Code']}
     
     Please generate the patches in given json format:
         
@@ -91,9 +89,9 @@ def get_token_count(string):
     return num_tokens
 
 
-@backoff.on_exception(backoff.expo, openai.error.RateLimitError)
+# @backoff.on_exception(backoff.expo, openai.error.RateLimitError)
 def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model=model,
         messages=[
             {"role": "system", "content": prompt}
@@ -103,7 +101,7 @@ def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
 
 
 def exec_fix_suggestion():
-    lib_name = 'torch'
+    lib_name = 'tf'
     rules_path = f"output/{lib_name}_patches_new.json"
 
     with open(f'data/{lib_name}_bug_data.json') as json_file:

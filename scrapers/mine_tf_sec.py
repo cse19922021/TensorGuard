@@ -1,6 +1,6 @@
 import sys
 from bs4 import BeautifulSoup as soup
-from selenium import webdriver
+# from selenium import webdriver
 # driver = webdriver.Firefox(executable_path= r"/home/nimashiri/geckodriver-v0.32.0-linux64/geckodriver")
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
@@ -20,6 +20,97 @@ import numpy as np
 # test
 ROOT_DIR = os.getcwd()
 
+REG_CHANGED = re.compile(".*@@ -(\d+),(\d+) \+(\d+),(\d+) @@.*")
+REG_LOC_FLAWFINDER = re.compile('\:(\d+)\:')
+REG_RATS = re.compile('<vulnerability>')
+REG_CPP_CHECK_LOC = re.compile('line=\"(\d+)\"')
+REG_CPP_CHECK = re.compile('error id=')
+
+FIND_CWE_IDENTIFIER = re.compile('CWE-(\d+)')
+FIND_RATS_VUL_TYPE = re.compile('<type.*>((.|\n)*?)<\/type>')
+
+def get_patches(splitted_lines):
+    change_info = {}
+    i = 0
+    for line in splitted_lines:
+        if REG_CHANGED.match(line):
+            i += 1
+            addStart = int(REG_CHANGED.search(line).group(1))
+            addedLines = int(REG_CHANGED.search(line).group(2))
+            deletedStart = int(REG_CHANGED.search(line).group(3))
+            deletedLines = int(REG_CHANGED.search(line).group(4))
+                        
+            start = deletedStart
+            if(start == 0):
+                start += 1
+    
+            end = addStart+addedLines-1
+            change_info[i] = [deletedStart, deletedStart+deletedLines]
+
+    super_temp = []
+    j = 0
+    indices = []
+    while j < len(splitted_lines):
+        if re.findall(r'(@@)',splitted_lines[j]):
+            indices.append(j)
+        j += 1
+
+    if len(indices) == 1:
+        for i, item in enumerate(splitted_lines):
+            if i != 0:
+                super_temp.append(item)
+        super_temp = [super_temp]
+    else:
+        i = 0
+        j = 1
+        while True:
+            temp = [] 
+            for row in range(indices[i]+1, indices[j]):
+                temp.append(splitted_lines[row])
+            super_temp.append(temp)
+            if j == len(indices)-1:
+                temp = [] 
+                for row in range(indices[j]+1, len(splitted_lines)):
+                    temp.append(splitted_lines[row])
+                super_temp.append(temp)
+                break
+            i+= 1
+            j+= 1
+    return super_temp, change_info
+
+def get_diff_header(diff):
+    code_lines = diff.split('\n')
+    [super_temp, change_info] = get_patches(code_lines)
+    return change_info
+
+def get_fix_file_names(commit):
+    f_names = {}
+    raw_name = []
+    if 'test' not in commit.filename:
+        diff_split = get_diff_header(commit.diff)
+        if bool(commit.new_path):
+            f_names[commit.new_path] = diff_split
+            raw_name.append(commit.new_path)
+        else:
+            f_names[commit.old_path] = diff_split
+            raw_name.append(commit.old_path)
+    else:
+        if 'test' not in commit.filename:
+            diff_split = get_diff_header(commit.diff)
+            if bool(commit.new_path):
+                f_names[commit.new_path] = diff_split
+                raw_name.append(commit.new_path)
+            else:
+                f_names[commit.old_path] = diff_split
+                raw_name.append(commit.old_path)
+    return f_names, raw_name
+
+def changed_lines_to_list(cl):
+    global_list = []
+    for k, v in cl.items():
+        for sk, sv in v.items():
+            global_list = global_list + sv
+    return global_list
 
 def decompose_code_linens(splitted_lines):
     super_temp = []
@@ -106,13 +197,21 @@ def format_code(code_):
 
 def get_code_change(sha):
     changes = []
+    changed_lines = []
+    before_union = []
+    after_union = []
     try:
         for commit in Repository('repos/tensorflow', single=sha).traverse_commits():
             for modification in commit.modified_files:
+                cl, raw_name = get_fix_file_names(modification)
+                cl_list = changed_lines_to_list(cl)
                 changes.append(modification.diff)
+                changed_lines.append(cl)
+                before_union.append(modification.source_code_before.split('\n'))
+                after_union.append(modification.source_code.split('\n'))
     except Exception as e:
         print(e)
-    return changes
+    return changes, before_union,after_union, changed_lines
 
 
 def calculate_rule_importance(data):
@@ -157,8 +256,8 @@ def scrape_security_page(link):
                 sentence for sentence in d_ if 'patched' in sentence]
             if matching_sentences:
                 if d_[-1] == '.':
-                    changes = get_code_change(d_[1])
-                    if changes:
+                    code_changes, source_code_before, source_code_after, changed_lines = get_code_change(d_[1])
+                    if code_changes:
                         change_flag = True
                     break
                 # else:
@@ -174,12 +273,22 @@ def scrape_security_page(link):
                 code_ = recursive_parse_api_description(item.contents[0])
                 code_formated = format_code(code_)
                 code_flag = True
+    
+    union_buggy = []
+    union_fix = []
+    for idx, mods in enumerate(changed_lines):
+        for k, v in mods.items():
+            for key,value in v.items():
+                union_buggy.append(source_code_before[idx][value[0]:value[1]])
+                union_fix.append(source_code_after[idx][value[0]:value[1]])
 
     if code_flag and change_flag:
         data = {'Title': title_,
                 'Bug description': description_,
                 'Sample Code': code_formated,
-                'Code change': changes}
+                'Code change': code_changes,
+                'Buggy Code': union_buggy,
+                'Clean Code': union_fix}
     elif code_flag == True and change_flag == False:
         data = {'Title': title_,
                 'Bug description': description_,
@@ -188,7 +297,10 @@ def scrape_security_page(link):
         data = {'Title': title_,
                 'Bug description': description_,
                 'Sample Code': '',
-                'Code change': changes}
+                'Code change': code_changes,
+                'Buggy Code': union_buggy,
+                'Clean Code': union_fix
+                }
     else:
         data = {'Title': title_,
                 'Bug description': description_,
@@ -213,22 +325,25 @@ def scrape_tensorflow_security_from_list(hash_table):
         print(row['API'])
         _target_api = search(hash_table, target_api=row['API'])
         full_link = row['Advisory Link']
-        data_ = scrape_security_page(full_link)
-        data_.update({'Link': full_link})
-        data_.update({'API Signature': _target_api})
+        try:
+            data_ = scrape_security_page(full_link)
+            data_.update({'Link': full_link})
+            data_.update({'API Signature': _target_api})
 
-        score_ = search_in_tuples(weights_, row['Anomaly'])
+            score_ = search_in_tuples(weights_, row['Anomaly'])
 
-        data_.update({'Score': score_})
-        data_.update({'Anomaly': row['Anomaly']})
-        data_.update({'Anomaly Description': row['Anomaly description']})
-        data_.update({'Category': row['Category']})
-        data_.update({'Argument': row['Reproducing Example']})
+            data_.update({'Score': score_})
+            data_.update({'Anomaly': row['Anomaly']})
+            data_.update({'Anomaly Description': row['Anomaly description']})
+            data_.update({'Category': row['Category']})
+            data_.update({'Argument': row['Reproducing Example']})
 
-        with open("data/tf_bug_data.json", "a") as json_file:
-            json.dump(data_, json_file, indent=4)
-            json_file.write(',')
-            json_file.write('\n')
+            with open("data/tf_bug_data.json", "a") as json_file:
+                json.dump(data_, json_file, indent=4)
+                json_file.write(',')
+                json_file.write('\n')
+        except Exception as e:
+            print(e)
 
 
 def scrape_tensorflow_security():
