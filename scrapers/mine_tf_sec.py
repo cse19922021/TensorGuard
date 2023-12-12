@@ -260,12 +260,6 @@ def scrape_security_page(link):
                     if code_changes:
                         change_flag = True
                     break
-                # else:
-                #     for i in range(j+1, len(main_elements)-1):
-                #         if not isinstance(main_elements[i], str):
-                #             p = recursive_parse_api_description(
-                #                 main_elements[i])
-                #             print('')
 
     for item in main_elements:
         if not isinstance(item, str):
@@ -307,7 +301,7 @@ def scrape_security_page(link):
                 'Sample Code': ''
                 }
 
-    return data
+    return data, union_buggy, union_fix
 
 
 def search_in_tuples(target_tuple, target_rule):
@@ -326,7 +320,7 @@ def scrape_tensorflow_security_from_list(hash_table):
         _target_api = search(hash_table, target_api=row['API'])
         full_link = row['Advisory Link']
         try:
-            data_ = scrape_security_page(full_link)
+            data_, buggy_snippets, fix_snippets = scrape_security_page(full_link)
             data_.update({'Link': full_link})
             data_.update({'API Signature': _target_api})
 
@@ -338,7 +332,7 @@ def scrape_tensorflow_security_from_list(hash_table):
             data_.update({'Category': row['Category']})
             data_.update({'Argument': row['Reproducing Example']})
 
-            with open("data/tf_bug_data.json", "a") as json_file:
+            with open("data/tf_bug_data_new.json", "a") as json_file:
                 json.dump(data_, json_file, indent=4)
                 json_file.write(',')
                 json_file.write('\n')
@@ -392,6 +386,7 @@ def search_dict(d, q):
 def main():
 
     lib_name = 'tf'
+    single_commit = True
 
     with open(f'API signatures/{lib_name}_API_table.json') as json_file:
         hash_table = json.load(json_file)
