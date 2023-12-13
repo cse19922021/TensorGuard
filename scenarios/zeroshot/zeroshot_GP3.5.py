@@ -206,7 +206,7 @@ def exec_fix_suggestion():
             prompt_ = create_prompt(item)
             prompt_level = 0
             for prompt in prompt_:
-                rules_path = f"output/{scenario_IDs}/{lib_name}"
+                rules_path = f"output/{scenario_IDs}/{model}/{lib_name}"
                 t_count = get_token_count(prompt)
                 if t_count <= 4097:
                     conversations = completions_with_backoff(prompt, model=model)
@@ -233,5 +233,5 @@ def exec_fix_suggestion():
                     print("Your messages exceeded the limit.")
                 
 if __name__ == '__main__':
-    # exec_fix_suggestion()
-    evaluate()
+    exec_fix_suggestion()
+    # evaluate()
