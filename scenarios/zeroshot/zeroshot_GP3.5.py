@@ -79,14 +79,22 @@ def chat(prompt, model="gpt-4"):
 def create_prompt(item):
     prompt_ = [
     f"""
-    Please find and fix all security issues in the buggy code: @@{item['Vulnerable Code']}@@ given the following context:
-    Please generate the patches/code (C++ code) fix in given json format:    
+    You are a bug fix chatbot. You will receive a buggy code snippet along with the corresponding context information 
+    about the bug and output the fixed code. Do NOT try to generate the fix code if you don't know how to fix the buggy code.
+    ONLY generate the code, do not explain how to fix it. 
+    For each buggy code, you have the following context (wrappted by @@):
+
+    Vulnerable code in the backend: @@{item['Vulnerable Code']}@@
     <answer json start>,
     "Patch":"Generated patch"
     """
     ,
     f"""
-    Please find and fix all security issues in the buggy code: @@{item['Vulnerable Code']}@@ given the following context:
+    You are a bug fix chatbot. You will receive a buggy code snippet along with the corresponding context information 
+    about the bug and output the fixed code. Do NOT try to generate the fix code if you don't know how to fix the buggy code.
+    ONLY generate the code, do not explain how to fix it. 
+    For each buggy code, you have the following context (wrappted by @@):
+
     API Name: @@{item['API Name']}@@
     Vulnerable code in the backend: @@{item['Vulnerable Code']}@@
     Please generate the patches/code (C++ code) fix in given json format:    
@@ -96,7 +104,11 @@ def create_prompt(item):
     """ 
     ,
     f"""
-    Please find and fix all security issues in the buggy code: @@{item['Vulnerable Code']}@@ given the following context:
+    You are a bug fix chatbot. You will receive a buggy code snippet along with the corresponding context information 
+    about the bug and output the fixed code. Do NOT try to generate the fix code if you don't know how to fix the buggy code.
+    ONLY generate the code, do not explain how to fix it. 
+    For each buggy code, you have the following context (wrappted by @@):
+
     API Name: @@{item['API Name']}@@
     Vulnerability Category: @@{item['Vulnerability Category']}@@
     Vulnerable code in the backend: @@{item['Vulnerable Code']}@@
@@ -108,7 +120,11 @@ def create_prompt(item):
     """ 
     ,
     f"""
-    Please find and fix all security issues in the buggy code: @@{item['Vulnerable Code']}@@ given the following context:
+    You are a bug fix chatbot. You will receive a buggy code snippet along with the corresponding context information 
+    about the bug and output the fixed code. Do NOT try to generate the fix code if you don't know how to fix the buggy code.
+    ONLY generate the code, do not explain how to fix it. 
+    For each buggy code, you have the following context (wrappted by @@):
+
     API Name: @@{item['API Name']}@@
     Vulnerability Category: @@{item['Vulnerability Category']}@@
     Description of how the vulnerability is triggered when calling @@{item['API Name']}@@: @@{item["Trigger Mechanism"]}@@
@@ -120,7 +136,11 @@ def create_prompt(item):
 
     """,
     f"""
-    Please find and fix all security issues in the buggy code: @@{item['Vulnerable Code']}@@ given the following context:
+    You are a bug fix chatbot. You will receive a buggy code snippet along with the corresponding context information 
+    about the bug and output the fixed code. Do NOT try to generate the fix code if you don't know how to fix the buggy code.
+    ONLY generate the code, do not explain how to fix it. 
+    For each buggy code, you have the following context (wrappted by @@):
+
     API Name: @@{item['API Name']}@@
     Vulnerability Category: @@{item['Vulnerability Category']}@@
     Root cause of the vulnerability in the backend: @@{item["Backend Root Cause"]}
@@ -177,16 +197,12 @@ def exec_fix_suggestion():
                     response = conversations.choices[0].message.content
                     formated_response = format_json(response)
                     try:
-                        # x = json.loads(rule_, strict=False)
-                        # keys = [k for k, v in x.items()]
-                        # split_ = x[keys[0]].split('\n')
                         out_dict = {
+                            'Patch Formated': formated_response,
                             'Actual Clean Code': item['Clean Code'],
                             'Link': item['Commit Link'],
                             'API name': item['API Name']
                         }
-                        out_dict.update({'Patch Formated': formated_response})
-
                         if not os.path.exists(rules_path):
                             os.makedirs(rules_path)
                         with open(f"{rules_path}/L{prompt_level}_code_fixes.json", "a") as json_file:

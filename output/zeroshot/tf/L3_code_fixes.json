@@ -1,6 +1,6 @@
 {
     "Patch Formated": [
-        "{\"Patch\":\"    }\"}"
+        "{\"Patch\":\"OP_REQUIRES(context, pooling_ratio_[0] == 1.0 && pooling_ratio_[3] == 1.0,\\n            errors::Unimplemented(\\\"Fractional average pooling is not yet \\\",\\n                                  \\\"supported on the batch nor channel dimension.\\\"));\\nOP_REQUIRES_OK(context, context->GetAttr(\\\"deterministic\\\", &deterministic_));\\nOP_REQUIRES_OK(context, context->GetAttr(\\\"seed\\\", &seed_));\"}"
     ],
     "Actual Clean Code": [
         "    }",
@@ -16,7 +16,11 @@
 },
 {
     "Patch Formated": [
-        "{\"Patch\":\"DimensionHandle unused;\\nif (c->input_size() == 0) {\\n  return errors::InvalidArgument(\"No inputs provided.\");\\n}\\n\\nfor (int i = 0; i < c->input_size(); i++) {\\n  if (!c->WithValue(c->Dim(c->input(i), 0), 1, &unused).ok()) {\\n    return errors::InvalidArgument(\"Size of first dimension must be 1.\");\\n  }\\n  TF_RETURN_WITH_CONTEXT_IF_ERROR(c->Merge(c->input(i), cur, &cur),\\n                                    \"From merging shape \", i,\\n                                    \" with other shapes.\");\\n}\\n\\nc->set_output(0, passed_shape);\"}"
+        "{",
+        "    \"Patch\": \"if (c->input(i).dims() < 1) {",
+        "                    return errors::InvalidArgument(\\\"Shape must have rank greater than zero.\\\");",
+        "                }\"",
+        "}"
     ],
     "Actual Clean Code": [
         "              \"All input shapes must be fully defined.\");",
@@ -37,7 +41,7 @@
 },
 {
     "Patch Formated": [
-        "{\"imports\": [\"tensorflow/core/framework/op.h\"], \"code\": \"    if (element_dims.size() != 2) {\\n        ctx->SetStatus(errors::InvalidArgument(\\\"Input tensor must have rank 2\\\"));\\n        return;\\n    }\\n    if (element_dims[1] % length != 0) {\\n        ctx->SetStatus(errors::InvalidArgument(\\\"All lengths have to be the same\\\"));\\n        return;\\n    }\\n    if (element_dims[0] % length != 0) {\\n        ctx->SetStatus(errors::InvalidArgument(\\\"Buffer size has to be a multiple of length\\\"));\\n        return;\\n    }\\n    std::vector<int64_t> new_dims = {element_dims[0] / length, length};\\n    for (int i = 1; i < element_dims.size(); i++) {\\n        new_dims.push_back(element_dims[i]);\\n    }\"}"
+        "{\"Patch\": \"if (length <= 0) {\\n   OP_REQUIRES(\\n      ctx, length > 0,\\n      errors::InvalidArgument(\\\"Length value has to be greater than zero\\\"));\\n} \\nif (element_dims[0] % length != 0) {\\n   OP_REQUIRES(\\n      ctx, element_dims[0] % length == 0,\\n      errors::Unimplemented(\\\"Buffer size has to be a multiple of length\\\"));\\n}\\nstd::vector<int64_t> new_dims = {element_dims[0] / length, length};\\nfor (int i = 1; i < element_dims.size(); i++) {\\n   new_dims.push_back(element_dims[i]);\\n}\" }"
     ],
     "Actual Clean Code": [
         "                  errors::Unimplemented(\"All lengths have to be the same\"));",
@@ -54,7 +58,9 @@
 },
 {
     "Patch Formated": [
-        "{\"changes\": [{\"line\": 1, \"code\": \"ShapeHandle keys;\\n\"}, {\"line\": 2, \"code\": \"ShapeHandle values;\\n\"}, {\"line\": 3, \"code\": \"TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 1, &keys));\\n\"}, {\"line\": 4, \"code\": \"TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 1, &values));\\n\"}, {\"line\": 6, \"code\": \"return OkStatus();\\n\"}]}"
+        "{",
+        "\"Patch\": \"In the MutableHashTableShape() function, we need to validate the input parameters 'key' and 'value' to handle scalars properly. By checking the rank of the input, we can identify whether it is a scalar or not. If the rank is 0, it means it is a scalar and we need to reshape it to have a rank of 1 before further processing. If the rank is not 0, it means it is already a tensor and we can continue with the existing code. We can modify the code as follows:\\n\\nStatus MutableHashTableShape(InferenceContext* c, const ShapeHandle& key, const ShapeHandle& value) {\\n  ShapeHandle keys;\\n  TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 1, &keys));\\n  if (c->Rank(key) == 0) {\\n    // Reshape key scalar\\n    const DimensionHandle dim_one = c->MakeDim(1);\\n    keys = c->MakeShape({dim_one});\\n  }\\n  DimensionHandle unused;\\n  TF_RETURN_IF_ERROR(c->Merge(c->Dim(keys, 0), c->Dim(c->input(2), 0), &unused));\\n  return OkStatus();\\n}\"",
+        "}"
     ],
     "Actual Clean Code": [
         "      ShapeHandle keys;",
@@ -73,19 +79,7 @@
 },
 {
     "Patch Formated": [
-        "{\"Patch\": \"// Here, we implement a bitwise hack: we use the hi 16 bits of input for\\n\"",
-        "          \"    // separate max pooling alongside each of the hi and lo 16 bits of\\n\"",
-        "          \"    // out_backprop packed into 16 lo bits, which we then glue back together at\\n\"",
-        "          \"    // the end to get a full 32 bits of gradient.\\n\"",
-        "          \"    //\\n\"",
-        "          \"    // This could select the wrong backprop value for two x values that are\\n\"",
-        "          \"    // equally maximal up to the first 16 bits, in which case we are taking the\\n\"",
-        "          \"    // latter.\\n\"",
-        "          \"    //\\n\"",
-        "          \"    // Note that in principle we could use 32 separate maxpools to recover each\\n\"",
-        "          \"    // of 32 bits of the gradient while preserving 31 bits of input for the max\\n\"",
-        "          \"    // pooling criteria; here, we just truncate to the first 16 bits of input.\\n\"",
-        "          \"// Fix: Increase the number of maxpools to match the number of bits in the gradient while preserving all bits of input for the max pooling criteria.\"}"
+        "{\"Patch\": \"Fix for the vulnerability in AvgPoolGrad: Ensuring that the stride and window size are positive to avoid FPE.\\n\\n// Here, we implement a bitwise hack: we use the hi 16 bits of input for separate max pooling alongside each of the hi and lo 16 bits of out_backprop packed into 16 lo bits, which we then glue back together at the end to get a full 32 bits of gradient.\\n//\\n// This could select the wrong backprop value for two x values that are equally maximal up to the first 16 bits, in which case we are taking the latter.\\n//\\n// Note that in principle we could use 32 separate maxpools to recover each of 32 bits of the gradient while preserving 31 bits of input for the max pooling criteria; here, we just truncate to the first 16 bits of input.\"}"
     ],
     "Actual Clean Code": [
         "                                        \"specify \",",
@@ -106,9 +100,7 @@
 },
 {
     "Patch Formated": [
-        "{",
-        "    \"Patch\": \"REGISTER_KERNEL_BUILDER(Name(\\\"QuantizeAndDequantizeV3\\\")\\n                              .Device(DEVICE_GPU)\\n                              .HostMemory(\\\"input_min\\\")\\n                              .HostMemory(\\\"input_max\\\")\\n                              .HostMemory(\\\"num_bits\\\")\\n                              .TypeConstraint<T>(\\\"T\\\")\\n                          QuantizeAndDequantizeV3Op<GPUDevice, T>);\"",
-        "}"
+        "{\"Patch\": \"In the given vulnerable code, the issue lies with the improper input validation. To fix this vulnerability, we need to add proper input validation to ensure that only scalar input tensors are accepted. To achieve this, we can modify the code as follows:\\n\\nREGISTER_OP(\\\"QuantizeAndDequantizeV3\\\")\\n    .Input(\\\"input: T\\\")\\n    .Input(\\\"input_min: float\\\")\\n    .Input(\\\"input_max: float\\\")\\n    .Input(\\\"num_bits: int32\\\")\\n    .Output(\\\"output: T\\\")\\n    .Attr(\\\"T: {float, double}\\\")\\n    .SetShapeFn([](InferenceContext* c) {\\n      ShapeHandle input_shape;\\n      TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &input_shape));\\n      c->set_output(0, input_shape);\\n      return Status::OK();\\n    });\\n\\nThis patch adds a shape validation check to ensure that the input tensor has a rank of 0, i.e., it is a scalar input. If the input tensor is not a scalar, an error will be returned. This helps to prevent potential security vulnerabilities that may arise from non-scalar input tensors.\\n\\nNote: This patch assumes that the vulnerability exists in the REGISTER_OP macro code snippet provided.\"}"
     ],
     "Actual Clean Code": [
         "                              .HostMemory(\"input_max\")                         \\",
@@ -143,31 +135,4 @@
     ],
     "Link": "https://github.com/tensorflow/tensorflow/commit/f3f9cb38ecfe5a8a703f2c4a8fead434ef291713",
     "API name": "tf.raw_ops.QuantizeAndDequantizeV3"
-},
-{
-    "Patch Formated": [
-        "{",
-        "    \"Patch\": \"The security issues in the code are as follows:\\n\\n1. In line 2, the code uses the '== depth' comparison without checking if depth is a valid value. This can lead to a potential security issue. To fix this, we need to add a separate check to ensure that depth is a valid value before executing the comparison.\\n\\n2. In line 4, the code throws an InvalidArgument exception with potentially sensitive information (the expected and actual size of 'max'). To fix this, we should modify the exception message to omit the actual size of 'max'.\\n\\nThe patched code is as follows:\\n\\nOP_REQUIRES(context, depth > 0, InvalidArgument(\\\"depth must be a positive value\\\"));\\nOP_REQUIRES(context, max.dim_size(0) == depth, InvalidArgument(\\\"max has incorrect size, expected \\\", depth));\\n\\nTensor* grad_wrt_input;\\nOP_REQUIRES_OK(context, context->allocate_output(0, input.shape(), &grad_wrt_input));\\n\\nTensorShape min_max_shape({input.dim_size(input.dims() - 1)});\\nTensor* grad_wrt_min;\\nOP_REQUIRES_OK(context, context->allocate_output(1, min_max_shape, &grad_wrt_min));\\n\\nTensor* grad_wrt_max;\\nOP_REQUIRES_OK(context, context->allocate_output(2, min_max_shape, &grad_wrt_max));\"",
-        "}"
-    ],
-    "Actual Clean Code": [
-        "    const int depth = input.dim_size(input.dims() - 1);  // last dimension size.",
-        "    const Tensor& min = context->input(2);",
-        "    OP_REQUIRES(",
-        "        context, TensorShapeUtils::IsVector(min.shape()),",
-        "        InvalidArgument(\"`min` must be rank 1 but is rank \", min.dims()));",
-        "    OP_REQUIRES(context, min.dim_size(0) == depth,",
-        "                InvalidArgument(\"min has incorrect size, expected \", depth,",
-        "                                \" was \", min.dim_size(0)));",
-        "    const Tensor& max = context->input(3);",
-        "    OP_REQUIRES(",
-        "        context, TensorShapeUtils::IsVector(max.shape()),",
-        "        InvalidArgument(\"`max` must be rank 1 but is rank \", max.dims()));",
-        "    OP_REQUIRES(context, max.dim_size(0) == depth,",
-        "                InvalidArgument(\"max has incorrect size, expected \", depth,",
-        "                                \" was \", max.dim_size(0)));",
-        ""
-    ],
-    "Link": "https://github.com/tensorflow/tensorflow/commit/f3cf67ac5705f4f04721d15e485e192bb319feed",
-    "API name": "tf.quantization.fake_quant_with_min_max_vars_gradient"
 },
