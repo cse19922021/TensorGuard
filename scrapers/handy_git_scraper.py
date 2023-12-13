@@ -1,5 +1,6 @@
 from pydriller import Repository
-import re, os, sys
+import re, os, sys, json
+import pandas as pd
 
 ROOT_DIR = os.getcwd()
 
@@ -12,6 +13,19 @@ REG_CPP_CHECK = re.compile('error id=')
 FIND_CWE_IDENTIFIER = re.compile('CWE-(\d+)')
 FIND_RATS_VUL_TYPE = re.compile('<type.*>((.|\n)*?)<\/type>')
 
+
+def separate_added_deleted(github_diff):
+    diff_lines = github_diff.split('\n')
+
+    added_lines = ""
+    deleted_lines = ""
+
+    for line in diff_lines:
+        if line.startswith('+'):
+            added_lines += line[0:] + '\n'
+        elif line.startswith('-'):
+            deleted_lines += line[0:] + '\n'
+    return deleted_lines, added_lines
 
 def get_patches(splitted_lines):
     change_info = {}
@@ -121,9 +135,6 @@ if __name__ == '__main__':
     # full_link = sys.argv[1]
     # file_name = sys.argv[2]
 
-    union_buggy = []
-    union_fix = []
-
     out_buggy = {
         'code': [],
     }
@@ -132,26 +143,41 @@ if __name__ == '__main__':
         'code': []
     }
 
-    # full_link = "https://github.com/tensorflow/tensorflow/commit/ee50d1e00f81f62a4517453f721c634bbb478307"
-    # file_name = 'tensorflow/core/kernels/fractional_avg_pool_op.cc'
+    data = pd.read_csv('scenarios/data.csv')
+    
+    for idx, row in data.iterrows():
 
-    full_link = input("Enter commit url: ")
-    file_name = input("Enter filename: ")
+        print(row['Commit'])
+        full_link = row['Commit'].split('/')[-1]
+        if row['Commit'] == 'https://github.com/tensorflow/tensorflow/commit/8a47a39d9697969206d23a523c977238717e8727':
+            print('')
 
-    full_link = full_link.split('/')[-1]
-    changes, before_union, after_union, changed_lines = get_code_change(full_link, file_name)
+        changes, before_union, after_union, changed_lines = get_code_change(full_link, row['Good file Name'])
+        if changes:
+            deleted_lines, added_lines = separate_added_deleted(changes[0])
+            for idx, mods in enumerate(changed_lines):
+                for k, v in mods.items():
+                    for key,value in v.items():
 
-    for idx, mods in enumerate(changed_lines):
-        for k, v in mods.items():
-            for key,value in v.items():
-                union_buggy.append(before_union[idx][value[0]:value[1]])
-                union_fix.append(after_union[idx][value[0]:value[1]])
-    # out_buggy['code'] = "\n".join(union_buggy[0])
-    # out_clean['code'] = "\n".join(union_fix[0])
-
-    print("\n".join(union_buggy[0]))
-    print("########################")
-    print("########################")
-    print("########################")
-    print("########################")
-    print("\n".join(union_fix[0]))
+                        data_ = {
+                            'Commit Link': row['Commit'],
+                            'API Name': row['API'],
+                            'Vulnerability Category': row['Bug category'],
+                            'Trigger Mechanism': row['Front-end Root Cause Explanation'],
+                            'Backend Root Cause': row['Backend root cause'],
+                            'Vulnerability Impact': row['Impact L1'],
+                            'Vulnerability Fixing Commit Description': row['Fix Description'],
+                            'Vulnerable Code': before_union[idx][value[0]:value[1]],
+                            'Clean Code': after_union[idx][value[0]:value[1]],
+                            'Added_Lines': added_lines,
+                            'Deleted Lines': deleted_lines}
+            
+            with open("scenarios/tf_bug_data_sample.json", "a") as json_file:
+                json.dump(data_, json_file, indent=4)
+                json_file.write(',')
+                json_file.write('\n')
+        else:
+            print(
+                "PyDriller is not able to fetch this commit. The root cause is unknown."
+            )
+            
