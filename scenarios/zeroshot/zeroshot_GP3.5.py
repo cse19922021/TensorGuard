@@ -48,8 +48,21 @@ def main():
         anomalies_unique = list(anomalies.unique())
         print('')
 
+# def chat(system_prompt, user_prompt, model='gpt-3.5-turbo', temperature = 0, verbose=False):
+#     '''The call to OpenAI API goes here'''
+#     response = openai.ChatCompletion.create(
+#         temperature = temperature,
+#         model = model,
+#         messages = [
+#             {"role": "system", "content": system_prompt},
+#             {"role": "system", "content": user_prompt},
+#         ])
+    
+#     result = response['choices'[0]['message']['content']]
+#     return result
+    
 
-def gpt_conversation(prompt, model="gpt-4"):
+def chat(prompt, model="gpt-4"):
 
     response = openai.ChatCompletion.create(
         model=model,
@@ -66,27 +79,16 @@ def gpt_conversation(prompt, model="gpt-4"):
 def create_prompt(item):
     prompt_ = [
     f"""
-    You are a bug fix chatbot. You will receive a buggy code snippet along with the corresponding context information 
-    about the bug and output the fixed code. 
-    ONLY generate the code, DON'T explain how to fix it. 
-    For each buggy code, you have the following context (wrappted by @@):
-
-    Vulnerable code in the backend: @@{item['Vulnerable Code']}@@
-    
+    Please find and fix all security issues in the buggy code: @@{item['Vulnerable Code']}@@ given the following context:
     Please generate the patches/code (C++ code) fix in given json format:    
     <answer json start>,
     "Patch":"Generated patch"
     """
     ,
     f"""
-    You are a bug fix chatbot. You will receive a buggy code snippet along with the corresponding context information 
-    about the bug and output the fixed code. 
-    ONLY generate the code, do not explain how to fix it. 
-    For each buggy code, you have the following context (wrappted by @@):
-
+    Please find and fix all security issues in the buggy code: @@{item['Vulnerable Code']}@@ given the following context:
     API Name: @@{item['API Name']}@@
     Vulnerable code in the backend: @@{item['Vulnerable Code']}@@
-    
     Please generate the patches/code (C++ code) fix in given json format:    
     <answer json start>,
     "Patch":"Generated patch"
@@ -94,11 +96,7 @@ def create_prompt(item):
     """ 
     ,
     f"""
-    You are a bug fix chatbot. You will receive a buggy code snippet along with the corresponding context information 
-    about the bug and output the fixed code. 
-    ONLY generate the code, do not explain how to fix it. 
-    For each buggy code, you have the following context (wrappted by @@):
-
+    Please find and fix all security issues in the buggy code: @@{item['Vulnerable Code']}@@ given the following context:
     API Name: @@{item['API Name']}@@
     Vulnerability Category: @@{item['Vulnerability Category']}@@
     Vulnerable code in the backend: @@{item['Vulnerable Code']}@@
@@ -110,11 +108,7 @@ def create_prompt(item):
     """ 
     ,
     f"""
-    You are a bug fix chatbot. You will receive a buggy code snippet along with the corresponding context information 
-    about the bug and output the fixed code. 
-    ONLY generate the code, do not explain how to fix it. 
-    For each buggy code, you have the following context (wrappted by @@):
-
+    Please find and fix all security issues in the buggy code: @@{item['Vulnerable Code']}@@ given the following context:
     API Name: @@{item['API Name']}@@
     Vulnerability Category: @@{item['Vulnerability Category']}@@
     Description of how the vulnerability is triggered when calling @@{item['API Name']}@@: @@{item["Trigger Mechanism"]}@@
@@ -126,11 +120,7 @@ def create_prompt(item):
 
     """,
     f"""
-    You are a bug fix chatbot. You will receive a buggy code snippet along with the corresponding context information 
-    about the bug and output the fixed code. 
-    ONLY generate the code, do not explain how to fix it. 
-    For each buggy code, you have the following context (wrappted by @@):
-
+    Please find and fix all security issues in the buggy code: @@{item['Vulnerable Code']}@@ given the following context:
     API Name: @@{item['API Name']}@@
     Vulnerability Category: @@{item['Vulnerability Category']}@@
     Root cause of the vulnerability in the backend: @@{item["Backend Root Cause"]}
@@ -139,6 +129,7 @@ def create_prompt(item):
     Please generate the patches/code (C++ code) fix in given json format:    
     <answer json start>,
     "Patch":"Generated patch"
+
     """    
     ]
     return prompt_
@@ -163,11 +154,15 @@ def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
     )
     return response
 
+def format_json(response):
+    split_response = response.split('\n')
+    return split_response
 
 def exec_fix_suggestion():
     scenario_IDs = 'zeroshot'
     lib_name = 'tf'
     
+
     with open(f'scenarios/{lib_name}_bug_data_sample.json') as json_file:
         data = json.load(json_file)
         for j, item in enumerate(data):
@@ -179,19 +174,23 @@ def exec_fix_suggestion():
                 t_count = get_token_count(prompt)
                 if t_count <= 4097:
                     conversations = completions_with_backoff(prompt)
-                    rule_ = conversations.choices[0].message.content
+                    response = conversations.choices[0].message.content
+                    formated_response = format_json(response)
                     try:
-                        x = json.loads(rule_, strict=False)
-                        keys = [k for k, v in x.items()]
-                        split_ = x[keys[0]].split('\n')
-                        x.update({'Patch Formated': split_})
-                        x.update({'Actual Clean Code': item['Clean Code']})
-                        x.update({'Link': item['Commit Link']})
-                        x.update({'API name': item['API Name']})
+                        # x = json.loads(rule_, strict=False)
+                        # keys = [k for k, v in x.items()]
+                        # split_ = x[keys[0]].split('\n')
+                        out_dict = {
+                            'Actual Clean Code': item['Clean Code'],
+                            'Link': item['Commit Link'],
+                            'API name': item['API Name']
+                        }
+                        out_dict.update({'Patch Formated': formated_response})
+
                         if not os.path.exists(rules_path):
                             os.makedirs(rules_path)
                         with open(f"{rules_path}/L{prompt_level}_code_fixes.json", "a") as json_file:
-                            json.dump(x, json_file, indent=4)
+                            json.dump(out_dict, json_file, indent=4)
                             json_file.write(',')
                             json_file.write('\n')
 
