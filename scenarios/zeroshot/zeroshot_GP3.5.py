@@ -6,8 +6,14 @@ import tiktoken
 import openai
 from openai import OpenAI
 import backoff
+# from utils.metrics import bleu_score
 from dotenv import load_dotenv
 load_dotenv()
+from nltk.translate.bleu_score import sentence_bleu
+
+def bleu_score(reference, candidate):
+    score = sentence_bleu(reference, candidate)
+    return score
 
 client = OpenAI(
     api_key=os.environ.get(".env")
@@ -178,11 +184,21 @@ def format_json(response):
     split_response = response.split('\n')
     return split_response
 
+def evaluate():
+    output_ids = ['L0']
+    for id in output_ids:
+        with open(f'output/zeroshot/tf/{id}_code_fixes.json') as json_file:
+            data = json.load(json_file)
+        for item in data:
+            x = sentence_bleu(item['Actual Clean Code'], item['Patch Formated'][0])
+            print(f"The Bleu score the API {item['API name']} is {x}")
+    pass
+
 def exec_fix_suggestion():
     scenario_IDs = 'zeroshot'
+    model = 'gpt-4'
     lib_name = 'tf'
     
-
     with open(f'scenarios/{lib_name}_bug_data_sample.json') as json_file:
         data = json.load(json_file)
         for j, item in enumerate(data):
@@ -193,7 +209,7 @@ def exec_fix_suggestion():
                 rules_path = f"output/{scenario_IDs}/{lib_name}"
                 t_count = get_token_count(prompt)
                 if t_count <= 4097:
-                    conversations = completions_with_backoff(prompt)
+                    conversations = completions_with_backoff(prompt, model=model)
                     response = conversations.choices[0].message.content
                     formated_response = format_json(response)
                     try:
@@ -217,4 +233,5 @@ def exec_fix_suggestion():
                     print("Your messages exceeded the limit.")
                 
 if __name__ == '__main__':
-    exec_fix_suggestion()
+    # exec_fix_suggestion()
+    evaluate()
