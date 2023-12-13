@@ -694,3 +694,220 @@
     "Link": "https://github.com/tensorflow/tensorflow/commit/88f93dfe691563baa4ae1e80ccde2d5c7a143821",
     "API name": "tf.raw_ops.RaggedTensorToVariant"
 },
+{
+    "Patch Formated": [
+        "\"Patch\": \"['      if(input_backprop_index >= 0 &&', '            input_backprop_index < num_total_inputs) {', '          input_backprop_flat(input_backprop_index) += out_backprop_flat(index);', '      } else {', '          return errors::InvalidArgument(\\\"Invalid input backprop index: \\\", input_backprop_index, \\\", Maximum valid index: \\\", num_total_inputs);', '      }', '    }', '  }', '', ' private:', '  bool overlapping_;', '};', '']\""
+    ],
+    "Actual Clean Code": [
+        "    for (int index = 0; index < num_total_outputs; ++index) {",
+        "      int input_backprop_index = out_arg_max_flat(index);",
+        "      OP_REQUIRES(",
+        "          context,",
+        "          input_backprop_index >= 0 && input_backprop_index < num_total_inputs,",
+        "          errors::InvalidArgument(",
+        "              \"Invalid input backprop index: \", input_backprop_index, \", \",",
+        "              num_total_inputs));",
+        "      input_backprop_flat(input_backprop_index) += out_backprop_flat(index);",
+        "    }",
+        "  }",
+        ""
+    ],
+    "Link": "https://github.com/tensorflow/tensorflow/commit/8741e57d163a079db05a7107a7609af70931def4",
+    "API name": "tf.raw_ops.FractionalMaxPoolGrad"
+},
+{
+    "Patch Formated": [
+        "<answer json start>,",
+        "{",
+        "\"Patch\": \"['if (!TensorShapeUtils::IsScalar(min_features->shape()) ||\",",
+        "\"        !TensorShapeUtils::IsScalar(max_features->shape())) {\", ",
+        "\"        OP_REQUIRES(context, false,\",",
+        "\"                    errors::InvalidArgument('min_features and max_features must be scalars.'));\", ",
+        "\"      }\", ",
+        "\"      min_as_quantized, max_as_quantized,',\",",
+        "\"      'output->flat<quint8>().data());\", ",
+        "\"    } else {\",",
+        "\"      output->flat<T>().device(context->eigen_cpu_device()) =\",",
+        "\"          input.flat<T>()\", ",
+        "\"              .cwiseMax(min_as_quantized)\", ",
+        "\"              .cwiseMin(max_as_quantized)\", ",
+        "\"              .template cast<T>();\", ",
+        "\"    }\", ",
+        "\"\",",
+        "\"    Tensor* output_min = nullptr;\", ",
+        "\"    OP_REQUIRES_OK(context, context->allocate_output(1, {}, &output_min));\", ",
+        "\"    output_min->flat<float>()(0) = min_input;\", ",
+        "\"    Tensor* output_max = nullptr;\", ",
+        "\"    OP_REQUIRES_OK(context, context->allocate_output(2, {}, &output_max));\", ",
+        "\"    output_max->flat<float>()(0) = max_input;\", ",
+        "\"  }\", ",
+        "\"};\",",
+        "\"\",",
+        "\"REGISTER_KERNEL_BUILDER(Name('QuantizedRelu')\", ",
+        "\"                            .Device(DEVICE_CPU))]\"",
+        "}",
+        "<answer json end>"
+    ],
+    "Actual Clean Code": [
+        "  void Compute(OpKernelContext* context) override {",
+        "    const Tensor& input = context->input(0);",
+        "    const Tensor& min_input_tensor = context->input(1);",
+        "    const Tensor& max_input_tensor = context->input(2);",
+        "",
+        "    OP_REQUIRES(",
+        "        context, TensorShapeUtils::IsScalar(min_input_tensor.shape()),",
+        "        errors::InvalidArgument(\"`min_input` must be rank 0 but is rank \",",
+        "                                min_input_tensor.dims()));",
+        "    OP_REQUIRES(",
+        "        context, TensorShapeUtils::IsScalar(max_input_tensor.shape()),",
+        "        errors::InvalidArgument(\"`max_input` must be rank 0 but is rank \",",
+        "                                max_input_tensor.dims()));",
+        "",
+        "    const float min_input = min_input_tensor.scalar<float>()();",
+        "    const float max_input = max_input_tensor.scalar<float>()();",
+        "",
+        "    Tensor* output = nullptr;",
+        "    OP_REQUIRES_OK(context,",
+        "                   context->allocate_output(0, input.shape(), &output));",
+        "    const T min_as_quantized = FloatToQuantized<T>(0.0f, min_input, max_input);"
+    ],
+    "Link": "https://github.com/tensorflow/tensorflow/commit/49b3824d83af706df0ad07e4e677d88659756d89",
+    "API name": "tf.raw_ops.QuantizedRelu6"
+},
+{
+    "Patch Formated": [
+        "<answer json start>,",
+        "\"Patch\": \"['  void Compute(OpKernelContext* ctx) override {', '    const Tensor& input = ctx->input(0);', '    OP_REQUIRES(ctx, ctx->input(1).dims() == 0);', '    const float input_min_float = ctx->input(1).flat<float>()(0);', '    OP_REQUIRES(ctx, ctx->input(2).dims() == 0);', '    const float input_max_float = ctx->input(2).flat<float>()(0);', '    Tensor* output = nullptr;', '    OP_REQUIRES_OK(ctx, ctx->allocate_output(0, input.shape(), &output));', '    Tensor* output_min = nullptr;', '    OP_REQUIRES_OK(ctx, ctx->allocate_output(1, TensorShape({}), &output_min));', '    Tensor* output_max = nullptr;', '    OP_REQUIRES_OK(ctx, ctx->allocate_output(2, TensorShape({}), &output_max));', '', '    // See QuantizationRangeOp as well, which has a copy of this logic.', '    auto input_array = input.flat<T1>();', '    const int32_t input_lowest_quantized =', '        static_cast<int32>(Eigen::NumTraits<T1>::lowest());', '    const int32_t input_highest_quantized =', '        static_cast<int32>(Eigen::NumTraits<T1>::highest());', '    T1 actual_min_quantized = input_highest_quantized;', '    T1 actual_max_quantized = input_lowest_quantized;', '    for (int i = 0; i < input_array.size(); ++i) {']\"",
+        "<answer json end>"
+    ],
+    "Actual Clean Code": [
+        "  void Compute(OpKernelContext* ctx) override {",
+        "    const Tensor& input = ctx->input(0);",
+        "    const Tensor& input_min = ctx->input(1);",
+        "    const Tensor& input_max = ctx->input(2);",
+        "",
+        "    OP_REQUIRES(",
+        "        ctx, TensorShapeUtils::IsScalar(input_min.shape()),",
+        "        errors::InvalidArgument(\"`input_min` must be rank 0 but is rank \",",
+        "                                input_min.dims()));",
+        "    OP_REQUIRES(",
+        "        ctx, TensorShapeUtils::IsScalar(input_max.shape()),",
+        "        errors::InvalidArgument(\"`input_max` must be rank 0 but is rank \",",
+        "                                input_max.dims()));",
+        "",
+        "    const float input_min_float = input_min.scalar<float>()();",
+        "    const float input_max_float = input_max.scalar<float>()();",
+        "    Tensor* output = nullptr;",
+        "    OP_REQUIRES_OK(ctx, ctx->allocate_output(0, input.shape(), &output));",
+        "    Tensor* output_min = nullptr;",
+        "    OP_REQUIRES_OK(ctx, ctx->allocate_output(1, TensorShape({}), &output_min));"
+    ],
+    "Link": "https://github.com/tensorflow/tensorflow/commit/73ad1815ebcfeb7c051f9c2f7ab5024380ca8613",
+    "API name": "tf.raw_ops.QuantizeDownAndShrinkRange"
+},
+{
+    "Patch Formated": [
+        "{\"Patch\": \"const float min_a = context->input(2).flat<float>()(0);\\n    OP_REQUIRES(context, !std::isnan(min_a) && !std::isinf(min_a),\\n                errors::InvalidArgument(\\\"min_a must be a scalar.\\\"));\\n    const float max_a = context->input(3).flat<float>()(0);\\n    OP_REQUIRES(context, !std::isnan(max_a) && !std::isinf(max_a),\\n                errors::InvalidArgument(\\\"max_a must be a scalar.\\\"));\\n    const float min_b = context->input(4).flat<float>()(0);\\n    OP_REQUIRES(context, !std::isnan(min_b) && !std::isinf(min_b),\\n                errors::InvalidArgument(\\\"min_b must be a scalar.\\\"));\\n    const float max_b = context->input(5).flat<float>()(0);\\n    OP_REQUIRES(context, !std::isnan(max_b) && !std::isinf(max_b),\\n                errors::InvalidArgument(\\\"max_b must be a scalar.\\\"));\"}"
+    ],
+    "Actual Clean Code": [
+        "    const Tensor& a = context->input(0);",
+        "    const Tensor& b = context->input(1);",
+        "    OP_REQUIRES(context, TensorShapeUtils::IsScalar(context->input(2).shape()),",
+        "                errors::InvalidArgument(\"min_a must be a scalar, but got shape\",",
+        "                                        context->input(2).shape()));",
+        "    const float min_a = context->input(2).flat<float>()(0);",
+        "    OP_REQUIRES(context, context->input(3).NumElements() == 1,",
+        "                errors::InvalidArgument(\"max_a must be a scalar, but got shape\",",
+        "                                        context->input(3).shape()));",
+        "    const float max_a = context->input(3).flat<float>()(0);",
+        "    OP_REQUIRES(context, context->input(4).NumElements() == 1,",
+        "                errors::InvalidArgument(\"min_b must be a scalar, but got shape\",",
+        "                                        context->input(4).shape()));",
+        "    const float min_b = context->input(4).flat<float>()(0);",
+        "    OP_REQUIRES(context, context->input(5).NumElements() == 1,",
+        "                errors::InvalidArgument(\"max_b must be a scalar, but got shape\",",
+        "                                        context->input(5).shape()));",
+        "    const float max_b = context->input(5).flat<float>()(0);",
+        "",
+        "    // Make sure that we have valid quantization ranges for the input buffers.",
+        "    // If the difference between the min and max is negative or zero, it makes"
+    ],
+    "Link": "https://github.com/tensorflow/tensorflow/commit/aca766ac7693bf29ed0df55ad6bfcc78f35e7f48",
+    "API name": "tf.raw_ops.QuantizedMatMul"
+},
+{
+    "Patch Formated": [
+        "\"Patch\": \"['                                \\\" was \\\", max.dim_size(0)));', '', '    Tensor* output;', '    OP_REQUIRES_OK(context,', '                   context->allocate_output(0, input.shape(), &output));', '', '    FakeQuantWithMinMaxVarsPerChannelFunctor<Device> functor;', '      // Check if min and max tensors rank is 1', '    OP_REQUIRES(context, min.dims() == 1 && max.dims() == 1,', '               errors::InvalidArgument(\\\"min and max must be rank 1 tensor.\\\"));', '    functor(context->eigen_device<Device>(), input.flat_inner_dims<float, 2>(),', '            min.vec<float>(), max.vec<float>(), quant_min_, quant_max_,', '            output->flat_inner_dims<float, 2>());', '  }', '', ' private:', '  int quant_min_;', '  int quant_max_;', '};', '']\""
+    ],
+    "Actual Clean Code": [
+        "    const int depth = input.dim_size(input.dims() - 1);  // last dimension size.",
+        "    const Tensor& min = context->input(1);",
+        "    const Tensor& max = context->input(2);",
+        "",
+        "    OP_REQUIRES(",
+        "        context, TensorShapeUtils::IsVector(min.shape()),",
+        "        InvalidArgument(\"`min` must be rank 1 but is rank \", min.dims()));",
+        "    OP_REQUIRES(context, min.dim_size(0) == depth,",
+        "                InvalidArgument(\"min has incorrect size, expected \", depth,",
+        "                                \" was \", min.dim_size(0)));",
+        "    OP_REQUIRES(",
+        "        context, TensorShapeUtils::IsVector(max.shape()),",
+        "        InvalidArgument(\"`max` must be rank 1 but is rank \", max.dims()));",
+        "    OP_REQUIRES(context, max.dim_size(0) == depth,",
+        "                InvalidArgument(\"max has incorrect size, expected \", depth,",
+        "                                \" was \", max.dim_size(0)));",
+        ""
+    ],
+    "Link": "https://github.com/tensorflow/tensorflow/commit/785d67a78a1d533759fcd2f5e8d6ef778de849e0",
+    "API name": "tf.raw_ops.FakeQuantWithMinMaxVarsPerChannel"
+},
+{
+    "Patch Formated": [
+        "<answer json start>,",
+        "{",
+        "  \"Patch\": \"CHECK_EQ(4, input_sizes.dims()) << \\\"The input_sizes parameter must be 4-dimensional.\\\";\"",
+        "}",
+        "<answer json end>"
+    ],
+    "Actual Clean Code": [
+        "    const Tensor& filter = context->input(1);",
+        "    const Tensor& out_backprop = context->input(2);",
+        "    OP_REQUIRES(",
+        "        context, out_backprop.dims() == 4,",
+        "        errors::InvalidArgument(\"input_sizes must be 4-dimensional, got: \",",
+        "                                out_backprop.dims()));",
+        "",
+        "    TensorShape input_shape;",
+        "    OP_REQUIRES_OK(context,",
+        "                   Conv2DBackpropComputeInputShape(input_sizes, filter.shape(),"
+    ],
+    "Link": "https://github.com/tensorflow/tensorflow/commit/50156d547b9a1da0144d7babe665cf690305b33c",
+    "API name": "tf.raw_ops.Conv2DBackpropInput"
+},
+{
+    "Patch Formated": [
+        "<answer json start>,",
+        "\"Patch\": \"[",
+        "    '  auto shape_vec = tensor_in_shape.vec<int32>();', ",
+        "    '  CHECK_GE(tensor_in_shape.NumElements(), 0);', ",
+        "    '  for (int64_t i = 0; i < tensor_in_shape.NumElements(); ++i) {', ",
+        "    '    output_shape.AddDim(shape_vec(i));', ",
+        "    '  }', ",
+        "    '  if (output_shape.num_elements() == 0) {', ",
+        "    '    Tensor* output = nullptr;', ",
+        "    '    OP_REQUIRES_OK(context, allocation_status);',",
+        "    '  }'",
+        "]\"<answer json end>"
+    ],
+    "Actual Clean Code": [
+        "    auto shape_vec = tensor_in_shape.vec<int32>();",
+        "    for (int64_t i = 0; i < tensor_in_shape.NumElements(); ++i) {",
+        "      OP_REQUIRES_OK(context, output_shape.AddDimWithStatus(shape_vec(i)));",
+        "    }",
+        "    if (output_shape.num_elements() == 0) {",
+        "      Tensor* output = nullptr;",
+        "      OP_REQUIRES_OK(context,"
+    ],
+    "Link": "https://github.com/tensorflow/tensorflow/commit/3a6ac52664c6c095aa2b114e742b0aa17fdce78f",
+    "API name": "tf.raw_ops.AvgPoolGrad"
+},
