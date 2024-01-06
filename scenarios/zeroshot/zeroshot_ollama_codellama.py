@@ -22,17 +22,21 @@ def create_prompt_fix_sugesstion(item):
     """
 
     return prompt_
-
+import time
 if __name__ == '__main__':
     lib_name = 'tf'
-    rules_path = f"scenarios/{lib_name}_code_fixes.json"
+    rules_path = f"scenarios/{lib_name}_code_fixes_test.json"
 
     with open(f'scenarios/{lib_name}_bug_data_sample.json') as json_file:
         data = json.load(json_file)
         for j, item in enumerate(data):
             print(f"Record {j}/{len(data)}")
             prompt_ = create_prompt_fix_sugesstion(item)
-            output = codellama13b(prompt_)     
+            start_time = time.time()
+
+            output = codellama13b(prompt_)
+            print(output)     
+            print(time.time() - start_time)
             try:
                 # output = output.split('\n')
                 x = json.loads(output)
