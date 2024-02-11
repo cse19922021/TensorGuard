@@ -1,72 +1,125 @@
+import json
+import os
+import re
+import requests
+import random
+import datetime
+import time
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 from csv import writer
-import os, subprocess, re
-from git import Repo
-from datetime import datetime
 
-REPO_LIST = ["https://github.com/pytorch/pytorch"]
+from dotenv import load_dotenv
+load_dotenv()
 
-THIS_PROJECT = os.getcwd()
+TOKEN0 = os.getenv("GIT_TOKEN0")
+TOKEN1 = os.getenv("GIT_TOKEN1")
+TOKEN2 = os.getenv("GIT_TOKEN2")
+TOKEN3 = os.getenv("GIT_TOKEN3")
+TARGET = os.getenv('TARGET')
 
-def read_txt(fname):
-    with open(fname, "r") as fileReader:
-        data = fileReader.read()
-    return data
+tokens = {
+    0: TOKEN0,
+    1: TOKEN1,
+    2: TOKEN2,
+    3: TOKEN3,
+}
 
-def main():
+tokens_status = {
+    TOKEN0: True,
+    TOKEN1: True,
+    TOKEN2: True,
+    TOKEN3: True,
+}
 
-    r_prime = REPO_LIST[0].split("/")
+if TARGET == 'device':
+    pattern = r'(\bERROR: OpenGL error\b|\bfail\b|ROCm fails|ROCm runtime|NCCL error\b|CPU error\b|\bmkldnn error\b|\brocm driver error\b|\bGPUassert\b|\bDLA_RUNTIME Error\b|\bCUDA compilation error\b|\bCUDA MMU fault\b|\bGPU temperature\b|\bVulkan error\b|\bvulkan validation error\b|\bOpenGL Error\b|\bVulkan errors\b|\bGPU version mismatch\b|\bGPU hangs\b|\bdriver issue\b|\bGPU driver issue\b|\bGPU memory issue\b|\bTensorRT error\b|\bGPU compatibility\b|\bcuDNN error\b|\bCUDA error\b|\bGPU support\b|\bGPU error\b|\bGPU utilization\b|\bGPU memory\b)'
+else:
+    pattern = r"(FutureWarning:|Warning:|warning:)"
 
-    v = REPO_LIST[0] + ".git"
+def requests_retry_session(
+    retries=3,
+    backoff_factor=0.3,
+    status_forcelist=(500, 502, 504),
+    session=None,
+):
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
 
-    if not os.path.exists(
-        THIS_PROJECT + "/ml_repos_cloned/" + r_prime[3] + "/" + r_prime[4]
-    ):
-        subprocess.call(
-            "git clone "
-            + v
-            + " "
-            + THIS_PROJECT
-            + "/ml_repos_cloned/"
-            + r_prime[3]
-            + "/"
-            + r_prime[4],
-            shell=True,
+
+def select_access_token(current_token):
+    x = ""
+    if all(value == False for value in tokens_status.values()):
+        for k, v in tokens_status.items():
+            tokens_status[k] = True
+
+    for k, v in tokens.items():
+        if tokens_status[v] != False:
+            x = v
+            break
+    current_token = x
+    return current_token
+
+
+def parse_comment(first_100_commits, current_token):
+    match_flag = False
+    response = requests_retry_session().get(
+        first_100_commits,
+        headers={"Authorization": "token {}".format(current_token)},
+    )
+    if response.status_code != 200:
+        tokens_status[current_token] = False
+        current_token = select_access_token(current_token)
+        response = requests_retry_session().get(
+            first_100_commits,
+            headers={"Authorization": "token {}".format(current_token)},
         )
 
-    r = Repo(THIS_PROJECT + "/ml_repos_cloned/" + r_prime[3] + "/" + r_prime[4])
+    if response.status_code != 200:
+        tokens_status[current_token] = False
+        current_token = select_access_token(current_token)
+        response = requests_retry_session().get(
+            first_100_commits,
+            headers={"Authorization": "token {}".format(current_token)},
+        )
 
-    subprocess.check_call(
-        "./checkout.sh %s "
-        % (THIS_PROJECT + "/ml_repos_cloned/" + r_prime[3] + "/" + r_prime[4]),
-        shell=True,
-    )
+    if response.status_code != 200:
+        tokens_status[current_token] = False
+        current_token = select_access_token(current_token)
+        response = requests_retry_session().get(
+            first_100_commits,
+            headers={"Authorization": "token {}".format(current_token)},
+        )
 
-    all_commits = list(r.iter_commits("master", max_count=50000))
+    if response.status_code != 200:
+        tokens_status[current_token] = False
+        current_token = select_access_token(current_token)
+        response = requests_retry_session().get(
+            first_100_commits,
+            headers={"Authorization": "token {}".format(current_token)},
+        )
 
-    memory_related_rules = r"(\bdenial of service\b|\bDOS\b|\bremote code execution\b|\bCVE\b|\bNVD\b|\bmalicious\b|\battack\b|\bexploit\b|\bRCE\b|\badvisory\b|\binsecure\b|\bsecurity\b|\binfinite\b|\bbypass\b|\binjection\b|\boverflow\b|\bHeap buffer overflow\b|\bInteger division by zero\b|\bUndefined behavior\b|\bHeap OOB write\b|\bDivision by zero\b|\bCrashes the Python interpreter\b|\bHeap overflow\b|\bUninitialized memory accesses\b|\bHeap OOB access\b|\bHeap underflow\b|\bHeap OOB\b|\bHeap OOB read\b|\bSegmentation faults\b|\bSegmentation fault\b|\bseg fault\b|\bBuffer overflow\b|\bNull pointer dereference\b|\bFPE runtime\b|\bsegfaults\b|\bsegfault\b|\battack\b|\bcorrupt\b|\bcrack\b|\bcraft\b|\bCVE-\b|\bdeadlock\b|\bdeep recursion\b|\bdenial-of-service\b|\bdivide by 0\b|\bdivide by zero\b|\bdivide-by-zero\b|\bdivision by zero\b|\bdivision by 0\b|\bdivision-by-zero\b|\bdivision-by-0\b|\bdouble free\b|\bendless loop\b|\bleak\b|\binitialize\b|\binsecure\b|\binfo leak\b|\bnull deref\b|\bnull-deref\b|\bNULL dereference\b|\bnull function pointer\b|\bnull pointer dereference\b|\bnull-ptr\b|\bnull-ptr-deref\b|\bOOB\b|\bout of bound\b|\bout-of-bound\b|\boverflow\b|\bprotect\b|\brace\b|\brace condition\b|RCE|\bremote code execution\b|\bsanity check\b|\bsanity-check\b|\bsecurity\b|\bsecurity fix\b|\bsecurity issue\b|\bsecurity problem\b|\bsnprintf\b|\bundefined behavior\b|\bunderflow\b|\buninitialize\b|\buse after free\b|\buse-after-free\b|\bviolate\b|\bviolation\b|\bvsecurity\b|\bvuln\b|\bvulnerab\b)"
+    first_100_commits = json.loads(response.text)
 
-    try:
-        temp = []
-        for i, com in enumerate(all_commits):
+    if first_100_commits:
+        try:
+            for i, com in enumerate(first_100_commits):
 
-            _date = datetime.fromtimestamp(com.committed_date)
+                body_match_sec = re.findall(pattern, com["body"])
 
-            security_match = re.findall(memory_related_rules, com.message)
+                if body_match_sec:
+                    match_flag = True
+        except Exception as e:
+            print(e)
 
-            print("Analyzed commits: {}/{}".format(i, len(all_commits)))
-            if security_match and "typo" not in com.message:
-                if 2018 <= _date.year <= 2022:
-                    print("got one!")
-                    commit_link = REPO_LIST[0] + "/commit/" + com.hexsha
-                    temp.append(commit_link)
-
-    except Exception as e:
-        print(e)
-
-    with open("./commits/" + r_prime[4] + ".txt", "a") as f:
-        for item in temp:
-            f.write("%s\n" % item)
-
-
-if __name__ == "__main__":
-    main()
+    return match_flag

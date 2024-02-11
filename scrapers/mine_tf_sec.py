@@ -12,7 +12,7 @@ import subprocess
 import json
 import requests
 import os
-import time
+import time, csv
 from pydriller import Repository
 from collections import Counter
 import numpy as np
@@ -270,11 +270,15 @@ def scrape_security_page(link):
     
     union_buggy = []
     union_fix = []
-    for idx, mods in enumerate(changed_lines):
-        for k, v in mods.items():
-            for key,value in v.items():
-                union_buggy.append(source_code_before[idx][value[0]:value[1]])
-                union_fix.append(source_code_after[idx][value[0]:value[1]])
+    file_extensions = ['.h', '.cc', '.cpp', '.cu', '.py', '.hpp']
+
+    if change_flag:
+        for idx, mods in enumerate(changed_lines):
+            for k, v in mods.items():
+                for key,value in v.items():
+                    if any(extension in k.split('/')[-1] for extension in file_extensions) :
+                        union_buggy.append(source_code_before[idx-1][value[0]:value[1]])
+                        union_fix.append(source_code_after[idx-1][value[0]:value[1]])
 
     if code_flag and change_flag:
         data = {'Title': title_,
@@ -359,17 +363,21 @@ def scrape_tensorflow_security():
                 partial_link = link_text[1].attrs['href']
                 record_title = link_text[1].contents[0]
 
-                full_link = f"https://github.com/{partial_link}"
+                full_link = f"https://github.com{partial_link}"
+                print(full_link)
                 data_ = scrape_security_page(full_link)
-                data_.update({'Title': record_title})
-                data_.update({'Link': full_link})
+                data_[0].update({'Title': record_title})
+                data_[0].update({'Link': full_link})
 
-                data_list.append(data_)
-                print(data_)
-
-    with open("data/tf_bug_data.json", "a") as json_file:
-        json.dump(data_list, json_file, indent=4)
-        json_file.write('\n')
+                # data_list.append(data_)
+                list_data = [full_link, data_[0]['Title'], data_[0]['Bug description']]
+                with open("./data/tf_validation_bug_data.csv","a", newline="\n",) as fd:
+                    writer_object = csv.writer(fd)
+                    writer_object.writerow(list_data)
+   
+    # with open("data/tf_bug_data.json", "a") as json_file:
+    #     json.dump(data_list, json_file, indent=4)
+    #     json_file.write('\n')
 
 
 def ckeckList(lst):
@@ -395,7 +403,8 @@ def main():
         subprocess.call(
             f'git clone https://github.com/tensorflow/tensorflow.git repos/tensorflow', shell=True)
 
-    scrape_tensorflow_security_from_list(hash_table)
+    # scrape_tensorflow_security_from_list(hash_table)
+    scrape_tensorflow_security()
 
 
 if __name__ == '__main__':
