@@ -3,7 +3,15 @@ import os, subprocess, re, csv
 from git import Repo
 from datetime import datetime
 from datetime import datetime, timezone
+from openai import OpenAI
+import backoff, time
+import tiktoken
+from dotenv import load_dotenv
+load_dotenv()
 
+client = OpenAI(
+    api_key=os.environ.get(".env")
+)
 REPO_LIST = ["https://github.com/tensorflow/tensorflow"]
 
 THIS_PROJECT = os.getcwd()
@@ -20,6 +28,53 @@ def read_txt(fname):
     with open(fname, "r") as fileReader:
         data = fileReader.read()
     return data
+
+def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": prompt}
+        ]
+    )
+    return response
+
+def stage_1_prompting(item):
+    prompt_ = f"""
+    You are a chatbot responsible for classifying a commit message that fixing bugs in pytorch backend implementation.
+    Your task is to classify if the commit is fixing an improper/missing validation/checker bug. Please generate binary response, i.e., yes or no.
+
+    Here is the commit message:
+    Commit message: {item}
+
+    Result: <your response>
+
+    """
+
+    return prompt_
+
+def stage_2_prompting(item):
+    prompt_ = f"""
+    You are a chatbot responsible for analyzing a commit message that fixing bugs in pytorch backend implementation.
+    Your task is to perform analysis on the bug fixing commit that fixing an improper/missing validation/checker bug.
+
+    Here is the commit message:
+    Commit message: {item}
+
+    
+    
+    Result: <your response>
+
+    """
+
+    return prompt_
+
+def get_token_count(string):
+
+    encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+
+    num_tokens = len(encoding.encode(string))
+
+    return num_tokens
 
 def main():
 
@@ -72,15 +127,35 @@ def main():
 
             print("Analyzed commits: {}/{}".format(i, len(all_commits)))
             if security_match and "typo" not in com.message:
-                if 2016 <= _date.year <= 2021:
-                    print("got one!")
-                    commit_link = REPO_LIST[0] + "/commit/" + com.hexsha
-                    commit_date = com.committed_date
-                    dt_object = datetime.fromtimestamp(commit_date)
-                    commit_date = dt_object.replace(tzinfo=timezone.utc)
-                    data = [commit_link, commit_date.strftime("%Y-%m-%d %H:%M:%S")]
-                    temp.append(commit_link)
-                    save_commit(data, r_prime[3])
+                if 2016 <= _date.year <= 2024:
+                    prompt_ = stage_1_prompting(com.message)
+                    t_count = get_token_count(prompt_)
+                    if t_count <= 4097:
+                        time.sleep(2)
+                        conversations = completions_with_backoff(prompt_)
+                        decision = conversations.choices[0].message.content
+
+                        if 'Yes' in decision or 'yes' in decision:
+                            prompt_ = stage_2_prompting(com.message)
+                            t_count = get_token_count(prompt_)
+                            if t_count <= 4097:
+                                time.sleep(2)
+                                conversations = completions_with_backoff(prompt_)
+                                analysis = conversations.choices[0].message.content
+
+                            commit_link = REPO_LIST[0] + "/commit/" + com.hexsha
+                            commit_date = com.committed_date
+                            dt_object = datetime.fromtimestamp(commit_date)
+                            commit_date = dt_object.replace(tzinfo=timezone.utc)
+                            data = [commit_link, commit_date.strftime("%Y-%m-%d %H:%M:%S"), decision, analysis]
+                            save_commit(data, r_prime[3])
+                        else:
+                            commit_link = REPO_LIST[0] + "/commit/" + com.hexsha
+                            commit_date = com.committed_date
+                            dt_object = datetime.fromtimestamp(commit_date)
+                            commit_date = dt_object.replace(tzinfo=timezone.utc)
+                            data = [commit_link, commit_date.strftime("%Y-%m-%d %H:%M:%S"), decision, 'no analysis']
+                            save_commit(data, r_prime[3])
 
     except Exception as e:
         print(e)
