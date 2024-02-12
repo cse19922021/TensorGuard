@@ -44,7 +44,7 @@ def completions_with_backoff(prompt, model='gpt-4-0125-preview'):
 
 def stage_1_prompting(item):
     prompt_ = f"""
-    You are a chatbot responsible for classifying a commit message that fixing bugs in pytorch backend implementation.
+    You are a chatbot responsible for classifying a commit message that fixing bugs in tensorflow backend implementation.
     Your task is to classify if the commit is fixing an improper/missing validation/checker bug. Please generate binary response, i.e., yes or no.
 
     Here is the commit message:
@@ -143,7 +143,7 @@ def main():
                         prompt_ = stage_1_prompting(com.message)
                         t_count = get_token_count(prompt_)
                         if t_count <= 4097:
-                            time.sleep(2)
+                            time.sleep(3)
                             conversations = completions_with_backoff(prompt_)
                             decision = conversations.choices[0].message.content
 
