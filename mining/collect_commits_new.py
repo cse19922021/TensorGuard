@@ -13,7 +13,7 @@ load_dotenv()
 client = OpenAI(
     api_key=os.environ.get(".env")
 )
-REPO_LIST = ["https://github.com/pytorch/pytorch"]
+REPO_LIST = ["https://github.com/tensorflow/tensorflow"]
 
 THIS_PROJECT = os.getcwd()
 
@@ -128,7 +128,10 @@ def main():
     all_commits = list(r.iter_commits(branch_name, max_count=max_count))
     hist = read_txt(f'logs/{r_prime[3]}_parsed_commits.txt')
 
-    rules = r"(\bchecker\b|\bvalidating\b|\bcheckers\b|\bchecking\b|\bparameter validation\b|\bvalidation vulnerability\b|\bboundary\b|\bboundary validation\b|\binvalid input\b|\bvalidation bypass\b|\bchecks\b|\bcheck\b|\bdata validation\b|\binput validation\b|\bvalidation\b|\bcheck\b|\bdenial of service\b|\bDOS\b|\bremote code execution\b|\bCVE\b|\bNVD\b|\bmalicious\b|\battack\b|\bexploit\b|\bRCE\b|\badvisory\b|\binsecure\b|\bsecurity\b|\binfinite\b|\bbypass\b|\binjection\b|\boverflow\b|\bHeap buffer overflow\b|\bInteger division by zero\b|\bUndefined behavior\b|\bHeap OOB write\b|\bDivision by zero\b|\bCrashes the Python interpreter\b|\bHeap overflow\b|\bUninitialized memory accesses\b|\bHeap OOB access\b|\bHeap underflow\b|\bHeap OOB\b|\bHeap OOB read\b|\bSegmentation faults\b|\bSegmentation fault\b|\bseg fault\b|\bBuffer overflow\b|\bNull pointer dereference\b|\bFPE runtime\b|\bsegfaults\b|\bsegfault\b|\battack\b|\bcorrupt\b|\bcrack\b|\bcraft\b|\bCVE-\b|\bdeadlock\b|\bdeep recursion\b|\bdenial-of-service\b|\bdivide by 0\b|\bdivide by zero\b|\bdivide-by-zero\b|\bdivision by zero\b|\bdivision by 0\b|\bdivision-by-zero\b|\bdivision-by-0\b|\bdouble free\b|\bendless loop\b|\bleak\b|\binitialize\b|\binsecure\b|\binfo leak\b|\bnull deref\b|\bnull-deref\b|\bNULL dereference\b|\bnull function pointer\b|\bnull pointer dereference\b|\bnull-ptr\b|\bnull-ptr-deref\b|\bOOB\b|\bout of bound\b|\bout-of-bound\b|\boverflow\b|\bprotect\b|\brace\b|\brace condition\b|RCE|\bremote code execution\b|\bsanity check\b|\bsanity-check\b|\bsecurity\b|\bsecurity fix\b|\bsecurity issue\b|\bsecurity problem\b|\bsnprintf\b|\bundefined behavior\b|\bunderflow\b|\buninitialize\b|\buse after free\b|\buse-after-free\b|\bviolate\b|\bviolation\b|\bvsecurity\b|\bvuln\b|\bvulnerab\b)"
+    rule_checks_initial = r"(\bchecker\b|\bvalidating\b|\bcheckers\b|\bchecking\b|\bparameter validation\b|\bvalidation vulnerability\b|\bboundary\b|\bboundary validation\b|\binvalid input\b|\bvalidation bypass\b|\bchecks\b|\bcheck\b|\bdata validation\b|\binput validation\b|\bvalidation\b|\bcheck\b)"
+    rule_checks_l1 = r"(\bcheck if\b|\badd a check\b|\bdevice check\b|\bchecks of device type\b|\bin this check\b|\bexisting check\b|\bside effect checks\b|\bRelax the check\b|\bbefore checking\b|\bbut the check\b|\bto check\b|\badding a condition\b|\badding a condition to check\b|\bcheck that\b|\btypes checks\b|\bcheck bounds\b|\badd proper checks\b|\bsupports checks\b|\bRemove checks\b|\bAdd an extra level of checks\b|\bextra level of checks\b|\badd check\b|\bcheck to ensure\b|\bwithin valid range\b|\bworth checking\b|\bwe need to check\b|\blayering checks\b|\bchecks to fix\b|\bAdded size check\b|\bsize check\b|\bversion check\b|\badd checks\b|\badds more checks\b|\bcheck in\b|\badd additional checks\b|\badd additional checks for valid\b|\bstill checks\b|\bimprove type checking\b|\bcheck the existence of\b)"
+    rule_checks_l2 = r"(\bcheck for reductions\b|\bwe don't need to check\b|\bWhen checking\b|\bhandle the case\b|\bchecking if\b|\bdevice check\b|\bChecking for the attribute\b|\bchecking for\b|\bWe want to check that\b|\bVersionCheck\b|\bget rid of a check\b|\bmulti-GPU fusion check\b|\bWe have a function to check\b|\bvalue check\b|\bmore checks\b|\bcheck only\b|\bconditional check\b|\bdon't check\b|\btype check\b|\bnull check\b|\bpadding check\b|\bAPI check\b|\bmemory kind check\b|\bExplicitly check\b|\bthe checks that check\b|\bwithin range\b|\bcheck to check\b|\bfunction check\b|\bcheck if\b|\blegality check\b|\bwe check\b|\bsafety check\b|\bdisabled checks\b|\bcheck the last element\b|\blater check\b|\bplatform check\b|\bduplicate checks\b|\bFix check\b|\bAdd validation to check\b)"
+    rule_checks_l3 = r"(\bcheck error\b|\bValidate null\b|\binitial checks\b|\bcheck failure\b|\bcheck failed\b|\bedge cases\b|\bedge case\b|\bcheck for out of range\b|\bcheck for float\b|\bSkip checking\b|\brank checking\b)"
     try:
         temp = []
         for i, com in enumerate(all_commits):
@@ -136,11 +139,14 @@ def main():
                 write_list_to_txt4(com.hexsha, f'logs/{r_prime[3]}_parsed_commits.txt')
                 _date = datetime.fromtimestamp(com.committed_date)
 
-                security_match = re.findall(rules, com.message)
+                _match1 = re.findall(rule_checks_initial, com.message)
+                _match2 = re.findall(rule_checks_l1, com.message)
+                _match3 = re.findall(rule_checks_l2, com.message)
+                _match4 = re.findall(rule_checks_l3, com.message)
 
                 print("Analyzed commits: {}/{}".format(i, len(all_commits)))
                 
-                if security_match and "typo" not in com.message:
+                if _match1 or _match2 or _match3 or _match4 and "typo" not in com.message:
                     if 2016 <= _date.year <= 2024:
                         # prompt_ = stage_1_prompting(com.message, r_prime[3])
                         # t_count = get_token_count(prompt_)
