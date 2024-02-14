@@ -129,9 +129,10 @@ def main():
     hist = read_txt(f'logs/{r_prime[3]}_parsed_commits.txt')
 
     rule_checks_initial = r"(\bchecker\b|\bvalidating\b|\bcheckers\b|\bchecking\b|\bparameter validation\b|\bvalidation vulnerability\b|\bboundary\b|\bboundary validation\b|\binvalid input\b|\bvalidation bypass\b|\bchecks\b|\bcheck\b|\bdata validation\b|\binput validation\b|\bvalidation\b|\bcheck\b)"
-    rule_checks_l1 = r"(\bcheck if\b|\badd a check\b|\bdevice check\b|\bchecks of device type\b|\bin this check\b|\bexisting check\b|\bside effect checks\b|\bRelax the check\b|\bbefore checking\b|\bbut the check\b|\bto check\b|\badding a condition\b|\badding a condition to check\b|\bcheck that\b|\btypes checks\b|\bcheck bounds\b|\badd proper checks\b|\bsupports checks\b|\bRemove checks\b|\bAdd an extra level of checks\b|\bextra level of checks\b|\badd check\b|\bcheck to ensure\b|\bwithin valid range\b|\bworth checking\b|\bwe need to check\b|\blayering checks\b|\bchecks to fix\b|\bAdded size check\b|\bsize check\b|\bversion check\b|\badd checks\b|\badds more checks\b|\bcheck in\b|\badd additional checks\b|\badd additional checks for valid\b|\bstill checks\b|\bimprove type checking\b|\bcheck the existence of\b)"
+    rule_checks_l1 = r"(\bnumeric check\b|\bbackend check\b|\btype checkers\b|\bcheck if\b|\badd a check\b|\bdevice check\b|\bchecks of device type\b|\bin this check\b|\bexisting check\b|\bside effect checks\b|\bRelax the check\b|\bbefore checking\b|\bbut the check\b|\bto check\b|\badding a condition\b|\badding a condition to check\b|\bcheck that\b|\btypes checks\b|\bcheck bounds\b|\badd proper checks\b|\bsupports checks\b|\bRemove checks\b|\bAdd an extra level of checks\b|\bextra level of checks\b|\badd check\b|\bcheck to ensure\b|\bwithin valid range\b|\bworth checking\b|\bwe need to check\b|\blayering checks\b|\bchecks to fix\b|\bAdded size check\b|\bsize check\b|\bversion check\b|\badd checks\b|\badds more checks\b|\bcheck in\b|\badd additional checks\b|\badd additional checks for valid\b|\bstill checks\b|\bimprove type checking\b|\bcheck the existence of\b)"
     rule_checks_l2 = r"(\bcheck for reductions\b|\bwe don't need to check\b|\bWhen checking\b|\bhandle the case\b|\bchecking if\b|\bdevice check\b|\bChecking for the attribute\b|\bchecking for\b|\bWe want to check that\b|\bVersionCheck\b|\bget rid of a check\b|\bmulti-GPU fusion check\b|\bWe have a function to check\b|\bvalue check\b|\bmore checks\b|\bcheck only\b|\bconditional check\b|\bdon't check\b|\btype check\b|\bnull check\b|\bpadding check\b|\bAPI check\b|\bmemory kind check\b|\bExplicitly check\b|\bthe checks that check\b|\bwithin range\b|\bcheck to check\b|\bfunction check\b|\bcheck if\b|\blegality check\b|\bwe check\b|\bsafety check\b|\bdisabled checks\b|\bcheck the last element\b|\blater check\b|\bplatform check\b|\bduplicate checks\b|\bFix check\b|\bAdd validation to check\b)"
     rule_checks_l3 = r"(\bcheck error\b|\bValidate null\b|\binitial checks\b|\bcheck failure\b|\bcheck failed\b|\bedge cases\b|\bedge case\b|\bcheck for out of range\b|\bcheck for float\b|\bSkip checking\b|\brank checking\b)"
+    
     try:
         temp = []
         for i, com in enumerate(all_commits):
@@ -145,22 +146,22 @@ def main():
                 _match4 = re.findall(rule_checks_l3, com.message)
 
                 print("Analyzed commits: {}/{}".format(i, len(all_commits)))
-                modified_files = [item.a_path for item in com.diff()]
-                if _match1 or _match2 or _match3 or _match4 and "typo" not in com.message and len(modified_files) == 1:
-                    if 2016 <= _date.year <= 2024:
-                        # prompt_ = stage_1_prompting(com.message, r_prime[3])
-                        # t_count = get_token_count(prompt_)
-                        # if t_count <= 4097:
-                        #     # time.sleep(3)
-                        #     conversations = completions_with_backoff(prompt_)
-                        #     decision = conversations.choices[0].message.content
+                modified_files = com.stats.files
+                if len(modified_files) == 1:
+                    if _match1 or _match2 or _match3 or _match4 and 'test' not in modified_files:
+                            # prompt_ = stage_1_prompting(com.message, r_prime[3])
+                            # t_count = get_token_count(prompt_)
+                            # if t_count <= 4097:
+                            #     # time.sleep(3)
+                            #     conversations = completions_with_backoff(prompt_)
+                            #     decision = conversations.choices[0].message.content
 
-                        commit_link = REPO_LIST[0] + "/commit/" + com.hexsha
-                        commit_date = com.committed_date
-                        dt_object = datetime.fromtimestamp(commit_date)
-                        commit_date = dt_object.replace(tzinfo=timezone.utc)
-                        data = [commit_link, commit_date.strftime("%Y-%m-%d %H:%M:%S"), 'No decision']
-                        save_commit(data, r_prime[3])
+                            commit_link = REPO_LIST[0] + "/commit/" + com.hexsha
+                            commit_date = com.committed_date
+                            dt_object = datetime.fromtimestamp(commit_date)
+                            commit_date = dt_object.replace(tzinfo=timezone.utc)
+                            data = [commit_link, commit_date.strftime("%Y-%m-%d %H:%M:%S"), 'No decision']
+                            save_commit(data, r_prime[3])
             else:
                 print('This commit has been already analyzed!')
 
