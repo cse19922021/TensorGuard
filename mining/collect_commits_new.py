@@ -145,8 +145,8 @@ def main():
                 _match4 = re.findall(rule_checks_l3, com.message)
 
                 print("Analyzed commits: {}/{}".format(i, len(all_commits)))
-                
-                if _match1 or _match2 or _match3 or _match4 and "typo" not in com.message:
+                modified_files = [item.a_path for item in com.diff()]
+                if _match1 or _match2 or _match3 or _match4 and "typo" not in com.message and len(modified_files) == 1:
                     if 2016 <= _date.year <= 2024:
                         # prompt_ = stage_1_prompting(com.message, r_prime[3])
                         # t_count = get_token_count(prompt_)
