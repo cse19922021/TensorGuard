@@ -5,6 +5,7 @@ from datetime import datetime
 from datetime import datetime, timezone
 from openai import OpenAI
 import backoff, time
+import openai
 import tiktoken
 from dotenv import load_dotenv
 load_dotenv()
@@ -12,7 +13,7 @@ load_dotenv()
 client = OpenAI(
     api_key=os.environ.get(".env")
 )
-REPO_LIST = ["https://github.com/tensorflow/tensorflow"]
+REPO_LIST = ["https://github.com/pytorch/pytorch"]
 
 THIS_PROJECT = os.getcwd()
 
@@ -33,6 +34,7 @@ def read_txt(fname):
         data = fileReader.read()
     return data
 
+@backoff.on_exception(backoff.expo, openai.RateLimitError)
 def completions_with_backoff(prompt, model='gpt-4-0125-preview'):
     response = client.chat.completions.create(
         model=model,
@@ -42,9 +44,9 @@ def completions_with_backoff(prompt, model='gpt-4-0125-preview'):
     )
     return response
 
-def stage_1_prompting(item):
+def stage_1_prompting(item, libname):
     prompt_ = f"""
-    You are a chatbot responsible for classifying a commit message that fixing bugs in tensorflow backend implementation.
+    You are a chatbot responsible for classifying a commit message that fixing bugs in {libname} backend implementation.
     Your task is to classify if the commit is fixing an improper/missing validation/checker bug. Please generate binary response, i.e., yes or no.
 
     Here is the commit message:
@@ -140,18 +142,18 @@ def main():
                 
                 if security_match and "typo" not in com.message:
                     if 2016 <= _date.year <= 2024:
-                        prompt_ = stage_1_prompting(com.message)
-                        t_count = get_token_count(prompt_)
-                        if t_count <= 4097:
-                            time.sleep(3)
-                            conversations = completions_with_backoff(prompt_)
-                            decision = conversations.choices[0].message.content
+                        # prompt_ = stage_1_prompting(com.message, r_prime[3])
+                        # t_count = get_token_count(prompt_)
+                        # if t_count <= 4097:
+                        #     # time.sleep(3)
+                        #     conversations = completions_with_backoff(prompt_)
+                        #     decision = conversations.choices[0].message.content
 
                         commit_link = REPO_LIST[0] + "/commit/" + com.hexsha
                         commit_date = com.committed_date
                         dt_object = datetime.fromtimestamp(commit_date)
                         commit_date = dt_object.replace(tzinfo=timezone.utc)
-                        data = [commit_link, commit_date.strftime("%Y-%m-%d %H:%M:%S"), decision]
+                        data = [commit_link, commit_date.strftime("%Y-%m-%d %H:%M:%S"), 'No decision']
                         save_commit(data, r_prime[3])
             else:
                 print('This commit has been already analyzed!')
