@@ -13,7 +13,7 @@ load_dotenv()
 client = OpenAI(
     api_key=os.environ.get(".env")
 )
-REPO_LIST = ["https://github.com/tensorflow/tensorflow"]
+REPO_LIST = ["https://github.com/pytorch/pytorch"]
 
 THIS_PROJECT = os.getcwd()
 
@@ -58,16 +58,21 @@ def stage_1_prompting(item, libname):
 
     return prompt_
 
-def stage_2_prompting(item):
+def stage_2_prompting(item, libname):
     prompt_ = f"""
-    You are a chatbot responsible for analyzing a commit message that fixing bugs in pytorch backend implementation.
+    You are a chatbot responsible for analyzing a commit message that fixing bugs in {libname} backend implementation.
     Your task is to perform analysis on the bug fixing commit that fixing an improper/missing validation/checker bug.
 
     Here is the commit message:
     Commit message: {item}
+    
+    Your analysis should contain the following factors:
 
-    
-    
+    Root cause: <What is the root cause of the bug>
+    Impact of the bug: <what is the impact of the bug>
+    Fixing pattern: <how the bug is fixed>
+
+    Please generate a short response for each factor. 
     Result: <your response>
 
     """
@@ -146,22 +151,33 @@ def main():
                 _match4 = re.findall(rule_checks_l3, com.message)
 
                 print("Analyzed commits: {}/{}".format(i, len(all_commits)))
-                modified_files = com.stats.files
-                if len(modified_files) == 1:
-                    if _match1 or _match2 or _match3 or _match4 and 'test' not in modified_files:
-                            # prompt_ = stage_1_prompting(com.message, r_prime[3])
-                            # t_count = get_token_count(prompt_)
-                            # if t_count <= 4097:
-                            #     # time.sleep(3)
-                            #     conversations = completions_with_backoff(prompt_)
-                            #     decision = conversations.choices[0].message.content
 
-                            commit_link = REPO_LIST[0] + "/commit/" + com.hexsha
-                            commit_date = com.committed_date
-                            dt_object = datetime.fromtimestamp(commit_date)
-                            commit_date = dt_object.replace(tzinfo=timezone.utc)
-                            data = [commit_link, commit_date.strftime("%Y-%m-%d %H:%M:%S"), 'No decision']
-                            save_commit(data, r_prime[3])
+                parent = com.parents[0]
+
+                diffs  = {
+                    diff.a_path: diff for diff in com.diff(parent)
+                }
+                if len(diffs) == 1:
+                    file_name = list(diffs.keys())
+                    if 'test' not in file_name[0] and 'bug' in com.message:
+                        if _match1 or _match2 or _match3 or _match4:
+                                # prompt_ = stage_2_prompting(com.message, r_prime[3])
+                                # t_count = get_token_count(prompt_)
+                                # if t_count <= 4097:
+                                #     time.sleep(3)
+                                #     conversations = completions_with_backoff(prompt_)
+                                #     decision = conversations.choices[0].message.content
+                                #     decision_split = decision.split('\n')
+                                #     filtered_list = list(filter(None, decision_split))
+
+                                commit_link = REPO_LIST[0] + "/commit/" + com.hexsha
+                                commit_date = com.committed_date
+                                dt_object = datetime.fromtimestamp(commit_date)
+                                commit_date = dt_object.replace(tzinfo=timezone.utc)
+                                data = [commit_link, commit_date.strftime("%Y-%m-%d %H:%M:%S")]
+                                save_commit(data, r_prime[3])
+                    else:
+                        print("+++++++++++++++++++++++++++++++++++")
             else:
                 print('This commit has been already analyzed!')
 
