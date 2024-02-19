@@ -77,9 +77,9 @@ def write_list_to_txt4(data, filename):
         file.write(data+'\n')
 
 def save_commit(data, lib):
-    if not os.path.exists(f'mining/commits/{lib}/'):
-        os.makedirs(f'mining/commits/{lib}/')
-    with open(f"mining/commits/{lib}/{lib}.csv","a", newline="\n",) as fd:
+    if not os.path.exists(f'data/commits/{lib}/'):
+        os.makedirs(f'data/commits/{lib}/')
+    with open(f"data/commits/{lib}/{lib}.csv","a", newline="\n",) as fd:
         writer_object = csv.writer(fd)
         writer_object.writerow(data)
 
@@ -89,9 +89,9 @@ def read_txt(fname):
     return data
 
 def analysis():
-    data = pd.read_csv('mining/commits/tensorflow/tensorflow.csv')
+    data = pd.read_csv('mining/commits/pytorch/pytorch.csv')
     THIS_PROJECT = os.getcwd()
-    REPO_LIST = ["https://github.com/tensorflow/tensorflow"]
+    REPO_LIST = ["https://github.com/pytorch/pytorch"]
     r_prime = REPO_LIST[0].split("/")
     repo = Repo(THIS_PROJECT + "/ml_repos_cloned/" + r_prime[3] + "/" + r_prime[4])
 
@@ -103,29 +103,29 @@ def analysis():
     hist = read_txt(f'logs/{r_prime[3]}_parsed_commits.txt')
 
     for idx, row in data.iterrows():
-        if com.hexsha not in hist:
-            print("Analyzed commits: {}/{}".format(idx, len(data)))
-            write_list_to_txt4(com.hexsha, f'logs/{r_prime[3]}_parsed_commits.txt')
-            try:
-                com = repo.commit(row.iloc[0].split('/')[-1])
-                prompt_ = stage_2_prompting(com.message, r_prime[3])
-                t_count = get_token_count(prompt_)
-                if t_count <= 4097:
-                    time.sleep(3)
-                    conversations = completions_with_backoff(prompt_)
-                    decision = conversations.choices[0].message.content
-                    decision_split = decision.split('\n')
-                    filtered_list = list(filter(None, decision_split))
-                
-                commit_link = REPO_LIST[0] + "/commit/" + com.hexsha
-                commit_date = com.committed_date
-                dt_object = datetime.fromtimestamp(commit_date)
-                commit_date = dt_object.replace(tzinfo=timezone.utc)
-                data = [commit_link, commit_date.strftime("%Y-%m-%d %H:%M:%S"), filtered_list[0], filtered_list[1], filtered_list[2], filtered_list[3]]
-                save_commit(data, r_prime[3])
-
-            except Exception as e:
-                print(e)
+        if row.iloc[2] == 2:
+            com = repo.commit(row.iloc[0].split('/')[-1])
+            if com.hexsha not in hist:
+                print("Analyzed commits: {}/{}".format(idx, len(data)))
+                write_list_to_txt4(com.hexsha, f'logs/{r_prime[3]}_parsed_commits.txt')
+                try:
+                    prompt_ = stage_2_prompting(com.message, r_prime[3])
+                    t_count = get_token_count(prompt_)
+                    if t_count <= 4097:
+                        time.sleep(3)
+                        conversations = completions_with_backoff(prompt_)
+                        decision = conversations.choices[0].message.content
+                        decision_split = decision.split('\n')
+                        filtered_list = list(filter(None, decision_split))
+                    
+                    commit_link = REPO_LIST[0] + "/commit/" + com.hexsha
+                    commit_date = com.committed_date
+                    dt_object = datetime.fromtimestamp(commit_date)
+                    commit_date = dt_object.replace(tzinfo=timezone.utc)
+                    data = [commit_link, commit_date.strftime("%Y-%m-%d %H:%M:%S"), filtered_list[0], filtered_list[1], filtered_list[2], filtered_list[3]]
+                    save_commit(data, r_prime[3])
+                except Exception as e:
+                    print(e)
 
 if __name__ == '__main__':
     analysis()
