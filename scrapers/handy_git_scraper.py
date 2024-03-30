@@ -1,15 +1,14 @@
 from pydriller import Repository
 import re, os, sys, json
 import pandas as pd
+import subprocess
 
 ROOT_DIR = os.getcwd()
-
 REG_CHANGED = re.compile(".*@@ -(\d+),(\d+) \+(\d+),(\d+) @@.*")
 REG_LOC_FLAWFINDER = re.compile('\:(\d+)\:')
 REG_RATS = re.compile('<vulnerability>')
 REG_CPP_CHECK_LOC = re.compile('line=\"(\d+)\"')
 REG_CPP_CHECK = re.compile('error id=')
-
 FIND_CWE_IDENTIFIER = re.compile('CWE-(\d+)')
 FIND_RATS_VUL_TYPE = re.compile('<type.*>((.|\n)*?)<\/type>')
 
@@ -110,24 +109,34 @@ def changed_lines_to_list(cl):
             global_list = global_list + sv
     return global_list
 
-def get_code_change(sha, file_name):
+def get_added_deleted_lines(mod):
+    out = []
+    for item in mod:
+        out.append(item[1])
+    return "\n".join(out)
+
+def get_code_change(sha, libname):
     changes = []
     changed_lines = []
     before_union = []
     after_union = []
+    stat = []
     try:
-        for commit in Repository('repos/tensorflow', single=sha).traverse_commits():
+        for commit in Repository(f'ml_repos/{libname}', single=sha).traverse_commits():
             for modification in commit.modified_files:
-                if file_name.split('/')[-1] == modification.filename:
-                    cl, raw_name = get_fix_file_names(modification)
-                    cl_list = changed_lines_to_list(cl)
-                    changes.append(modification.diff)
-                    changed_lines.append(cl)
-                    before_union.append(modification.source_code_before.split('\n'))
-                    after_union.append(modification.source_code.split('\n'))
+                #if file_name.split('/')[-1] == modification.filename:
+                cl, raw_name = get_fix_file_names(modification)
+                cl_list = changed_lines_to_list(cl)
+                added_lines = get_added_deleted_lines(modification.diff_parsed['added'])
+                deleted_lines = get_added_deleted_lines(modification.diff_parsed['deleted'])
+                changes.append(modification.diff)
+                changed_lines.append(cl)
+                before_union.append(modification.source_code_before.split('\n'))
+                after_union.append(modification.source_code.split('\n'))
+                stat.append([commit.msg, commit.deletions, commit.insertions, commit.lines, deleted_lines, added_lines])
     except Exception as e:
         print(e)
-    return changes, before_union,after_union, changed_lines
+    return stat
 
 
 if __name__ == '__main__':
@@ -143,41 +152,41 @@ if __name__ == '__main__':
         'code': []
     }
 
-    data = pd.read_csv('scenarios/data.csv')
+    data = pd.read_csv('data/data_original.csv')
     
     for idx, row in data.iterrows():
 
         print(row['Commit'])
         full_link = row['Commit'].split('/')[-1]
-        if row['Commit'] == 'https://github.com/tensorflow/tensorflow/commit/8a47a39d9697969206d23a523c977238717e8727':
-            print('')
+        # if row['Commit'] == 'https://github.com/tensorflow/tensorflow/commit/8a47a39d9697969206d23a523c977238717e8727':
+        #     print('')
 
-        changes, before_union, after_union, changed_lines = get_code_change(full_link, row['Good file Name'])
-        if changes:
-            deleted_lines, added_lines = separate_added_deleted(changes[0])
-            for idx, mods in enumerate(changed_lines):
-                for k, v in mods.items():
-                    for key,value in v.items():
-
-                        data_ = {
-                            'Commit Link': row['Commit'],
-                            'API Name': row['API'],
-                            'Vulnerability Category': row['Bug category'],
-                            'Trigger Mechanism': row['Front-end Root Cause Explanation'],
-                            'Backend Root Cause': row['Backend root cause'],
-                            'Vulnerability Impact': row['Impact L1'],
-                            'Vulnerability Fixing Commit Description': row['Fix Description'],
-                            'Vulnerable Code': before_union[idx][value[0]:value[1]],
-                            'Clean Code': after_union[idx][value[0]:value[1]],
-                            'Added_Lines': added_lines,
-                            'Deleted Lines': deleted_lines}
-            
-            with open("scenarios/tf_bug_data_sample.json", "a") as json_file:
-                json.dump(data_, json_file, indent=4)
-                json_file.write(',')
-                json_file.write('\n')
+        if row['Library'] == 'tensorflow' or row['Library'] == 'pytorch':
+            repository_path = ROOT_DIR+'/ml_repos/'+row['Library']
         else:
-            print(
-                "PyDriller is not able to fetch this commit. The root cause is unknown."
-            )
+            repository_path = ROOT_DIR+'/ml_repos/'+row['Library']+'/'+dir.split('_')[1].split('.')[0]
+
+        v = f"https://github.com/{row['Library']}/{row['Library']}.git"
+
+        if not os.path.exists(repository_path):
+            subprocess.call('git clone '+v+' '+repository_path, shell=True)
+
+        commit_stat = get_code_change(full_link, row['Library'])
+        # deleted_lines, added_lines = separate_dadded_deleted(changes[0])
+
+        if commit_stat:
+            data_ = {
+                'Library': row['Library'],
+                'Commit Link': row['Commit'],
+                'Commit message': commit_stat[0][0],
+                'Deleted lines': commit_stat[0][1],
+                'Added lines': commit_stat[0][2],
+                'Changed lines': commit_stat[0][3],
+                'Deleted code': commit_stat[0][4],
+                'Added code': commit_stat[0][5]}
+                
+        with open("data/commit_stat_data.json", "a") as json_file:
+            json.dump(data_, json_file, indent=4)
+            json_file.write(',')
+            json_file.write('\n')
             
