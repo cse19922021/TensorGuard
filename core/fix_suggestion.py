@@ -77,7 +77,6 @@ def create_prompt_fix_sugesstion(item):
     "Patch":"Generated patch"
 
     """
-
     return prompt_
 
 def get_token_count(string):

@@ -32,10 +32,10 @@ def get_patches(splitted_lines):
     for line in splitted_lines:
         if REG_CHANGED.match(line):
             i += 1
-            addStart = int(REG_CHANGED.search(line).group(1))
-            addedLines = int(REG_CHANGED.search(line).group(2))
-            deletedStart = int(REG_CHANGED.search(line).group(3))
-            deletedLines = int(REG_CHANGED.search(line).group(4))
+            deletedStart = int(REG_CHANGED.search(line).group(1))
+            deletedLines = int(REG_CHANGED.search(line).group(2))
+            addStart = int(REG_CHANGED.search(line).group(3))
+            addedLines = int(REG_CHANGED.search(line).group(4))
                         
             start = deletedStart
             if(start == 0):
@@ -133,11 +133,15 @@ def get_code_change(sha, libname):
                 changed_lines.append(cl)
                 before_union.append(modification.source_code_before.split('\n'))
                 after_union.append(modification.source_code.split('\n'))
-                stat.append([commit.msg, commit.deletions, commit.insertions, commit.lines, deleted_lines, added_lines])
+                stat.append([cl, modification.source_code_before, modification.diff_parsed['deleted']])
     except Exception as e:
         print(e)
     return stat
 
+def slice_code_base(changed_lines, code):
+    split_code = code.split('\n')
+    split_code = split_code[changed_lines[0][1][0]:changed_lines[0][1][1]] 
+    return "\n".join(split_code)
 
 if __name__ == '__main__':
 
@@ -152,10 +156,9 @@ if __name__ == '__main__':
         'code': []
     }
 
-    data = pd.read_csv('data/data_original.csv')
+    data = pd.read_csv('data/data.csv')
     
     for idx, row in data.iterrows():
-
         print(row['Commit'])
         full_link = row['Commit'].split('/')[-1]
         # if row['Commit'] == 'https://github.com/tensorflow/tensorflow/commit/8a47a39d9697969206d23a523c977238717e8727':
@@ -172,20 +175,25 @@ if __name__ == '__main__':
             subprocess.call('git clone '+v+' '+repository_path, shell=True)
 
         commit_stat = get_code_change(full_link, row['Library'])
+        changed_lines = [commit_stat[0][0][key] for key in commit_stat[0][0]]
+        if len(changed_lines[0]) == 1:
+            code = slice_code_base(changed_lines, commit_stat[0][1])
+        else:
+            continue
         # deleted_lines, added_lines = separate_dadded_deleted(changes[0])
 
         if commit_stat:
             data_ = {
                 'Library': row['Library'],
                 'Commit Link': row['Commit'],
-                'Commit message': commit_stat[0][0],
+                'Bug report': row['bug report'],
                 'Deleted lines': commit_stat[0][1],
                 'Added lines': commit_stat[0][2],
                 'Changed lines': commit_stat[0][3],
                 'Deleted code': commit_stat[0][4],
                 'Added code': commit_stat[0][5]}
                 
-        with open("data/commit_stat_data.json", "a") as json_file:
+        with open("data/data.json", "a") as json_file:
             json.dump(data_, json_file, indent=4)
             json_file.write(',')
             json_file.write('\n')

@@ -1,0 +1,30 @@
+{
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/603097be18824a33069addec7b8f14ba5c3bc67a",
+    "Bug report": "For OneDNN MaxPooling training, it will save indices as a workspace for backward, but for inference, indices are not necessary",
+    "Deleted lines": 1,
+    "Added lines": 11,
+    "Changed lines": 12,
+    "Deleted code": "      ideep::prop_kind::forward);",
+    "Added code": "#include <ATen/core/grad_mode.h>\n  auto aprop_kind = ideep::prop_kind::forward;\n  // for max_pool, prop_kind::forward will save indices as workspace for backward use,\n  // for inference, don't need the indices, set aprop_kind to prop_kind::forward_inference\n  // can reduce the memory use.\n  if (ideep::algorithm::pooling_max == algo\n      && !(input.requires_grad() && at::GradMode::is_enabled())) {\n    aprop_kind = ideep::prop_kind::forward_inference;\n  }\n\n      aprop_kind);"
+},
+{
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/0a7eef9bcf6d1f8b5531102342ffc21f24beb58d",
+    "Bug report": "Unnecessary version checking",
+    "Deleted lines": 5,
+    "Added lines": 2,
+    "Changed lines": 7,
+    "Deleted code": "        # --generate-dependencies-with-compile was added in CUDA 10.2.\n        # Compilation will work on earlier CUDA versions but header file\n        # dependencies are not correctly computed.\n        required_cuda_version = '11.0'\n        if torch.version.cuda is not None and TorchVersion(torch.version.cuda) >= required_cuda_version:",
+    "Added code": "        # --generate-dependencies-with-compile is not supported by ROCm\n        if torch.version.cuda is not None:"
+},
+{
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/ae2c219de2fd032036aa1d2a04101f1c23fd5bbe",
+    "Bug report": "Unnecessary version checking",
+    "Deleted lines": 6,
+    "Added lines": 11,
+    "Changed lines": 17,
+    "Deleted code": "        cuda_compile_rule.append('  depfile = $out.d')\n        cuda_compile_rule.append('  deps = gcc')\n        # Note: non-system deps with nvcc are only supported\n        # on Linux so use --generate-dependencies-with-compile\n        # to make this work on Windows too.\n        nvcc_gendeps = '--generate-dependencies-with-compile --dependency-output $out.d'",
+    "Added code": "        # --generate-dependencies-with-compile was added in CUDA 10.2.\n        # Compilation will work on earlier CUDA versions but header file\n        # dependencies are not correctly computed.\n        required_cuda_version = '11.0'\n        if torch.version.cuda is not None and TorchVersion(torch.version.cuda) >= required_cuda_version:\n            cuda_compile_rule.append('  depfile = $out.d')\n            cuda_compile_rule.append('  deps = gcc')\n            # Note: non-system deps with nvcc are only supported\n            # on Linux so use --generate-dependencies-with-compile\n            # to make this work on Windows too.\n            nvcc_gendeps = '--generate-dependencies-with-compile --dependency-output $out.d'"
+},
