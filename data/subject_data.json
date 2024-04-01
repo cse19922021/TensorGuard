@@ -1,0 +1,192 @@
+[{
+    "Id": 11,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/5a63c452e638dad8e077887ad8d2c94ff0e23917",
+    "Bug report": "This is because there are some hard-to-detect edge cases that will throw exceptions with cudnn 8.0.5 on Nvidia A40 GPU.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "      }\n    } else if (prop->major >= 8) {\n      // Based on tests by Vasily Volkov and xwang233.  Vasily only tried bsize <= 128,\n      // so conservatively enable persistence for bsize <= 128 only.\n      // TODO:  Run more tests for bsize > 128.\n      if (rnn.mode == CUDNN_GRU) {"
+},
+{
+    "Id": 60,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/bbc7c79b20e67da450dd9b7de70cc6b68e656714",
+    "Bug report": "add device checks for sparse csr",
+    "Number of deleted lines": 0,
+    "Deleted lines": "        \" and tensor `other` with shape \",\n        other.sizes());\n\n    if (only_sparse_compressed_add_trivial_cases(self, other, alpha, out)) {\n      return out;\n    }"
+},
+{
+    "Id": 63,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/4ab1588d9919bc1a62219a5c2393e0784ddaae70",
+    "Bug report": "Enhance error message for dependency check, If python development library is missing when building pytorch from source cmake will raise the error like: CMake Error at cmake/Dependencies.cmake:1079 (if): if given arguments: \"VERSION_LESS\" \"3\"  Unknown arguments specified ```it's quite a misleading information that user would consider it's a syntax error or cmake version problem. This PR add a check to ensure `PYTHONLIBS_VERSION_STRING` exist before using.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "  find_package(PythonLibs 3.0)\n\n  if(${PYTHONLIBS_VERSION_STRING} VERSION_LESS 3)\n    message(FATAL_ERROR\n      \"Found Python libraries version ${PYTHONLIBS_VERSION_STRING}. Python 2 has reached end-of-life and is no longer supported by PyTorch.\")\n  endif()"
+},
+{
+    "Id": 70,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/9a9eadacc6ac3b734a6d607ae6f63ec1a0d1438d",
+    "Bug report": "explicitly check device for grid_sampler",
+    "Number of deleted lines": 0,
+    "Deleted lines": "        ctx.save_for_backward(input, grid)\n\n        if padding_mode == 'zeros':\n            ctx.padding_mode = MODE_ZEROS\n        elif padding_mode == 'border':\n            ctx.padding_mode = MODE_BORDER"
+},
+{
+    "Id": 72,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/f14887a63f83b931df9fc5d841c7d3829141ff58",
+    "Bug report": "check for exact shape match before loading. Use RuntimeError instead of ValueError to keep it consistent with other errors",
+    "Number of deleted lines": 0,
+    "Deleted lines": "            if key in state_dict:\n                input_param = state_dict[key]\n                if isinstance(input_param, Parameter):\n                    # backwards compatibility for serialized parameters\n                    input_param = input_param.data\n                try:"
+},
+{
+    "Id": 73,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/02e2158e754bafda46e663052c838aeb6ab6b560",
+    "Bug report": " Fix for out of bounds read in mobile interpreter INTERFACE_CALL opcode handler. The INTERFACE_CALL opcode for the mobile TorchScript interpreter contained an out of bounds read issue leading to memory corruption. This change adds an explicit check that the number of inputs passed to the format method called when handling the INTERFACE_CALL opcode is a valid and within bounds of the stack.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "            TORCH_CHECK(false, \"Can't load constant with index: \", inst.X);\n          }\n          torch::jit::Function& method =\n              peek(stack, 0, inst.N)\n                  .toObject()\n                  ->type()"
+},
+{
+    "Id": 74,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/4d07428edee863e7f5920f0672957a9711a9f0b5",
+    "Bug report": "Fix for out of bounds read in mobile interpreter FORMAT opcode handler. Summary: The FORMAT opcode for the mobile TorchScript interpreter contained an out of bounds read issue leading to memory corruption. This change adds an explicit check that the number of inputs passed to the format method called when handling the FORMAT opcode is a valid and within bounds of the stack.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "\nvoid format(Stack& stack, size_t num_inputs) {\n  // static const std::regex unsupported_options(\"\\\\{(.*?)\\\\}\");\n  auto format = peek(stack, 0, num_inputs).toStringRef();\n  // // Temporally comment out the warning message because of\n  // // \"StdRegexIsAwful\" internal Lint error, to prevent sev"
+},
+{
+    "Id": 75,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/b3ace213f240dc0f0f2a738f825f46e0d0dffca4",
+    "Bug report": "The error occurs because there is not check in `deserialize_source` that `text_table_` size can be less than `fnameIndex`. To prevent the error the corresponding check must be located.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "    c10::optional<std::string> filename = c10::nullopt;\n\n    filename = *text_table_[fnameIndex];\n\n    std::vector<c10::string_view> pieces;\n    std::vector<std::shared_ptr<std::string>> strs;"
+},
+{
+    "Id": 76,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/d8466964b348b6172317f70b8e52de02402bad54",
+    "Bug report": "Add range check to multi margin loss target ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "  scalar_t *output_k = output + k;\n  int target_k = static_cast<int>(target[k]);\n  scalar_t input_target_k = input_k[target_k];\n\n  int i_start = threadIdx.x;\n  int i_end = dim;"
+},
+{
+    "Id": 77,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/c22ac14969a863a00b5ebb04a3453610c7a27713",
+    "Bug report": "The diff sets the upper boundary on border element when presenting the error message. This is required in order to avoid unnecessary log contamination",
+    "Number of deleted lines": 0,
+    "Deleted lines": "                other_failures_fmt.append(fmt)\n\n        return Template(_MSG_FORMAT_TEMPLATE).substitute(\n            boarder=boarder_delim * width,\n            title=title.center(width),\n            section=section_delim * width,"
+},
+{
+    "Id": 199,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/0197a2d8a3070af763cb67227835ee63df095e6d",
+    "Bug report": " Add a check to catch out-of-bound access on invalid Graphs. The existing Check trying to catch malformed graph is not robust when an op is registered with an expected number of inputs but has data edges beyond this.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "        inputs.push_back(edge);\n      } else {\n        CHECK(inputs[edge->dst_input()] == nullptr)\n            << \"Edge \" << edge->src()->DebugString() << \":\"\n            << edge->dst()->DebugString() << \" with dst_input \"\n            << edge->dst_input() << \" and had pre-existing input edge \""
+},
+{
+    "Id": 203,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/867a918bd3d40afeca6b96430671a098134e7905",
+    "Bug report": " CUDA Driver: do better error reporting if checking the pointer properties failed. There are many reasons why an operation can fail, propagate the error instead of assuming the cause.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "  cudaError_t err =\n      cudaPointerGetAttributes(&attributes, reinterpret_cast<const void*>(ptr));\n  // If we failed, reset cuda error status to avoid poisoning cuda streams.\n  if (err != cudaSuccess) cudaGetLastError();\n  bool points_to_host_memory = (err == cudaErrorInvalidValue ||\n                                attributes.memoryType != cudaMemoryTypeDevice);"
+},
+{
+    "Id": 205,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/b234ff0ee4ce87d21a3e5306b678e1fb4b1fedfc",
+    "Bug report": " Fixed division by zero, by checking the number of GPUs in GenericLayoutOptimizer.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "  }\n\n  return (static_cast<float>(num_conv2d_gpu_fp16) /\n          static_cast<float>(num_conv2d_gpu)) >= kConv2DGPUFP16Threshold;\n}\n"
+},
+{
+    "Id": 209,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/e009644f034fa0ca4df910a812432cab3458d440",
+    "Bug report": "Add one error check in cuda_dnn for int8 to float convolution. ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "          \"cuDNNv5 and cuDNNv6. See b/68264959.\");\n    }\n    return port::Status::OK();\n  };\n\n  auto get_bwd_data_bugs = [&]() -> port::Status {"
+},
+{
+    "Id": 214,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/5ed3c7881f1f039b1bb502eb68c65250de3bbac8",
+    "Bug report": "Fix ThreadPoolHandle 0 nthreads argument. It was reported that a value of 0 leads to a check failure.  Using 0 to indicate `port::MaxParallelism`, for consistency with `Dataset`.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "                                     &max_intra_op_parallelism_));\n    OP_REQUIRES_OK(ctx, ValidateNumThreads(num_threads_));\n  }\n\n  // The resource is deleted from the resource manager only when it is private\n  // to kernel. Ideally the resource should be deleted when it is no longer held"
+},
+{
+    "Id": 215,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/6381a7b127bd276a3817a93e5423b15a06c33419",
+    "Bug report": " [tf.data] Add a check for ram_budget == 0 to avoid division by 0 exception when ram_budget is not set.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "// Records the ram usage of hill climbing algorithm.\nvoid RecordAutotuneRamUsage(int64 ram_budget, double max_buffered_bytes) {\n  const auto memory_info = port::GetMemoryInfo();\n  // Records ratio of memory used since RootDataset was created over the ram\n  // budget.\n  const auto original_free_memory = ram_budget / kRamBudgetShare;"
+},
+{
+    "Id": 223,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/cddca76312f5ae4fb92a101e79eeff6d5ac16932",
+    "Bug report": "Add check for reading input tensors at an index that is out of range. ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "  template <typename TensorT>\n  absl::Status ReadTensor(uint32_t idx, TensorT* t) const {\n    const int32_t tensor_idx = node_->inputs->data[idx];\n    if (tensor_idx < 0) {\n      return absl::InvalidArgumentError(\n          \"Invalid data index found. Possibly an unset optional tensor is \""
+},
+{
+    "Id": 225,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/b1c9e600e02b93885dbebfa5dae92436c63d6c03",
+    "Bug report": "[XLA] Add range check for xla::Array<> indexing. ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "      index += indexes[i];\n    }\n    return index;\n  }\n\n  // Advances the specified set of indexes and returns true if we haven't"
+},
+{
+    "Id": 232,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/f6f62119587baf8ccb7378ceac86bacd2db2863d",
+    "Bug report": "Add missing validation in maxpooling_op.cc ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "                                {0}, 0, output_shape, &output));\n\n    SpatialMaxPoolWithArgMaxHelper<CPUDevice, T, int64>(\n        context, &tensor_out_dup, &tensor_out_arg_max, output, tensor_in,\n        out_backprop, params, true);\n  }"
+},
+{
+    "Id": 233,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/b86513673b98ac6c4458033fcda718365539afae",
+    "Bug report": "added check for zero stride values to strided slice ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "          ReadAttribsWithBatch(reader, tf_options, input->tensor.shape, &attr));\n    }\n    if (attr.strides.h < 0 || attr.strides.w < 0 || attr.strides.c < 0) {\n      return UnimplementedError(\"Reverse slices are not supported.\");\n    }\n    if ((attr.ends.h - attr.starts.h + attr.strides.h - 1) / attr.strides.h !="
+},
+{
+    "Id": 397,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/7e2d53c1c371f38c7f0ef13c1c06336b22a195c0",
+    "Bug report": "[tf.data] Adds the expected check for better debugging.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "        Status s = instantiated_captured_func_->Run(ctx, std::move(args),\n                                                    &state_and_output);\n        if (s.ok()) {\n          state_.clear();\n          size_t i = 0;\n          for (; i < dataset()->state_types_.size(); ++i) {"
+},
+{
+    "Id": 395,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/4923de56ec94fff7770df259ab7f2288a74feb41",
+    "Bug report": " Don't do any work when reshaping 0 elements sparse tensor. If reshaping to 0 elements tensor, check that input has no elements. If reshaping no elements input, check that output has no elements.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "                                          &result_indices));\n  if (nnz > 0) {\n    OP_REQUIRES_OK(context, functor::ReshapeSparseTensorFunctor<Device>()(\n                                context, input_shape, output_shape,\n                                input_indices_in.matrix<int64>(),\n                                result_indices->matrix<int64>()));"
+},
+{
+    "Id": 394,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/23968a8bf65b009120c43b5ebcceaf52dbc9e943",
+    "Bug report": " Fix out of bound access in DequantizeOp by adding check for axis < input dimension",
+    "Number of deleted lines": 0,
+    "Deleted lines": "    const Tensor& input_max_tensor = ctx->input(2);\n\n    int num_slices = 1;\n    if (axis_ > -1) {\n      num_slices = input.dim_size(axis_);\n    }"
+},
+{
+    "Id": 390,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/1610da3f992487bd9a8181d1e83cae99fe1e34d9",
+    "Bug report": "add more sanity check on AvgPoolGrad op",
+    "Number of deleted lines": 0,
+    "Deleted lines": "                          : TFShapeToMklDnnDimsInNCDHW(grad_tensor.shape(),\n                                                       this->data_format_tf_);\n      memory::dims output_dims_mkl_order;\n      this->GetOutputDims(pool_params, &output_dims_mkl_order);\n\n      // get src memory::desc"
+}]

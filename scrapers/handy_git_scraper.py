@@ -158,7 +158,9 @@ if __name__ == '__main__':
 
     data = pd.read_csv('data/data.csv')
     
+    counter = 0
     for idx, row in data.iterrows():
+        
         print(row['Commit'])
         full_link = row['Commit'].split('/')[-1]
         # if row['Commit'] == 'https://github.com/tensorflow/tensorflow/commit/8a47a39d9697969206d23a523c977238717e8727':
@@ -175,26 +177,27 @@ if __name__ == '__main__':
             subprocess.call('git clone '+v+' '+repository_path, shell=True)
 
         commit_stat = get_code_change(full_link, row['Library'])
-        changed_lines = [commit_stat[0][0][key] for key in commit_stat[0][0]]
-        if len(changed_lines[0]) == 1:
-            code = slice_code_base(changed_lines, commit_stat[0][1])
-        else:
-            continue
+        if commit_stat:
+            changed_lines = [commit_stat[0][0][key] for key in commit_stat[0][0]]
+            if len(changed_lines[0]) == 1 and len(commit_stat[0][2]) <= 5:
+                counter = counter + 1
+                code = slice_code_base(changed_lines, commit_stat[0][1])
+                
+                data_ = {
+                    "Id": counter,
+                    'Library': row['Library'],
+                    'Commit Link': row['Commit'],
+                    'Bug report': row['bug report'],
+                    "Number of deleted lines": len(commit_stat[0][2]),
+                    "Deleted lines": code}
+                            
+                with open("data/data.json", "a") as json_file:
+                    json.dump(data_, json_file, indent=4)
+                    json_file.write(',')
+                    json_file.write('\n')
+                
+            else:
+                continue
         # deleted_lines, added_lines = separate_dadded_deleted(changes[0])
 
-        if commit_stat:
-            data_ = {
-                'Library': row['Library'],
-                'Commit Link': row['Commit'],
-                'Bug report': row['bug report'],
-                'Deleted lines': commit_stat[0][1],
-                'Added lines': commit_stat[0][2],
-                'Changed lines': commit_stat[0][3],
-                'Deleted code': commit_stat[0][4],
-                'Added code': commit_stat[0][5]}
-                
-        with open("data/data.json", "a") as json_file:
-            json.dump(data_, json_file, indent=4)
-            json_file.write(',')
-            json_file.write('\n')
-            
+  
