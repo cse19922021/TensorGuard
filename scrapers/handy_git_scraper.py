@@ -138,9 +138,13 @@ def get_code_change(sha, libname):
         print(e)
     return stat
 
-def slice_code_base(changed_lines, code):
+def slice_code_base(changed_lines, code, ctx_window):
     split_code = code.split('\n')
-    split_code = split_code[changed_lines[0][1][0]:changed_lines[0][1][1]] 
+    # if changed_lines[0][1][0]-ctx_window < len(split_code):
+    #     lower_bound = changed_lines[0][1][0]
+    #     upper_bound = changed_lines[0][1][1]+ctx_window
+    # elif changed_lines[0][1][0]-ctx_window >  and 
+    split_code = split_code[changed_lines[0][1][0]-ctx_window:changed_lines[0][1][1]+ctx_window] 
     return "\n".join(split_code)
 
 if __name__ == '__main__':
@@ -159,45 +163,46 @@ if __name__ == '__main__':
     data = pd.read_csv('data/data.csv')
     
     counter = 0
-    for idx, row in data.iterrows():
-        
-        print(row['Commit'])
-        full_link = row['Commit'].split('/')[-1]
-        # if row['Commit'] == 'https://github.com/tensorflow/tensorflow/commit/8a47a39d9697969206d23a523c977238717e8727':
-        #     print('')
+    for ctx_ in [4, 8, 16, 32]:
+        for idx, row in data.iterrows():
+            
+            print(row['Commit'])
+            full_link = row['Commit'].split('/')[-1]
 
-        if row['Library'] == 'tensorflow' or row['Library'] == 'pytorch':
-            repository_path = ROOT_DIR+'/ml_repos/'+row['Library']
-        else:
-            repository_path = ROOT_DIR+'/ml_repos/'+row['Library']+'/'+dir.split('_')[1].split('.')[0]
-
-        v = f"https://github.com/{row['Library']}/{row['Library']}.git"
-
-        if not os.path.exists(repository_path):
-            subprocess.call('git clone '+v+' '+repository_path, shell=True)
-
-        commit_stat = get_code_change(full_link, row['Library'])
-        if commit_stat:
-            changed_lines = [commit_stat[0][0][key] for key in commit_stat[0][0]]
-            if len(changed_lines[0]) == 1 and len(commit_stat[0][2]) <= 5:
-                counter = counter + 1
-                code = slice_code_base(changed_lines, commit_stat[0][1])
-                
-                data_ = {
-                    "Id": counter,
-                    'Library': row['Library'],
-                    'Commit Link': row['Commit'],
-                    'Bug report': row['bug report'],
-                    "Number of deleted lines": len(commit_stat[0][2]),
-                    "Deleted lines": code}
-                            
-                with open("data/data.json", "a") as json_file:
-                    json.dump(data_, json_file, indent=4)
-                    json_file.write(',')
-                    json_file.write('\n')
-                
+            if row['Library'] == 'tensorflow' or row['Library'] == 'pytorch':
+                repository_path = ROOT_DIR+'/ml_repos/'+row['Library']
             else:
-                continue
+                repository_path = ROOT_DIR+'/ml_repos/'+row['Library']+'/'+dir.split('_')[1].split('.')[0]
+
+            v = f"https://github.com/{row['Library']}/{row['Library']}.git"
+
+            if not os.path.exists(repository_path):
+                subprocess.call('git clone '+v+' '+repository_path, shell=True)
+
+            commit_stat = get_code_change(full_link, row['Library'])
+            if commit_stat:
+                changed_lines = [commit_stat[0][0][key] for key in commit_stat[0][0]]
+                if len(changed_lines[0]) == 1 and len(commit_stat[0][2]) <= 5:
+                    counter = counter + 1
+                    code = slice_code_base(changed_lines, commit_stat[0][1], ctx_)
+                    
+                    data_ = {
+                        "Id": counter,
+                        'Library': row['Library'],
+                        'Commit Link': row['Commit'],
+                        'Violation': row['Violation'],
+                        'Bug report': row['bug report'],
+                        "Number of deleted lines": len(commit_stat[0][2]),
+                        "Deleted lines": code}
+                                
+                    with open(f"data/data_{ctx_}.json", "a") as json_file:
+                        json.dump(data_, json_file, indent=4)
+                        json_file.write(',')
+                        json_file.write('\n')
+                    
+                else:
+                    continue
+        counter = 0
         # deleted_lines, added_lines = separate_dadded_deleted(changes[0])
 
   

@@ -90,7 +90,7 @@ def global_agent(commit_msg, deleted_code):
     return response.choices[0].message.content
 
 def main():
-    use_base = True
+    use_base = False
 
     with open(rules_path) as json_file:
         data = json.load(json_file)
