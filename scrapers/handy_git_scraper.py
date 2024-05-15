@@ -138,12 +138,14 @@ def get_code_change(sha, libname):
         print(e)
     return stat
 
-def slice_code_base(changed_lines, code, ctx_window):
+def slice_code_base(changed_lines, code, deleted_lines, ctx_window):
     split_code = code.split('\n')
     # if changed_lines[0][1][0]-ctx_window < len(split_code):
     #     lower_bound = changed_lines[0][1][0]
     #     upper_bound = changed_lines[0][1][1]+ctx_window
-    # elif changed_lines[0][1][0]-ctx_window >  and 
+    # elif changed_lines[0][1][0]-ctx_window >  and
+    for item in deleted_lines:
+        split_code[item[0]] = '<UPDATE>' + split_code[item[0]]
     split_code = split_code[changed_lines[0][1][0]-ctx_window:changed_lines[0][1][1]+ctx_window] 
     return "\n".join(split_code)
 
@@ -163,7 +165,7 @@ if __name__ == '__main__':
     data = pd.read_csv('data/data.csv')
     
     counter = 0
-    for ctx_ in [4, 8, 16, 32]:
+    for ctx_ in [2]:
         for idx, row in data.iterrows():
             
             print(row['Commit'])
@@ -182,9 +184,9 @@ if __name__ == '__main__':
             commit_stat = get_code_change(full_link, row['Library'])
             if commit_stat:
                 changed_lines = [commit_stat[0][0][key] for key in commit_stat[0][0]]
-                if len(changed_lines[0]) == 1 and len(commit_stat[0][2]) <= 5:
+                if len(changed_lines[0]) == 1 and len(commit_stat[0][2]) <= 10:
                     counter = counter + 1
-                    code = slice_code_base(changed_lines, commit_stat[0][1], ctx_)
+                    code = slice_code_base(changed_lines, commit_stat[0][1], commit_stat[0][2], ctx_)
                     
                     data_ = {
                         "Id": counter,

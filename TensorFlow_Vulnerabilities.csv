@@ -1,0 +1,50 @@
+Tool,API,Known,Rule,Status,Fuzzing Rule,Corner Case,Symptom,Fix status,Link
+M2,tensorflow.python.ops.gen_nn_ops.fractional_max_pool_grad,new,Tensor List-Indices Mismatch,confirmed,Tensor List-Indices Mismatch,Tensor List-Indices Mismatch,Aborted,not fixed,https://github.com/tensorflow/tensorflow/issues/59373
+M1,tf.compat.v1.keras.layers.MaxPool2D,new,Large List Element,confirmed,List Corner Case Generator,Case_x,Check failed,not fixed,https://github.com/tensorflow/tensorflow/issues/61603
+M1,tensorflow.python.ops.gen_image_ops.resize_area,new,Negative Input Tensor,confirmed,Tensor Corner Case Generator Type 1,Case_n,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61576
+M1,tensorflow.python.ops.gen_math_ops._histogram_fixed_width,new,Invalid List Element,confirmed,List Corner Case Generator,Case_n,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61560
+M1,tf.keras.layers.RepeatVector,known,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Check failed,not fixed,https://github.com/tensorflow/tensorflow/issues/61643
+M1,tensorflow.python.ops.list_ops.tensor_list_from_tensor,new,Large Input Tensor,confirmed,Tensor Corner Case Generator Type 2,Case_x,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61557
+M3,tensorflow.python.ops.array_ops.quantize_and_dequantize_v2,new,Empty Input Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_mt,Check failed,not fixed,https://github.com/tensorflow/tensorflow/issues/61530
+M1,tf.linalg.diag,new,Large List Element,confirmed,List Corner Case Generator,Case_x,Integer overflow,not fixed,https://github.com/tensorflow/tensorflow/issues/61600
+M1,tensorflow.python.autograph.operators.data_structures.tf_tensor_list_new,new,Large Input Tensor,confirmed,Tensor Corner Case Generator Type 2,Case_x,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61538
+M1,tensorflow.python.ops.gen_ctc_ops.ctc_loss,new,Large Input Tensor,confirmed,Tensor Corner Case Generator Type 1,Case_x,Check failed,not fixed,https://github.com/tensorflow/tensorflow/issues/61575
+M1,tf.compat.v1.matrix_diag,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Integer overflow,not fixed,https://github.com/tensorflow/tensorflow/issues/61604
+M3,tensorflow.python.ops.bincount_ops.bincount,new,Negative Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_n,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/59130
+M3,tf.keras.layers.MaxPooling2D,new,Zero Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Check failed,not fixed,https://github.com/tensorflow/tensorflow/issues/61601
+M2,tensorflow.python.ops.gen_ragged_conversion_ops.ragged_tensor_to_variant,new,Shape Mismatch,confirmed,Tensor Shape Mismatch,Tensor Shape Mismatch,Check failed,not fixed,https://github.com/tensorflow/tensorflow/issues/59084
+M3,tensorflow.python.framework.importer._PopulateTFImportGraphDefOptions,new,None Input Argument,confirmed,Preemptive Corner Case Generator Type 2,Case_none,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61571
+M1,tf.compat.v1.nn.depth_to_space,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Floating Point Exception,not fixed,https://issuetracker.google.com/issues/296650168
+M1,tf.compat.v1.math.minimum,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Segfault,not fixed,https://issuetracker.google.com/issues/296678594
+M3,tensorflow.python.eager.context.add_function,new,None Input Argument,confirmed,Preemptive Corner Case Generator Type 2,Case_none,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61532
+M2,tensorflow.python.ops.gen_nn_ops.fractional_max_pool_grad,new,Large List Element,confirmed,List Corner Case Generator,Case_x,Crash,not fixed,https://issuetracker.google.com/issues/296795275
+M3,tensorflow.python.ops.nn_ops.max_pool,new,Invalid List Element,confirmed,List Corner Case Generator,Case_n,Check failed,not fixed,https://github.com/tensorflow/tensorflow/issues/61578
+M1,tf.raw_ops.ResizeBilinear,new,None Input Argument,confirmed,Preemptive Corner Case Generator Type 2,Case_none,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61618
+M1,tensorflow.python.ops.nn_ops.pool,new,Large List Element,confirmed,List Corner Case Generator,Case_x,Check failed,not fixed,https://github.com/tensorflow/tensorflow/issues/61579
+M2,tf.config.experimental_connect_to_host,new,NaN Input Argument,confirmed,List Corner Case Generator,Case_nan,Assertion failed,not fixed,https://github.com/tensorflow/tensorflow/issues/61646
+M3,tensorflow.python.ops.list_ops.tensor_list_reserve,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61537
+M3,tensorflow.python.framework.importer._GatherReturnElements,new,None Input Argument,confirmed,Preemptive Corner Case Generator Type 2,Case_none,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61570
+M3,tf.raw_ops.DepthToSpace,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Floating Point Exception,not fixed,https://issuetracker.google.com/issues/296646528
+M1,tf.compat.v1.depth_to_space,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Floating Point Exception,not fixed,https://issuetracker.google.com/issues/296647901
+M3,tensorflow.python.eager.context.check_alive,new,Invalid Input String,confirmed,Preemptive Corner Case Generator Type 2,Case_noa,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61533
+M2,tensorflow.python.ops.gen_nn_ops.max_pool_grad_with_argmax,new,Tensor List-Indices Mismatch,confirmed,Tensor List-Indices Mismatch,Tensor List-Indices Mismatch,Check failed,not fixed,https://github.com/tensorflow/tensorflow/issues/61652
+M3,tensorflow.python.ops.gen_nn_ops.fractional_max_pool_grad,new,Negative Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_n,Memory Corruption,not fixed,https://github.com/tensorflow/tensorflow/issues/59394
+M1,tf.pad,known,Large Input Tensor,confirmed,Tensor Corner Case Generator Type 1,Case_x,Integer overflow,not fixed,https://github.com/tensorflow/tensorflow/issues/61608
+M1,tensorflow.python.ops.gen_image_ops.resize_bicubic,new,Large List Element,confirmed,List Corner Case Generator,Case_x,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61547
+M1,tf.math.minimum,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Segfault,not fixed,https://issuetracker.google.com/issues/296678432
+M1,tf.keras.layers.MaxPool2D,new,Large List Element,confirmed,List Corner Case Generator,Case_x,Check failed,not fixed,https://github.com/tensorflow/tensorflow/issues/61605
+M3,tensorflow.python.ops.gen_array_ops.depth_to_space,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Floating Point Exception,not fixed,https://github.com/tensorflow/tensorflow/issues/61562
+M1,tf.raw_ops.ResizeBicubic,new,Large List Element,confirmed,List Corner Case Generator,Case_x,Segfault,not fixed,https://issuetracker.google.com/issues/296619405?pli=1
+M3,tensorflow.python.ops.gen_data_flow_ops.record_input,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61558
+M1,tf.compat.v1.nn.depth_to_space,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Floating Point Exception,not fixed,https://issuetracker.google.com/issues/296650168
+M3,tensorflow.python.ops.array_ops.depth_to_space,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Floating Point Exception,not fixed,https://issuetracker.google.com/issues/296700694
+M3,tf.compat.v1.depth_to_space,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Floating Point Exception,not fixed,https://issuetracker.google.com/issues/296647901
+M3,tensorflow.python.framework.kernels.get_registered_kernels_for_op,new,None Input Argument,confirmed,Preemptive Corner Case Generator Type 2,Case_none,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61572
+M2,tensorflow.python.eager.remote.connect_to_remote_host,new,NaN Input Argument,confirmed,List Corner Case Generator,Case_nan,Assertion failed,not fixed,https://github.com/tensorflow/tensorflow/issues/61568
+M1,tf.compat.v1.layers.MaxPooling1D,new,Large List Element,confirmed,List Corner Case Generator,Case_x,Check failed,not fixed,https://github.com/tensorflow/tensorflow/issues/61642
+M1,tf.raw_ops.Minimum,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Segfault,not fixed,https://issuetracker.google.com/issues/296678432
+M1,tf.raw_ops.ResizeBicubic,new,Large List Element,confirmed,List Corner Case Generator,Case_x,Segfault,not fixed,https://issuetracker.google.com/issues/296619405?pli=1
+M3,tf.raw_ops.DepthToSpace,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Floating Point Exception,not fixed,https://issuetracker.google.com/issues/296646528
+M3,tensorflow.python.ops.gen_list_ops.tensor_list_reserve,new,Large Integer Argument,confirmed,Preemptive Corner Case Generator Type 1 ,Case_x,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61563
+M1,tensorflow.python.ops.gen_math_ops._histogram_fixed_width,new,Large List Element,confirmed,List Corner Case Generator,Case_x,Segfault,not fixed,https://github.com/tensorflow/tensorflow/issues/61555
+M2,tensorflow.python.ops.gen_nn_ops.max_pool_grad_with_argmax,new,Tensor List-Indices Mismatch,confirmed,Tensor List-Indices Mismatch,Tensor List-Indices Mismatch,Check failed,not fixed,https://github.com/tensorflow/tensorflow/issues/61653
