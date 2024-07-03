@@ -19,9 +19,6 @@ def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
     )
     return response
 
-
-
-
 def description_observer(commit_msg):
     prompt_ = f"""
     Please read the following bug report from a bug fixing commit that fixes a validation/checker bug and understand what is the root cause of the bug:
