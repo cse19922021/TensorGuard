@@ -9,6 +9,22 @@ client = OpenAI(
     api_key=os.environ.get(".env")
 )
 
+from transformers import RobertaTokenizer, RobertaModel
+import torch
+from sklearn.metrics.pairwise import cosine_similarity
+
+tokenizer = RobertaTokenizer.from_pretrained("microsoft/codebert-base")
+model = RobertaModel.from_pretrained("microsoft/codebert-base")
+
+def embed_code(input_code):
+    inputs = tokenizer(input_code, return_tensors="pt", max_length=512, truncation=True, padding="max_length")
+    outputs = model(**inputs)
+    embeddings = outputs.last_hidden_state.mean(dim=1).detach().numpy()
+    return embeddings
+    
+def calculate_similarity(src_, dest_):
+    return cosine_similarity(src_, dest_)
+
 # @backoff.on_exception(backoff.expo, openai.error.RateLimitError)
 def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
     response = client.chat.completions.create(
@@ -85,7 +101,7 @@ def main():
     with open(data_path) as json_file:
         data = json.load(json_file)
         for j, item in enumerate(data):
-            print(f"Record {j}/{len(data)}")
+            # print(f"Record {j}/{len(data)}")
             if use_base:
                 output = global_agent(item['Bug report'], item['Deleted lines'])
             else:
@@ -94,6 +110,11 @@ def main():
                 patch_ = path_generator(a2, a1, item['Deleted lines'])
             
             data = [item['Commit Link'], patch_]
+            
+            actual_fix = embed_code(item['Added lines'])
+            patch_embed = embed_code(patch_)
+            
+            print(f"The similarity score for records{j}::{calculate_similarity(actual_fix, patch_embed)}")
             with open(f"output/output_2.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
                 write = csv.writer(file_writer)
                 write.writerow(data)

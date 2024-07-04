@@ -2,6 +2,7 @@ from pydriller import Repository
 import re, os, sys, json
 import pandas as pd
 import subprocess
+from unidiff import PatchSet
 
 ROOT_DIR = os.getcwd()
 REG_CHANGED = re.compile(".*@@ -(\d+),(\d+) \+(\d+),(\d+) @@.*")
@@ -115,6 +116,36 @@ def get_added_deleted_lines(mod):
         out.append(item[1])
     return "\n".join(out)
 
+def split_multiple_diffs(lines):
+    diffs = []
+    current_diff_block = []
+    for line in lines:
+        if line.startswith('@@'):
+            if current_diff_block:
+                diffs.append('\n'.join(current_diff_block))
+                current_diff_block = []
+        current_diff_block.append(line)
+    if current_diff_block:
+        diffs.append('\n'.join(current_diff_block))
+    return diffs
+
+def new_added_deleted_lines(lines):
+    split_lines = lines.split('\n')
+    added_lines_mod = []
+    deleted_lines_mod = []
+    for line in split_lines:
+        if line.startswith('+++') or line.startswith('---'):
+            continue  
+        if line.startswith('+'):
+            added_lines_mod.append(line)
+        elif line.startswith('-'):
+            deleted_lines_mod.append(line)
+        else:
+            pass
+    
+    return added_lines_mod, deleted_lines_mod
+    
+
 def get_code_change(sha, libname):
     changes = []
     changed_lines = []
@@ -124,16 +155,24 @@ def get_code_change(sha, libname):
     try:
         for commit in Repository(f'ml_repos/{libname}', single=sha).traverse_commits():
             for modification in commit.modified_files:
+                lines = modification.diff.splitlines()
+                diffs = split_multiple_diffs(lines)
                 #if file_name.split('/')[-1] == modification.filename:
                 cl, raw_name = get_fix_file_names(modification)
                 cl_list = changed_lines_to_list(cl)
-                added_lines = get_added_deleted_lines(modification.diff_parsed['added'])
-                deleted_lines = get_added_deleted_lines(modification.diff_parsed['deleted'])
+                added_lines = []
+                deleted_lines = []
+                for diff in diffs:
+                    added_, deleted_ = new_added_deleted_lines(diff)
+                    added_lines = added_lines + added_
+                    deleted_lines = deleted_lines + deleted_
+                    # added_lines = get_added_deleted_lines(modification.diff_parsed['added'])
+                    # deleted_lines = get_added_deleted_lines(modification.diff_parsed['deleted'])
                 changes.append(modification.diff)
                 changed_lines.append(cl)
                 before_union.append(modification.source_code_before.split('\n'))
                 after_union.append(modification.source_code.split('\n'))
-                stat.append([cl, modification.source_code_before, modification.diff_parsed['deleted'], modification.source_code, modification.diff_parsed['added']])
+                stat.append([cl, modification.source_code_before, deleted_lines, modification.source_code, added_lines])
     except Exception as e:
         print(e)
     return stat
@@ -171,8 +210,6 @@ if __name__ == '__main__':
     counter = 0
     for ctx_ in [1]:
         for idx, row in data.iterrows():
-            print(row['Commit'])
-            
             if row['Root Cause'] != 'edge cases':
                 continue
             
@@ -188,10 +225,12 @@ if __name__ == '__main__':
             if not os.path.exists(repository_path):
                 subprocess.call('git clone '+v+' '+repository_path, shell=True)
 
+            full_link = '6c98d904c09b69f1e7748cf3d80e2193df5fff63'
             commit_stat = get_code_change(full_link, row['Library'])
             if commit_stat:
                 changed_lines = [commit_stat[0][0][key] for key in commit_stat[0][0]]
                 if len(changed_lines[0]) > 1 and len(commit_stat[0][2]) <= 5:
+                    print(row['Commit'])
                     counter = counter + 1
                     code = slice_code_base(changed_lines, commit_stat[0][1], commit_stat[0][2], commit_stat[0][3], commit_stat[0][4], ctx_)
                     
