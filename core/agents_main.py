@@ -37,7 +37,7 @@ def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
 
 def code_observer(code_removed, code_added):
     prompt_ = f"""
-    Please identify the rules for fixing the validation/checker bug in the following code change:
+    Please identify the fixing pattern in the following code change. Fixing pattern should be general not too specific.
     Question:{code_removed}{code_added}
     <output>: 
     """
@@ -54,7 +54,7 @@ def bugReport_observer(commit_message):
 
 def path_generator(bug_explanation, fixing_rules, code_snippet):
     prompt_ = f"""
-    You are given bug explanation and rules for fixing the bug. Then, think 
+    You are given bug explanation and fixing pattern for fixing the bug. Then, think 
     step by step and generate a patch for the code snippet. 
     Please ignore any indentation problems in the code
     snippet. Fixing indentation is not the goal of this task. If the
@@ -82,7 +82,7 @@ def patch_generator(steps, deleted_code):
     return response.choices[0].message.content
 
 
-def global_agent(commit_msg, deleted_code):
+def single_agent(commit_msg, deleted_code):
     prompt_ = f"""
     Please read the following bug report and buggy code from a bug fixing commit that fixes a validation/checker bug:
     Bug report: {commit_msg}
@@ -103,19 +103,21 @@ def main():
         for j, item in enumerate(data):
             # print(f"Record {j}/{len(data)}")
             if use_base:
-                output = global_agent(item['Bug report'], item['Deleted lines'])
+                output = single_agent(item['Bug report'], item['Deleted lines'])
+                output_name = 'single'
             else:
-                a1 = code_observer(item['Deleted lines'], item['Added lines'])
-                a2 = bugReport_observer(item['Bug report'])
-                patch_ = path_generator(a2, a1, item['Deleted lines'])
-            
-            data = [item['Commit Link'], patch_]
+                output_name = 'multi'
+                bug_understanding = bugReport_observer(item['Bug report'])
+                fix_pattern = code_observer(item['Deleted lines'], item['Added lines'])
+                patch_ = path_generator(bug_understanding, fix_pattern, item['Deleted lines'])
             
             actual_fix = embed_code(item['Added lines'])
             patch_embed = embed_code(patch_)
             
             print(f"The similarity score for records{j}::{calculate_similarity(actual_fix, patch_embed)}")
-            with open(f"output/output_2.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
+            
+            data = [item['Commit Link'], item['Added lines'], patch_, fix_pattern, calculate_similarity(actual_fix, patch_embed)]
+            with open(f"output/output_{output_name}.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
                 write = csv.writer(file_writer)
                 write.writerow(data)
                             

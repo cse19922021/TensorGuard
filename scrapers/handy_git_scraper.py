@@ -224,15 +224,14 @@ if __name__ == '__main__':
 
             if not os.path.exists(repository_path):
                 subprocess.call('git clone '+v+' '+repository_path, shell=True)
-
-            full_link = '6c98d904c09b69f1e7748cf3d80e2193df5fff63'
+                
             commit_stat = get_code_change(full_link, row['Library'])
             if commit_stat:
                 changed_lines = [commit_stat[0][0][key] for key in commit_stat[0][0]]
-                if len(changed_lines[0]) > 1 and len(commit_stat[0][2]) <= 5:
+                if len(commit_stat[0][4]) < 6:
                     print(row['Commit'])
                     counter = counter + 1
-                    code = slice_code_base(changed_lines, commit_stat[0][1], commit_stat[0][2], commit_stat[0][3], commit_stat[0][4], ctx_)
+                    # code = slice_code_base(changed_lines, commit_stat[0][1], commit_stat[0][2], commit_stat[0][3], commit_stat[0][4], ctx_)
                     
                     data_ = {
                         "Id": counter,
@@ -241,8 +240,8 @@ if __name__ == '__main__':
                         'Violation': row['Violation'],
                         'Bug report': row['bug report'],
                         "Number of deleted lines": len(commit_stat[0][2]),
-                        "Deleted lines": code[0],
-                        "Added lines": code[1]}
+                        "Deleted lines": "\n".join(commit_stat[0][2]),
+                        "Added lines": "\n".join(commit_stat[0][4])}
                                 
                     with open(f"data/data_{ctx_}.json", "a") as json_file:
                         json.dump(data_, json_file, indent=4)

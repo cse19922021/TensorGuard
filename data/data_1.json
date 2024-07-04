@@ -1,0 +1,1420 @@
+[{
+    "Id": 1,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/e9c1ccee2247a7746fde202067a7d47b72809968",
+    "Violation": "improper",
+    "Bug report": "Bug fix: allow std 0 in the meta definition of normal_. All other `normal` variants allow 0.  Looks like a mistake made while copying the check. ",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  TORCH_CHECK(std > 0.0, \"normal_ expects std > 0.0, but found std=\", std);  // TODO: dedupe",
+    "Added lines": "+  TORCH_CHECK(std >= 0.0, \"normal_ expects std >= 0.0, but found std=\", std);  // TODO: dedupe"
+},
+{
+    "Id": 2,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/c99277e177cf16736262251c7e92ea5e9ba2c5c2",
+    "Violation": "improper",
+    "Bug report": " handle the case in acc_ops.sum when dim == 0, differentiating it from the case when dim is None. handle the case in acc_ops.sum when dim == 0, differentiating it from the case when dim is None",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    if dim:",
+    "Added lines": "+    if dim is not None:"
+},
+{
+    "Id": 3,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/6c98d904c09b69f1e7748cf3d80e2193df5fff63",
+    "Violation": "improper",
+    "Bug report": "handle the case of -0.0 on tanh quantization.  this fix makes fakelowp identical to hw - mask out the floating point number with 0x7fff so we are always dealing with positive numbers - dsp implementation is correct, ice-ref suffers from this same problem",
+    "Number of deleted lines": 5,
+    "Deleted lines": "-        float val = X_data[i];\n-        short shortAbsInput = _cvtss_sh(abs(val), 0);\n-        // Clamp the input in the range of\n-        //  (short)tanhLUTMinOffset to (short)(tanhLUTMaxOffset - 1)\n-        if (val < 0.0) {",
+    "Added lines": "+        short val = _cvtss_sh(X_data[i], 0);\n+        unsigned short max16BitPositive = 0x7FFF;\n+        unsigned short input16Bit = (*(unsigned short*)& val);\n+        short shortAbsInput = input16Bit & max16BitPositive; // mask out negative bit\n+        if (input16Bit > max16BitPositive) {  // negative value"
+},
+{
+    "Id": 4,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/0c0c9e743e82b398435ed07719e998aa15ac1ce1",
+    "Violation": "improper",
+    "Bug report": "Fix dimensions check ",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    CHECK_LT(num_reduce_dims_, input.dims().size());",
+    "Added lines": "+    CHECK_LE(num_reduce_dims_, input.dims().size());"
+},
+{
+    "Id": 5,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/4d0fbb0e6f578bea14f3f52b0a927bcc20f8b109",
+    "Violation": "improper",
+    "Bug report": "when adding a new axis to concatenate along, allow it to be the last axis. For example, concated 1D columns into a 2D matrix with axis=1, add_axis=1.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  CAFFE_ENFORCE_LT(axis_, input_zero.ndim(), \"Axis not in input ndim range.\");",
+    "Added lines": "+  CAFFE_ENFORCE_LT(\n+      axis_,\n+      input_zero.ndim() + (add_axis_ ? 1 : 0),\n+      \"Axis not in input ndim range.\");"
+},
+{
+    "Id": 6,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/85cbe0d8258ab06897e2f049e61f74d8aa935240",
+    "Violation": "missing",
+    "Bug report": "This diff is similar to D14163001. We need to handle the edge case when add_axis=1.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  const int canonical_axis = canonical_axis_index_(axis, in[0].dims_size());",
+    "Added lines": "+  int adj_size = in[0].dims_size() + (add_axis ? 1 : 0);\n+  const int canonical_axis = canonical_axis_index_(axis, adj_size);\n+  CAFFE_ENFORCE_LT(canonical_axis, adj_size, \"Axis not in input ndim range.\");"
+},
+{
+    "Id": 7,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/4b45f08f8765549915417997c30ae8981f2ad125",
+    "Violation": "missing",
+    "Bug report": "The issue was related to not checking the dimensions of source vs destination tensors.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  } ",
+    "Added lines": "+  }\n+  } else if ((source.dim() != self.dim()) && (source.dim() != 0 && self.dim() != 0)) {\n+    AT_INDEX_ERROR(\"index_copy_(): When source and destination are not scalars, their dimensionality must match. Source dimensionality (\",\n+                   source.dim(), \"), destination dimensionality (\", self.dim(), \")\");\n+"
+},
+{
+    "Id": 8,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/bf32ea80942ce720b105efcd517fd11182edeb08",
+    "Violation": "insufficient",
+    "Bug report": " Fix dimension check in 1D instance norm, allowing 2D tensors alongsid e 3D.",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-        if input.dim() != 3:\n-            raise ValueError('expected 3D input (got {}D input)'",
+    "Added lines": "+        if input.dim() != 2 and input.dim() != 3:\n+            raise ValueError('expected 2D or 3D input (got {}D input)'"
+},
+{
+    "Id": 9,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/71af538e31547e5b1bc814c9e00323a21905baf3",
+    "Violation": "insufficient",
+    "Bug report": "Updated assert to remove check on 3rd dim for MHA.  Updated assert statement to remove check on 3rd dimension (features) for keys and values in MultiheadAttention / Transform. The feature dimension for keys and values can now be of different sizes",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    assert key.size() == value.size()",
+    "Added lines": "+    # allow MHA to have different sizes for the feature dimension\n+    assert key.size(0) == value.size(0) and key.size(1) == value.size(1)"
+},
+{
+    "Id": 10,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/be253b8ee8a104997773d11ed28928a48193217d",
+    "Violation": "improper",
+    "Bug report": "The existing check isn't safe for 32-bit `size_t` because the max 64-bit int will overflow.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  assert(sizes.size() < static_cast<std::size_t>(std::numeric_limits<std::int64_t>::max()));",
+    "Added lines": "+  assert(!overflows<std::int64_t>(sizes.size()));"
+},
+{
+    "Id": 11,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/f02b7a9c36dd6182da694bc47a5c345285dfd951",
+    "Violation": "improper",
+    "Bug report": "don't error when unused fill value is zero. In the python version of `F.pad`, checking that the fill value was left as default was done by comparing against zero. So if someone does explicitly pass in a zero-value, then this `TORCH_CHECK` was an accidental BC-break.",
+    "Number of deleted lines": 4,
+    "Deleted lines": "-  TORCH_CHECK(\n-      !value.has_value(), \"Padding mode \\\"\",\n-      padding_mode_string(mode),\n-      \"\\\" doesn't take in value argument\");",
+    "Added lines": "+  TORCH_CHECK(!value.has_value() || *value == 0,\n+              \"Padding mode \\\"\", padding_mode_string(mode),\n+              \"\\\" doesn't take in value argument\");"
+},
+{
+    "Id": 12,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/157d478a30f27fd9d866c1235841721a559c8d0b",
+    "Violation": "improper",
+    "Bug report": "Fix omission of shape in size check in index. ",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-                        index[j] <= self.shape[k + j],",
+    "Added lines": "+                        index.shape[j] == self.shape[k + j],"
+},
+{
+    "Id": 13,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/4d07428edee863e7f5920f0672957a9711a9f0b5",
+    "Violation": "missing",
+    "Bug report": "Fix for out of bounds read in mobile interpreter FORMAT opcode handler. Summary: The FORMAT opcode for the mobile TorchScript interpreter contained an out of bounds read issue leading to memory corruption. This change adds an explicit check that the number of inputs passed to the format method called when handling the FORMAT opcode is a valid and within bounds of the stack.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  if (num_inputs == 0 || num_inputs > stack.size()) {\n+    AT_ERROR(\"Invalid number of inputs for format string: \", num_inputs);\n+  }\n+"
+},
+{
+    "Id": 14,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/b3ace213f240dc0f0f2a738f825f46e0d0dffca4",
+    "Violation": "missing",
+    "Bug report": "The error occurs because there is not check in `deserialize_source` that `text_table_` size can be less than `fnameIndex`. To prevent the error the corresponding check must be located.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    TORCH_CHECK(\n+        (uint64_t)fnameIndex < text_table_.size(),\n+        \"Text table index is out of range\")"
+},
+{
+    "Id": 15,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/d8466964b348b6172317f70b8e52de02402bad54",
+    "Violation": "missing",
+    "Bug report": "Add range check to multi margin loss target ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  CUDA_KERNEL_ASSERT(target_k >= 0 && target_k < dim && \"target index is out of bounds\");"
+},
+{
+    "Id": 16,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/43f810fa96a0d2c40387c8c84f710926d9ede3c1",
+    "Violation": "insufficient",
+    "Bug report": "Add streams boundary check to torch::cuda::scatter`. Summary: Accessing elements of `std::vector` outside of its boundaries can lead to crashes/memory corruptions",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-    if (streams && (*streams)[i]) {\n-      if (streams && (*streams)[i]) {",
+    "Added lines": "+    if (i < (streams ? streams->size() : 0U) && (*streams)[i]) {\n+      if (i < (streams ? streams->size() : 0U) && (*streams)[i]) {"
+},
+{
+    "Id": 17,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/91066559a8c8e5978ed4de722317576b222267c5",
+    "Violation": "improper",
+    "Bug report": "truthy check for empty string in NameScope(). As in name. LATTE translation team moving some code from Python 2 to 3 uncovered a case where comparison between unicode and str types leads NameScope('') to prepend a separator to the beginning of blob names. This fixes it.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    prefix = prefix + _NAMESCOPE_SEPARATOR if prefix is not '' else ''",
+    "Added lines": "+    prefix = prefix + _NAMESCOPE_SEPARATOR if prefix else ''"
+},
+{
+    "Id": 18,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/666ff0ae220e1a5c406b0bc5cd43283e1b18b38e",
+    "Violation": "missing",
+    "Bug report": "Update _create_c10d_store to check port value. Port number is int in python, but needs to be uint16_t when called for TCPStore constructor.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    # check if port is uint16_t\n+    if not 0 <= port < 2**16:\n+        raise ValueError(f\"port must have value from 0 to 65535 but was {port}.\")"
+},
+{
+    "Id": 19,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/ba59d720cd5c5c81601b53d2c3397c46c1f87883",
+    "Violation": "missing",
+    "Bug report": "Change error message for torch.linspace(). Basically moves the error checking from the device-specific function to the native function.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  TORCH_CHECK(steps >= 0, \"number of steps must be non-negative\");"
+},
+{
+    "Id": 20,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/bc371a2cd03ce573f3ad4f7be141364136028905",
+    "Violation": "missing",
+    "Bug report": "Add additional checks when tracing back during maybe share output observer function. Summary: Currently in `maybe_make_input_output_share_observers`  we trace back from a node to find the activation_post_process of the input node, we have internal use case which would error out during tracing back, this PR is adding a guard during this process to return False early when the node doesn't have any input",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+                # failed to trace back since no input arg for the current node\n+                if len(input_arg.args) < 1:\n+                    return False"
+},
+{
+    "Id": 21,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/647154f82ac2c57769f080c41452b3e5960ab94f",
+    "Violation": "missing",
+    "Bug report": "Assert tensor isn't sparse in enforce_invariants. There's no reason we can't check this, but I'm punting on implementing it for now.  But it currently segfaults, so this is an improvement",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+      AT_ASSERTM(\n+          !impl_->is_sparse(),\n+          \"Sparse Tensors are supported by at::Tensor, but invariant checking isn't implemented.  Please file a bug.\");"
+},
+{
+    "Id": 22,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/a6a433aecd0da3ac3c8d49cb36091623f1b5ec9e",
+    "Violation": "missing",
+    "Bug report": "Add stack emptiness checks inside interpreter.cpp",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+            TORCH_INTERNAL_ASSERT_DEBUG_ONLY(stack.size() >= inst.N);\n+            TORCH_INTERNAL_ASSERT_DEBUG_ONLY(!stack.empty());\n+            TORCH_INTERNAL_ASSERT_DEBUG_ONLY(!stack.empty());"
+},
+{
+    "Id": 23,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/2c9dd886afc656a8bfe5d8bbcb601ee5877cee21",
+    "Violation": "missing",
+    "Bug report": "Modify torch.movedim to handle scalar as no-op. Summary: `torch.movedim` directly handle the case of a scalar tensor (0-dim) in input as a no-op by returning a view of the input tensor (after all the usual checks for the other parameters)",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  // handle the case of scalar tensor as a no-op\n+  if (self_dim == 0)\n+    return self.alias();\n+"
+},
+{
+    "Id": 24,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/52e76a305677dfaf26cd5d59bd1aa239375f833c",
+    "Violation": "missing",
+    "Bug report": "fix ShardedTensor.gather when shard is empty. current ShardedTensor.gather is not working as expectation when the shard is empty on any rank The root cause is identified that when a sharded tensor has no placement on a specific rank, the metadata doesn't include that rank's placement which introduces KeyError in :```shard_offset = shard_placement[shard. Metadata][1]``` It's fixed by adding an empty tensor check.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+                if src.nelement() == 0 :\n+                    warnings.warn(\"Gathering a tensor with zero elements on rank \" + str(rank))\n+                    return"
+},
+{
+    "Id": 25,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/d23231fd8cd50e4eb657eb7c3cf102475634f9c6",
+    "Violation": "missing",
+    "Bug report": "Fix upgrader codegen when constant list is 0. Summary: When the constant list is empty, previous codegen will generate something like ``` std::vector<c10::IValue>({ }), // constants list, ``` However it will fail quick-check, because it includes trailing spaces. This pr will generate the following instead. ``` std::vector<c10::IValue>(), // constants list,",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+CONSTANTS_LIST_EMPTY = \"\"\"std::vector<c10::IValue>(), // constants list\"\"\"\n+\n+    if len(constants_list_part) == 0:\n+        return CONSTANTS_LIST_EMPTY"
+},
+{
+    "Id": 26,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/4ee179c9528c8c6aae17a01f2b0d7e8235219219",
+    "Violation": "insufficient",
+    "Bug report": "Fix ConstantVariable init method if NumPy is missing. By adding `np is not None` check before `isinstance(value, np.number)`",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-        if isinstance(value, np.number):",
+    "Added lines": "+        if np is not None and isinstance(value, np.number):"
+},
+{
+    "Id": 27,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/ba766ef39a4fff2d8856e17747393d469e409775",
+    "Violation": "missing",
+    "Bug report": "Fix BN size check in eval mode",
+    "Number of deleted lines": 3,
+    "Deleted lines": "-    size = list(input.size())\n-    if reduce(mul, size[2:], size[0]) == 1:\n-        raise ValueError('Expected more than 1 value per channel, got input size {}'.format(size))",
+    "Added lines": "+    if training:\n+        size = list(input.size())\n+        if reduce(mul, size[2:], size[0]) == 1:\n+            raise ValueError('Expected more than 1 value per channel when training, got input size {}'.format(size))"
+},
+{
+    "Id": 28,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/999bae0f54108ffc5b7cf2524a02a83901554b16",
+    "Violation": "insufficient",
+    "Bug report": "Add padding check for use_nnpack. nnp_convolution_output doesn't support the case of input padding > = kernel_size.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-           (at::symint::size<T>(weight, 2) < 17) && (at::symint::size<T>(weight, 3) < 17) // NNPACK only supports kernels up to 16x16",
+    "Added lines": "+           (at::symint::size<T>(weight, 2) < 17) && (at::symint::size<T>(weight, 3) < 17) && // NNPACK only supports kernels up to 16x16\n+           (padding[0] < at::symint::size<T>(weight, 2)) && (padding[1] < at::symint::size<T>(weight, 3)) // NNPACK only supports padding < kernel_size. See https://github.com/pytorch/pytorch/issues/90142."
+},
+{
+    "Id": 29,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/9bcb4de16878073896d8743fbd70d5abe28b595a",
+    "Violation": "insufficient",
+    "Bug report": "check parameter k and l ",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  TORCH_CHECK((unsigned)l < dims.size());",
+    "Added lines": "+  TORCH_CHECK((unsigned)l < dims.size() && (unsigned)k < dims.size());"
+},
+{
+    "Id": 30,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/260f66c3165ce0c48dd1514a916da6971d981578",
+    "Violation": "missing",
+    "Bug report": "Fix concat dimension check bug",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-      const int canonical_axis = canonical_axis_index_(axis, in[0].dims_size());",
+    "Added lines": "+      int adj_size = in[0].dims_size() + (add_axis ? 1 : 0);\n+      const int canonical_axis = canonical_axis_index_(axis, adj_size);\n+      CAFFE_ENFORCE_LT(\n+          canonical_axis, adj_size, \"Axis not in input ndim range.\");"
+},
+{
+    "Id": 31,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/dc07102b17915f21170fae9a9d52c6f2d59726ca",
+    "Violation": "missing",
+    "Bug report": "Check dim size preventively when doing shape inference for BatchMatMul. We check input(0) but not input(1) in BatchMatMul. This may result in a protobuf exception which won't be caught by upstream and causing termination of the program. Check that with `CAFFE_ENFORCE` will be caught by upstream inference function. Plus, it will print out clean stack tracing showing where went wrong.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    CAFFE_ENFORCE_GE(in[1].dims_size(), 2);"
+},
+{
+    "Id": 32,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/a53f4b0f9bbc007c0a92e4fd28dd22af027e24a8",
+    "Violation": "missing",
+    "Bug report": " add dimension check to NHWC2NCHW shape inference. Summary: To prevent assertion from protobuffer when accessing the dims.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+      CAFFE_ENFORCE_EQ(\n+          in[0].dims_size(), 4, \"Input for NHWC2NCHW must be 4 dimensional\");"
+},
+{
+    "Id": 33,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/55092b1cc604fad3d70d31e71bbdd3a43a279423",
+    "Violation": "missing",
+    "Bug report": "Validate matching input shapes in Int8Add operator. Default engine doesn't support broadcast semantics in Int8Add operator. This patch adds a check that shapes are equivalent.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    CAFFE_ENFORCE_EQ(\n+        A.t.sizes(),\n+        B.t.sizes(),\n+        \"inputs must have the same shape (broadcast semantics is not supported)\");\n+"
+},
+{
+    "Id": 34,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/8ee59280d78a4fefc4de0da04b287e067c28de0d",
+    "Violation": "insufficient",
+    "Bug report": "Bug - check config for dynamic",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-                automatic_dynamic = curr_sizes is None or curr_sizes[i] is None\n-",
+    "Added lines": "+                automatic_dynamic = config.automatic_dynamic_shapes and (\n+                    curr_sizes is None or curr_sizes[i] is None\n+                )"
+},
+{
+    "Id": 35,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/e9e125475e94aabfb34ee239fadc760615eef429",
+    "Violation": "missing",
+    "Bug report": "Add schema check to aten::repeat and fb::fast_gather",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  if (n->inputs().size() != 2) {\n+    return nullptr;\n+  }"
+},
+{
+    "Id": 36,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/bbb5e106ad6228953df6c7f5c8916b26dc0cb457",
+    "Violation": "improper",
+    "Bug report": "Improve error checking of CUDALoops. Same change as was applied to CPU loops -- separate out checking of the inputs and outputs.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  TORCH_INTERNAL_ASSERT(iter.ntensors() == traits::arity + 1);",
+    "Added lines": "+  TORCH_INTERNAL_ASSERT(iter.ninputs() == traits::arity);\n+  TORCH_INTERNAL_ASSERT(iter.noutputs() == 1);"
+},
+{
+    "Id": 37,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/7684044b713761abd4f51225dc5d83ce5869562a",
+    "Violation": "missing",
+    "Bug report": "Add size check before calling .back() in rpc/script_call.cpp",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  TORCH_INTERNAL_ASSERT(\n+      ivalues.size() > 1,\n+      \"At least 2 IValues are required to build a ScriptCall.\");\n+"
+},
+{
+    "Id": 38,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/5023995292f5119c447de15c20a375b7e3aa2d0b",
+    "Violation": "improper",
+    "Bug report": " fix output size adjustment for onnxifi_op. Summary: this breaks if we cut the net at certain int8 ops boundary.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-      if (max_shape[j] > real_shape.dims(j)) {",
+    "Added lines": "+      if (max_shape[j] >= real_shape.dims(j)) {"
+},
+{
+    "Id": 39,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/f810d96806d0e767aeca9fe9cf50e0bdcaab7d52",
+    "Violation": "unnecessary",
+    "Bug report": "emove redundant index check for index_select_out_cpu_dim1_. For  **index_select_out_cpu_dim1_**, there has a redundant idex check, **check_indexarray_range** has checked  **the index>=0 and  index < slect_dim**, we don't need re-check it at copy step.",
+    "Number of deleted lines": 7,
+    "Deleted lines": "-            if (idx < 0) {\n-              idx = idx + src_indexing_axis_dim;\n-            }\n-            if (idx < 0) {\n-              idx = idx + src_indexing_axis_dim;\n-            }\n-",
+    "Added lines": ""
+},
+{
+    "Id": 40,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/63e47c68a692c70bc64c49d687f85f7f5cd02ce3",
+    "Violation": "unnecessary",
+    "Bug report": " remove checks from embedding bag impl. These checks incur an H2D sync on every embedding bag forward. Also, the equivalent python code for embedding_bag does not have them",
+    "Number of deleted lines": 11,
+    "Deleted lines": "-    TORCH_CHECK(\n-        offsets_[0].item<int64_t>() == 0,\n-        \"offsets[0] has to be 0, i.e., the first sequence in the mini-batch has to start from position 0. However, got \",\n-        offsets_[0].item<int64_t>());\n-    TORCH_CHECK(\n-        offsets_[-1].item<int64_t>() <= input_.size(0),\n-        \"offsets[-1] can not be greater than input's length({\",\n-        input_.size(0),\n-        \"}), but got offsets[-1] of {\",\n-        offsets_[-1].item<int64_t>(),\n-        \"}\");",
+    "Added lines": ""
+},
+{
+    "Id": 41,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/67b6c880e39ba02ba53c7d499e45fd136090ee32",
+    "Violation": "missing",
+    "Bug report": " In tf.map_fn: skip sanity check for shape of first value in elems if it doesn't have a shape attribute. (E.g., this can happen if it's a CompsiteTensor.)",
+    "Number of deleted lines": 4,
+    "Deleted lines": "-    elems_static_shape = first_elem.shape\n-    if elems_static_shape.ndims is not None and elems_static_shape.ndims < 1:\n-      raise ValueError(\n-          \"Elements in elems must be 1+ dimensional Tensors, not scalars\")",
+    "Added lines": "+    if hasattr(first_elem, \"shape\"):\n+      elems_static_shape = first_elem.shape\n+      if elems_static_shape.ndims is not None and elems_static_shape.ndims < 1:\n+        raise ValueError(\n+            \"Elements in elems must be 1+ dimensional Tensors, not scalars\")"
+},
+{
+    "Id": 42,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/0197a2d8a3070af763cb67227835ee63df095e6d",
+    "Violation": "missing",
+    "Bug report": " Add a check to catch out-of-bound access on invalid Graphs. The existing Check trying to catch malformed graph is not robust when an op is registered with an expected number of inputs but has data edges beyond this.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+        DCHECK(edge->dst_input() < inputs.size())\n+            << \"Edge \" << edge->DebugString()\n+            << \" is overflowing the expected number of inputs (\"\n+            << node->num_inputs() << \") for node \" << node->DebugString();"
+},
+{
+    "Id": 43,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/083fd8c4b23104f6b27a871c6469629ace4ee9c3",
+    "Violation": "insufficient",
+    "Bug report": " Don't check soname on Windows. This allow users to specify a certain CUDA version on Windows again.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-        if check_soname and objdump != None:",
+    "Added lines": "+        if check_soname and objdump != None and not _is_windows(repository_ctx):"
+},
+{
+    "Id": 44,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/a21ec782601aca6c7e0461093d72596f26229e44",
+    "Violation": "improper",
+    "Bug report": " Use getattr instead of isinstance in tensor_conversion_registry. Using `isinstance` to check if an object is an instance of a Python `typing.Protocol` instead of using `getattr`/`hasattr` has negative performance implications. This change reverts `tensor_conversion_registry.convert()` to use `getattr` for this reason.",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-  if isinstance(value, core.TensorProtocol):\n-    return value.__tf_tensor__(dtype, name)",
+    "Added lines": "+  overload = getattr(value, \"__tf_tensor__\", None)\n+  if overload is not None:\n+    return overload(dtype, name)  #  pylint: disable=not-callable"
+},
+{
+    "Id": 45,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/15c186bffe51901e4a48b4b6bf1316832533743f",
+    "Violation": "improper",
+    "Bug report": "Correctly handle the case if static maximum dimension size = 0. ",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-          if not s or s != maximum_static_shapes[idx][i]:\n-            if s.value:",
+    "Added lines": "+          if s is None or s != maximum_static_shapes[idx][i]:\n+            if s.value is not None:"
+},
+{
+    "Id": 46,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/e1ad3b74ad44b883c7b3fdc3a19adcea1d28bfbc",
+    "Violation": "improper",
+    "Bug report": " [XLA:GPU] Handle edge case in Triton Softmax rewriter where bitcast is an effective scalar. This short-circuit avoids crashing within last_dimension when attempting to match and either the operand or the result of the bitcast has a shape with rank 0.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  if (bitcast->shape().rank() == 0) {",
+    "Added lines": "+  if (ShapeUtil::IsEffectiveScalar(bitcast->shape())) {"
+},
+{
+    "Id": 47,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/2f3b69e4976d3b14eaa6ae070eb68f37d1556d98",
+    "Violation": "improper",
+    "Bug report": "Changed empty check ",
+    "Number of deleted lines": 3,
+    "Deleted lines": "-      if (isinstance(checkpointable_object,\n-                     data_structures.CheckpointableDataStructure) and\n-              len(checkpointable_object.variables) == 0):",
+    "Added lines": "+      if not checkpointable_object._checkpoint_dependencies:"
+},
+{
+    "Id": 48,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/6381a7b127bd276a3817a93e5423b15a06c33419",
+    "Violation": "missing",
+    "Bug report": " [tf.data] Add a check for ram_budget == 0 to avoid division by 0 exception when ram_budget is not set.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  if (ram_budget == 0) {\n+    return;\n+  }"
+},
+{
+    "Id": 49,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/bd1f1ac1fec05d38f1b8fc98f650c1c55ac06790",
+    "Violation": "improper",
+    "Bug report": "Fix operator check ",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-      operator_a.is_square is not None and operator_a.is_square is not None):",
+    "Added lines": "+      operator_a.is_square is not None and operator_b.is_square is not None):"
+},
+{
+    "Id": 50,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/236660d0fccff6f59f29a1936dc731d783722e28",
+    "Violation": "missing",
+    "Bug report": " [XLA:GPU] Fix host conv checker canonicalization for f16 and nans. The GPU-side checker is correct, but the host-side checker was canonicalizing nan to F16_MAX.  The effect of this is that you'd get a \"conv mismatch!\" error but no description of exactly what mismatched.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+      if (std::isnan(a)) {\n+        return a;\n+      }"
+},
+{
+    "Id": 51,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/8c6f391a2282684a25cbfec7687bd5d35261a209",
+    "Violation": "missing",
+    "Bug report": " [lite] Add check for bias_size is zero to avoid division by zero. This shouldn't happen for properly converted models. Just safety check",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  if (bias_size == 0) return;"
+},
+{
+    "Id": 52,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/551a90f2e3d20420d68a2796d19f1c42b6636e0d",
+    "Violation": "missing",
+    "Bug report": " Add checks in ReduceWindowOpOnTensorsConversion. The pattern does not support ops with non-zero padding config. Add a check to prevent unexpected lowering. It is not easy to add tests because other patterns will convert body ops, and it causes issues like invalid IRs.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    if (op.padding() && !isSplatValue(*op.padding(), 0)) {\n+      return rewriter.notifyMatchFailure(op, \"require paddings are all zero\");\n+    }\n+"
+},
+{
+    "Id": 53,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/b86513673b98ac6c4458033fcda718365539afae",
+    "Violation": "missing",
+    "Bug report": "added check for zero stride values to strided slice ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    if (attr.strides.h == 0 || attr.strides.w == 0 || attr.strides.c == 0) {\n+      return InvalidArgumentError(\"stride values must be non-zero\");\n+    }"
+},
+{
+    "Id": 54,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/4377a561b7757ed83757f07532e6564c42c286ba",
+    "Violation": "missing",
+    "Bug report": " Add a check for group size when sorting grouped AllReduces within a block.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+        // Maintain relative order of ALLReduces within the block.\n+                    if (lhs.empty() || rhs.empty()) {\n+                      // Skip order check if either group is empty.\n+                      return false;\n+                    }"
+},
+{
+    "Id": 55,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/31bd5026304677faa8a0b77602c6154171b9aec1",
+    "Violation": "missing",
+    "Bug report": " Prevent check fail in FFT ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    OP_REQUIRES(ctx, temp_shape.num_elements() > 0,\n+                errors::InvalidArgument(\"Obtained a FFT shape of 0 elements: \",\n+                                        temp_shape.DebugString()));"
+},
+{
+    "Id": 56,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/1c56f53be0b722ca657cbc7df461ed676c8642a2",
+    "Violation": "missing",
+    "Bug report": "Fix a check fail in Fast Fourier implementation ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+#include \"tensorflow/core/platform/errors.h\"\n+    OP_REQUIRES(ctx, full_fft_shape.num_elements() > 0,\n+                errors::InvalidArgument(\"Obtained a FFT shape of 0 elements: \",\n+                                        full_fft_shape.DebugString()));"
+},
+{
+    "Id": 57,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/25bae42b3022b00788a29ae6c400922c31f88231",
+    "Violation": "insufficient",
+    "Bug report": " Add additional length check for inputs ",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  if all(shape is not None for shape in shapes_value):",
+    "Added lines": "+  if len(shapes_value) != 0 and all(shape is not None for shape in shapes_value):"
+},
+{
+    "Id": 58,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/e07e48b2e0908333a36f1c5726a9406a83b3ec90",
+    "Violation": "missing",
+    "Bug report": "Added a check on literal_.has_value() to avoid segfault. ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    if (!literal_.has_value()) {\n+      return \"{...}\";\n+    }"
+},
+{
+    "Id": 59,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/cc560f64b6e3e6724517757e9789c52cde224ee9",
+    "Violation": "missing",
+    "Bug report": " Profiler: restore correct behavior of StartTracing with empty workers list. absl::StrSplit behaves differently from str_util::Split when the passed string is empty. Restore previous behavior by explicitly checking for an empty string.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  std::vector<tensorflow::string> hostnames = absl::StrSplit(workers_list, ',');",
+    "Added lines": "+  std::vector<tensorflow::string> hostnames;\n+  if (!workers_list.empty()) {\n+    hostnames = absl::StrSplit(workers_list, ',');\n+  }"
+},
+{
+    "Id": 60,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/80bb2f5511e7d2d386c79da52ff517691e19ac54",
+    "Violation": "missing",
+    "Bug report": " Add check condition for large values of range_max, which is causing session abort.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  # Limiting to Max int32 value\n+  if range_max > 2147483647:\n+    raise ValueError(f'Value of range_max:{range_max} is too large to handle')"
+},
+{
+    "Id": 61,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/43a8963c73718f97a4425722a65b611d2ef0b69f",
+    "Violation": "missing",
+    "Bug report": "Added non-negative check for n. ",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-      not `-1`, or `norm` is not `None` or `'ortho'`.",
+    "Added lines": "+  if n is not None and n < 1:\n+    raise ValueError(\"n should be an integer greater than 1 or None\")\n+      not `-1`, `n` is not `None` or greater than 0, \n+      or `norm` is not `None` or `'ortho'`."
+},
+{
+    "Id": 62,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/4ea68093eeaf4c4157368668afd7f809b806a504",
+    "Violation": "missing",
+    "Bug report": "Add negative parameter validation to convolution layers. ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    if filters < 0:\n+      raise ValueError(\"Recieved a negative value for `filters`,\n+                       \"was expecting a positive value.\")"
+},
+{
+    "Id": 63,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/076f909b70b251daea6c443c9b1929b9745aed20",
+    "Violation": "improper",
+    "Bug report": "fix boolean expression in length check ",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    OP_REQUIRES(ctx, length,",
+    "Added lines": "+    OP_REQUIRES(ctx, length > 0,"
+},
+{
+    "Id": 64,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/3acc8eaf602b3e9a009f54e1e0164644dd793831",
+    "Violation": "missing",
+    "Bug report": "Add sanity check for resize-bilinear input shape. ",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  const int32* size_data = GetTensorData<int32>(size);",
+    "Added lines": "+  const int32* size_data = GetTensorData<int32>(size);\n+  // Sanity check, the up/down sampling size should always be positive.\n+  TF_LITE_ENSURE(context, size_data[0] > 0);\n+  TF_LITE_ENSURE(context, size_data[1] > 0);"
+},
+{
+    "Id": 65,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/fffbe5a26da2d6fab5a3eb648cefef49db4d38de",
+    "Violation": "missing",
+    "Bug report": " Check if the session has been deleted before releasing a callable. In some versions of Python, the Session._session field may be cleared (in `Session.__del__()`) before a callable that has a reference to that Session is deleted. Add a defensive check in the `Session._Callable.__del__()` method.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-      if self._handle is not None:",
+    "Added lines": "+      # NOTE(mrry): It is possible that `self._session.__del__()` could be\n+      # called before this destructor, in which case `self._session._session`\n+      # will be `None`.\n+      if self._handle is not None and self._session._session is not None:"
+},
+{
+    "Id": 66,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/ebeb598c2d1f341d6d641bf58c370cf7b43f6e37",
+    "Violation": "missing",
+    "Bug report": " Correctly check shape not None in Keras add_weight. When calling Keras add_weight with a np list, as written the `shape or ()` \"trick\" results in the following exception: \"\"\"ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()\"\"\" This change fixes the problem by using an explicit `if`.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    shape = shape or ()",
+    "Added lines": "+    if shape is None:\n+      shape = ()"
+},
+{
+    "Id": 67,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/c7c4a42c4372ca560ea415fe3a798e18286cedec",
+    "Violation": "improper",
+    "Bug report": "Fix an error in keras input_layer.Input() dtype type checking. ",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-    elif input_tensor and input_tensor.dtype != dtype:\n-      raise ValueError('`input_tensor.dtype` differs from `dtype`.')",
+    "Added lines": "+    elif input_tensor is not None and input_tensor.dtype != dtype:\n+      raise ValueError('`input_tensor.dtype` differs from `dtype`: %s vs. %s' %\n+                       (input_tensor.dtype, dtype))"
+},
+{
+    "Id": 68,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/bc7b64fe998cb0f118eace5bc29b52554eeda3f1",
+    "Violation": "missing",
+    "Bug report": " Added back the channel dimension check as a known channel dimension is required by creating beta.",
+    "Number of deleted lines": 3,
+    "Deleted lines": "-      channels = array_ops.shape(inputs)[-1]\n-      outputs = array_ops.reshape(outputs, array_ops.shape[original_inputs])\n-                        functools.reduce(lambda x, y: x * y, spatial_dims)])",
+    "Added lines": "+      channels = inputs.get_shape()[-1].value\n+      if channels is None:\n+        raise ValueError('`C` dimension must be known but is None')\n+      outputs = array_ops.reshape(outputs, array_ops.shape(original_inputs))\n+                         functools.reduce(lambda x, y: x * y, spatial_dims)])"
+},
+{
+    "Id": 69,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/a5b8d6c4694e4cd3e3cc4a162053ab0dfa6e174f",
+    "Violation": "insufficient",
+    "Bug report": "Relax the check for whether the relevant aggregation dimensions are known ahead of time.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    if x_shape.is_fully_defined():",
+    "Added lines": "+    if all(x_shape[d].value is not None for d in axes):"
+},
+{
+    "Id": 70,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/31849c61e0432009baabdfafc2ec1a1aed1a40e8",
+    "Violation": "insufficient",
+    "Bug report": " Small change in tf.nn.sufficient_statistics to guard against unknown shapes. Use is_fully_defined instead of checking shape.dims[d] as the dims variable may be None, if the rank is unknown.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    if all(x_shape.dims[d].value is not None for d in axes):",
+    "Added lines": "+    if x_shape.rank is not None and all(\n+        x_shape.dims[d].value is not None for d in axes):"
+},
+{
+    "Id": 71,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/30bd9d5bcc64097d21872486a5726d756ed7067b",
+    "Violation": "insufficient",
+    "Bug report": " Explicitly handle Tensors in start & stop. The current check was doing a identity check in order to handle both tensors and integers. This becomes problematic when enabling tensor equality. Instead we explicitly check for Tensor type and only compare with sys.maxsize for non-Tensors.",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-      if s.start is not None and s.start is not sys.maxsize:\n-      if s.stop is not None and s.stop != sys.maxsize:",
+    "Added lines": "+      if s.start is not None and (isinstance(s.start, ops.Tensor) or\n+                                  s.start != sys.maxsize):\n+      if s.stop is not None and (isinstance(s.stop, ops.Tensor) or\n+                                 s.stop != sys.maxsize):"
+},
+{
+    "Id": 72,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/a0ca4bcb81dfd07fdb1c7872b5852f84cfc1a081",
+    "Violation": "improper",
+    "Bug report": "Fix separable convolution bias check",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    if self.bias:",
+    "Added lines": "+    if self.bias is not None:"
+},
+{
+    "Id": 73,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/1ff493ed1a2059f82f7607a7f0a0aa2ce8d5a542",
+    "Violation": "improper",
+    "Bug report": "Replace a defensive check with TF_RET_CHECK",
+    "Number of deleted lines": 4,
+    "Deleted lines": "-    if (!device_name.empty()) {\n-      // TODO(sanjoy): Figure out if this is necessary.\n-      device_names_set.insert(device_name);\n-    }",
+    "Added lines": "+    TF_RET_CHECK(!device_name.empty());\n+    device_names_set.insert(device_name);"
+},
+{
+    "Id": 74,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/201982013046116767545cda18137b38abb39468",
+    "Violation": "missing",
+    "Bug report": "toco: Fix missing check for buffer in ResizeBilinear.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  if (!output_size_array.buffer) {\n+    return;\n+  }"
+},
+{
+    "Id": 75,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/f61175812426009a4c96e51befb2951612990903",
+    "Violation": "missing",
+    "Bug report": "To add a check of input_dims greater than zero in embedding layers. ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    if self.input_dim <= 0:\n+      raise ValueError('The argument `input_dim` should be greater than zero. '\n+                       'Received: %s' % input_dim)"
+},
+{
+    "Id": 76,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/a0dc73569fc193c1ce26a7bd2d4a8776e7b813ac",
+    "Violation": "missing",
+    "Bug report": "add check for empty cs_prev_tensor",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    OP_REQUIRES(ctx, \n+        cs_prev_tensor->dim_size(0) > 0 && cs_prev_tensor->dim_size(1) > 0,\n+                errors::InvalidArgument(\"cs_prev_tensor is empty, has shape: (\",\n+                            cs_prev_tensor->dim_size(0), \",\", cs_prev_tensor->dim_size(1), \").\"));"
+},
+{
+    "Id": 77,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/48d3e51a1bd128554dd129251a51b6e12918a604",
+    "Violation": "missing",
+    "Bug report": "Add a check to HandleFromInput to ensure that the resource isn't empty. ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+// TODO(b/228388547) users of this method should be migrated to the one below.\n+  if (tensor->NumElements() == 0) {\n+    return errors::InvalidArgument(\"Empty resouce handle\");\n+  }"
+},
+{
+    "Id": 78,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/258233804f2bc92b4bdb9714b396aed34b53ff0d",
+    "Violation": "missing",
+    "Bug report": " sanity check of empty tensor on avgpool3d_grad",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+      // For empty tensor, avg_pool_3d_grad in oneDNN doesn't handle this case\n+      if (orig_input_tensor.NumElements() == 0 ||\n+          grad_tensor.NumElements() == 0)\n+        return;\n+      "
+},
+{
+    "Id": 79,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/ce589223a5fa78cb12efaf1efd1d8d0e5507bd08",
+    "Violation": "missing",
+    "Bug report": " Update nn_ops.py. Added check for pooling_ratio",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  if pooling_ratio < 1.0:\n+    raise ValueError(\"pooling_ratio should be >= 1.0.\")"
+},
+{
+    "Id": 80,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/e5b0eec199c2d03de54fd6a7fd9275692218e2bc",
+    "Violation": "missing",
+    "Bug report": " [lite] Add validation check for dilation height/width to be positive integers.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  TF_LITE_ENSURE(context, params->dilation_height_factor > 0);\n+  TF_LITE_ENSURE(context, params->dilation_width_factor > 0);"
+},
+{
+    "Id": 81,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/5cedb0427bd4db4117182da8bc0680dd555b4f49",
+    "Violation": "missing",
+    "Bug report": "Add checks for dilation_rate. ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  TFLITE_DCHECK_GE(dilation_width_factor, 1);\n+  TFLITE_DCHECK_GE(dilation_height_factor, 1);"
+},
+{
+    "Id": 82,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/55aec0a33011773240f6696393952c984ca8de16",
+    "Violation": "insufficient",
+    "Bug report": " Add explicit not-None checks for the height and width in `resize_images()`. This was previously raising a `FutureWarning` when the height and/or width were dynamic.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  if width == new_width_const and height == new_height_const:",
+    "Added lines": "+  if new_width_const is not None and new_height_const is not None and (\n+      width == new_width_const and height == new_height_const):"
+},
+{
+    "Id": 83,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/c6899c721f3a4b4f2e71ae4e6d1767341112ff93",
+    "Violation": "missing",
+    "Bug report": "bug fix when iterators stops at multiple of batch_size ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+          if i == 0:\n+            raise"
+},
+{
+    "Id": 84,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/66e0cb1d9afd251931f4f920c5d7bd638bc882b4",
+    "Violation": "missing",
+    "Bug report": " validate clip_norm argument in clip_by_norm API. The API clip_by_norm have argument clip_norm which accepts  0-D (scalar) `Tensor` > 0 . But if we pass -ve value for this argument then its not raising intended error and converting the input tensor into Negative which IMO is wrong. Hence I am adding validation code for -ve values to raise value error.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    if clip_norm < 0:\n+      raise ValueError('clip_norm should be a 0-D (scalar) Tensor > 0')"
+},
+{
+    "Id": 85,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/d5862d423742ec26c46737d4526eca3b8b8a0d9b",
+    "Violation": "missing",
+    "Bug report": " [TFLite] Add check in Softmax reference function to ensure exponent is within valid range. * Add check to ensure the exponent does not cause an overflow in gemmlowp::RoundingDivideByPOT",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-            (shifted_scale * exp_in_0).raw(),\n-            num_bits_over_unit + 31 - (sizeof(OutputT) * 8));",
+    "Added lines": "+    const int exponent = num_bits_over_unit + 31 - (sizeof(OutputT) * 8);\n+    TFLITE_CHECK(0 <= exponent && exponent <= 31);\n+\n+            (shifted_scale * exp_in_0).raw(), exponent);"
+},
+{
+    "Id": 86,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/cb164786dc891ea11d3a900e90367c339305dc7b",
+    "Violation": "improper",
+    "Bug report": " Properly handle the case where SpecializeType() returns an error `Status`. If the error case in `SpecializeType()` is reached, then we would get a crash when trying to access the value of an errorenous `StatusOr` object",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  DCHECK(ret.status().ok()) << \"while instantiating types: \" << ret.status();",
+    "Added lines": "+  if (!ret.status().ok()) {\n+    construction_status_ = ret.status();\n+    return;\n+  }"
+},
+{
+    "Id": 87,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/43fd10302bcc8447e7a7205bae848a3a88624775",
+    "Violation": "missing",
+    "Bug report": "Return error on invalid input in tfl.atan2_custom",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    default:",
+    "Added lines": "+    default: {\n+      return TfLiteStatus::kTfLiteError;\n+    }"
+},
+{
+    "Id": 88,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/00517642a356c5e04f009ea61c74638d89746392",
+    "Violation": "missing",
+    "Bug report": "Return error on invalid input in tfl.splitv",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+      return kTfLiteError;\n+    return kTfLiteError;"
+},
+{
+    "Id": 89,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/40c7fe94824100338ef0c495143b26501b1c367e",
+    "Violation": "missing",
+    "Bug report": "Return error on invalid input in tfl.topkv2 ",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+      return kTfLiteError;"
+},
+{
+    "Id": 90,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/b4aadb17b7aa5ea926b5220008e41f33e582baed",
+    "Violation": "missing",
+    "Bug report": "Return error on invalid input in tfl.where",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+      return kTfLiteError;\n+        return kTfLiteError;\n+      return kTfLiteError;"
+},
+{
+    "Id": 91,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/ef049bdfc4f307c8b3a9dc480a90a5ff287f3d55",
+    "Violation": "missing",
+    "Bug report": "Add check for ResizeOutput return value in range.cc",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    ResizeOutput(context, start, limit, delta, output);",
+    "Added lines": "+    TF_LITE_ENSURE_OK(context,\n+                      ResizeOutput(context, start, limit, delta, output));"
+},
+{
+    "Id": 92,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/b65d9ec2b78c7c23e368ed4eec7b4deb89dcd712",
+    "Violation": "insufficient",
+    "Bug report": "Fix value error generated on is_scalar check. Fix value error generated on is_scalar check. `is_scalar = shape is not None and not shape` raises a value error when shape is a scalar, \"ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()\"",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-      is_scalar = shape is not None and not shape",
+    "Added lines": "+      is_scalar = (shape is not None and isinstance(shape, collections_lib.Sequence)\n+                   and len(shape) == 0)"
+},
+{
+    "Id": 93,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/f22ca1dc88c70a0dc5696c37e6a2de6bcf8d60c7",
+    "Violation": "improper",
+    "Bug report": " Avoid segfault when init_value is not on default_mesh. To actually fix the segfault in lower level (e.g. directly users of VarHandleOp), I tried to add a validation in SPMD of AssignValueOp, but turns out it only knows the resource_layout is an 'empty' layout without any mesh information. We shall start tracking mesh of empty layout -- but changing the data model at this point is not very easy to do or to justify.",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-      super(DVariable, self).__init__(\n-          initial_value, *args, dtype=dtype, **kwargs)",
+    "Added lines": "+import contextlib\n+      mesh = self.layout.mesh if self.layout else None\n+      with api.run_on(mesh) if mesh else contextlib.nullcontext():\n+        super(DVariable, self).__init__(\n+            initial_value, *args, dtype=dtype, **kwargs)"
+},
+{
+    "Id": 94,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/8876a1796aeced8f89c279cbc98db9c7957ddbd1",
+    "Violation": "improper",
+    "Bug report": " Updated check for existence of TensorFlow objects to 'is not None' rather than 'if [object]'.",
+    "Number of deleted lines": 3,
+    "Deleted lines": "-  if sync_optimizer and startup_delay_steps > 0:\n-    if is_chief and sync_optimizer:\n-        if is_chief and sync_optimizer:",
+    "Added lines": "+  if sync_optimizer is not None and startup_delay_steps > 0:\n+    if is_chief and sync_optimizer is not None:\n+        if is_chief and sync_optimizer is not None:"
+},
+{
+    "Id": 95,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/11030308c5d25df5b36f8a583f1b4607e4ea2b7f",
+    "Violation": "missing",
+    "Bug report": " Add a check to check if all sharding strategies are dropped due to infinity costs",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    size_t num_skipped_due_to_infinity_costs = 0;\n+        num_skipped_due_to_infinity_costs++;\n+    CHECK_LT(num_skipped_due_to_infinity_costs, strategies->leaf_vector.size())\n+        << \"All strategies removed due to infinite resharding costs\";"
+},
+{
+    "Id": 96,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/19b2e1b5868a044df4622ef7e26fa5570ca52e5e",
+    "Violation": "insufficient",
+    "Bug report": "Only perform scalar check for a tensor shape if it's not empty.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    DCHECK(weights.shape_.IsScalar());",
+    "Added lines": "+    DCHECK(weights.shape_.IsEmpty() || weights.shape_.IsScalar());"
+},
+{
+    "Id": 97,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/9c92b50fc4b95985a0749101976d04896bf19bfe",
+    "Violation": "improper",
+    "Bug report": " [conv3d_transpose] Fix dim check for bias. Per discussion with @thaink, the previous way to do the dim check for bias is not correct. So we need this change.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    TF_LITE_ENSURE_EQ(context, NumElements(bias), SizeOfDimension(filter, 4));",
+    "Added lines": "+    TF_LITE_ENSURE_EQ(context, NumElements(bias), SizeOfDimension(filter, 3));"
+},
+{
+    "Id": 98,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/2e4d3951eb618a7c34d5e629fc2506ea2a62b4a7",
+    "Violation": "improper",
+    "Bug report": " Correct Tensor order for dilation2D. `gen_nn_ops.dilation2d` seems to be in `NHWC` while the parent function was asking for `NCHW`.  I corrected the doc and the check.",
+    "Number of deleted lines": 3,
+    "Deleted lines": "-    data_format: A `string`, only `\"NCHW\"` is currently supported.\n-  if data_format != \"NCHW\":\n-    raise ValueError(\"Data formats other than NCHW are not yet supported\")",
+    "Added lines": "+    data_format: A `string`, only `\"NHWC\"` is currently supported.\n+  if data_format != \"NHWC\":\n+    raise ValueError(\"Data formats other than NHWC are not yet supported\")"
+},
+{
+    "Id": 99,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/076ea8d84c2058b0d01d56dd9ddc3221a2e0c817",
+    "Violation": "insufficient",
+    "Bug report": "Also check dst_format",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-  bool allow_5d = rank == 5 && (src_format == \"NHWC\" || src_format == \"NCHW\");\n-  bool allow_5d = rank == 5 && (src_format == \"NHWC\" || src_format == \"NCHW\");",
+    "Added lines": "+  bool allow_5d = rank == 5 && (src_format == \"NHWC\" || src_format == \"NCHW\") &&\n+                  (dst_format == \"NHWC\" || dst_format == \"NCHW\");\n+  bool allow_5d = rank == 5 && (src_format == \"NHWC\" || src_format == \"NCHW\") &&\n+                  (dst_format == \"NHWC\" || dst_format == \"NCHW\");"
+},
+{
+    "Id": 100,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/ed06859189722af4dc8e4abd655926df066e587a",
+    "Violation": "missing",
+    "Bug report": "Add format check.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-",
+    "Added lines": "+      DCHECK(data_format == \"NCDHW\");\n+      DCHECK(data_format == \"NCHW\");"
+},
+{
+    "Id": 101,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/0d5668cbdc6b46d099bd3abd93374c09b2e8121f",
+    "Violation": "improper",
+    "Bug report": " [XLA:SHAPE_UTIL] Return nullopt instead of a check failure if the input dimensions are not sorted.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  CHECK(std::is_sorted(input_dim_indices.begin(), input_dim_indices.end()));",
+    "Added lines": "+  if (!std::is_sorted(input_dim_indices.begin(), input_dim_indices.end())) {\n+    return absl::nullopt;\n+  }"
+},
+{
+    "Id": 102,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/d7ec7b9415181fce88ea8fde39af9e8be5a8be97",
+    "Violation": "missing",
+    "Bug report": "Added generic check that shape has not more than 4 dimensions.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-            \"OP is supported, but tensor type doesn't match.\";",
+    "Added lines": "+    if (t->dims && t->dims->size >= 5) {\n+      return false;\n+    }\n+            \"OP is supported, but tensor type/shape doesn't supported.\";"
+},
+{
+    "Id": 103,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/824af2acfa0cdf897c08d91224aea0958c1afc02",
+    "Violation": "missing",
+    "Bug report": " Add ndmin check. Added ndmin check to allow maximum 32 ndmin to make same behavior as numpy. Currently it is crashing when very large ndmin is passed.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  max_ndmin = 32\n+  if ndmin > max_ndmin:\n+    raise ValueError('ndmin bigger than allowable number of dimensions: '\n+                     f'{max_ndmin}.')\n+  "
+},
+{
+    "Id": 104,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/b73a3c21a224f479af8d3b8af320c220a091906c",
+    "Violation": "missing",
+    "Bug report": "[XLA] Add check for potential out-of-bound access.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  TF_RET_CHECK(sort_dim >= 0 && sort_dim < increment.size())\n+      << \"Unexpected out-of-bound sort dimension \" << sort_dim\n+      << \" accessing increment of size \" << increment.size();"
+},
+{
+    "Id": 105,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/63753d5f1531b17cf8cbbf1d8b77c16edcfb9711",
+    "Violation": "improper",
+    "Bug report": " Change DCHECK_LE to DCHECK_LT when checking invariant on original indices for sorted items Indices of items should be strictly smaller than the size of the vector.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    DCHECK_LE(original_index, names.size());",
+    "Added lines": "+    DCHECK_LT(original_index, names.size());"
+},
+{
+    "Id": 106,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/ba91c04e001f417641e757a6417e5325c1c4e15e",
+    "Violation": "insufficient",
+    "Bug report": "Add more check to sparsity parameter verifier.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  if (sparsity->dim_metadata()->size() != total_dims) {",
+    "Added lines": "+  if (total_dims < tensor.shape()->size() ||\n+      sparsity->dim_metadata()->size() != total_dims) {"
+},
+{
+    "Id": 107,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/150a6c06b281246cb5a075a704fceeb257bb63af",
+    "Violation": "missing",
+    "Bug report": "Add a check on the 0th dimension of filter for DepthwiseConv.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  // Filter in DepthwiseConv is expected to be [1, H, W, O].\n+  TF_LITE_ENSURE_EQ(context, SizeOfDimension(filter, 0), 1);"
+},
+{
+    "Id": 108,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/bf686faeddcca97be6ad7b6421cb26ab1c3cea2c",
+    "Violation": "missing",
+    "Bug report": "TFLite: Enhance input check for ResizeNearestNeghbor",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-  // TODO(ahentz): Our current implementations rely on the inputs being 4D.\n-",
+    "Added lines": "+  // TODO(ahentz): Our current implementations rely on the input being 4D,\n+  // and the size being 1D tensor with exactly 2 elements.\n+  TF_LITE_ENSURE_EQ(context, size->dims->data[0], 2);\n+"
+},
+{
+    "Id": 109,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/48393637f8154be16088d84742485a0e153ecbb2",
+    "Violation": "improper",
+    "Bug report": "Change check to allow tensors with up to 6 dims.",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-  CHECK_LE(RequiredBufferSizeForShape(dims_array.shape()), 4)\n-      << \"dims vector can be no larger than 4 values\";",
+    "Added lines": "+  CHECK_LE(RequiredBufferSizeForShape(dims_array.shape()), 6)\n+      << \"dims vector can be no larger than 6 values\";"
+},
+{
+    "Id": 110,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/662128e8ca3411286b234553a7efc1356353d0f5",
+    "Violation": "missing",
+    "Bug report": " add rank checking for MEAN op. The MEAN op of NNAPI only supports a tensor with rank <= 4. Check the rank of the input tensor before delegating the op.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+      Expect(context->tensors[node->inputs->data[0]].dims->size <= 4,\n+             NNAPIValidationFailureType::kUnsupportedOperandValue,\n+             \"NNAPI does not support mean of a tensor with rank > 4\",\n+             &val_ctx);"
+},
+{
+    "Id": 111,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/9b947dd6377c022091c8aa005cdcff52c53ff5f0",
+    "Violation": "insufficient",
+    "Bug report": "Also check dst_format",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  bool allow_5d = rank == 5 && (src_format == \"NHWC\" || src_format == \"NCHW\");",
+    "Added lines": "+  bool allow_5d = rank == 5 && (src_format == \"NHWC\" || src_format == \"NCHW\") &&\n+                  (dst_format == \"NHWC\" || dst_format == \"NCHW\");"
+},
+{
+    "Id": 112,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/356f360e8772a2697ec0d30036237342549803f5",
+    "Violation": "missing",
+    "Bug report": " Add additional shape validation to compute_accidental_hits. In `compute_accidental_hits`, the `sampled_candidates` must be a vector, as is shown in the kernel implementation in `tensorflow/core/kernels candidate_sampler_ops.cc`. This fix adds shape validation of `sampled_candidates` in the shape function whenever possible.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-      // Validate true_classes.",
+    "Added lines": "+      // Validate true_classes, must be a matrix.\n+      // Validate sampled_candidates, must be a vector.\n+      ShapeHandle sampled_candidates;\n+      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 1, &sampled_candidates));"
+},
+{
+    "Id": 113,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/7c88788e63f3a747d2794175076db551d768734e",
+    "Violation": "missing",
+    "Bug report": " Shape validation of max_features in QuantizedReluX. In shape function of QuantizedReluX, `max_value` and `min_features` have shape validation but not `max_features`. This fix add restriction to `max_features` as well.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+      TF_RETURN_IF_ERROR(c->WithRank(c->input(3), 0, &unused));"
+},
+{
+    "Id": 114,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/c59c37e7b2d563967da813fa50fe20b21f4da683",
+    "Violation": "missing",
+    "Bug report": " Prevent array write out-of-bounds. If user passes an invalid axis, then we copy one too many dimensions to the output in the loop below these checks. Even if we didn't do that, there will be further issues with an invalid axis, so we check for that right now.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  TF_LITE_ENSURE(context, axis_value >= 0);\n+  TF_LITE_ENSURE(context, axis_value < NumDimensions(input));\n+"
+},
+{
+    "Id": 115,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/402d478a107e2931fb0e9b2f08f973997cae7f98",
+    "Violation": "improper",
+    "Bug report": "Move the checking of ranks for early exit",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  if (!ShouldProcess(*context, *node) || (rank != 4 && rank != 5) ||",
+    "Added lines": "+  if (rank != 4 && rank != 5) {\n+    return Status::OK();\n+  }\n+  if (!ShouldProcess(*context, *node) ||"
+},
+{
+    "Id": 116,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/4a1d1c8413a3752af7dc91a7128e202660b0f05c",
+    "Violation": "improper",
+    "Bug report": " Fix mismatch of shape restriction in DrawBoundingBoxes. In the kernel of DrawBoundingBoxes, the shape of the input images should be 4-D. Though in the shape function, at the end `UnchangedShapeWithRankAtLeast(c, 3)` was used instead (at the beginning of the shape function the validation is `WithRank(c->input(0), 4, &images)` which is correct). This fix address the discrepancy by changing to `UnchangedShape`.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-      return shape_inference::UnchangedShapeWithRankAtLeast(c, 3);",
+    "Added lines": "+      // The rank of the input image (rank = 4) has already been restricted\n+      // above, and the output is of the same shape as the input.\n+      return shape_inference::UnchangedShape(c);"
+},
+{
+    "Id": 117,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/6e153325b66330dafea4e4e8b67b5d56b1a37852",
+    "Violation": "missing",
+    "Bug report": " [XLA:GPU] Handle edge case in Triton Softmax rewriter where bitcast produces a scalar. This avoids crashing within last_dimension when attempting to match.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  if (bitcast->shape().rank() == 0) {\n+    return true;\n+  }\n+"
+},
+{
+    "Id": 118,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/d94ffe08a65400f898241c0374e9edc6fa8ed257",
+    "Violation": "missing",
+    "Bug report": " Prevent an OOB read in expand_dims.cc. The for loop that follows this check assumes that `axis` is between `0` and `input_dims.size`. If user supplied `axis` is negative, the if code before this check is supposed to bring it back to positive (similar to how in Python one can do `l[-3]` to mean `l[-3 + len(l)]`).",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  TF_LITE_ENSURE(context, axis >= 0);"
+},
+{
+    "Id": 119,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/a680ed0bf03d5ca3b2c4a70c0d95eeebc20da6d6",
+    "Violation": "missing",
+    "Bug report": " For Substr check pos and len rank equality only when their rank is known. This fixes a bug where len has unknown rank, while pos has known shape. The WithRank(...) check returned error in such a case. Here we compare their ranks only when both pos and len have known rank.",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-      // Check that pos/len have same rank\n-      TF_RETURN_IF_ERROR(c->WithRank(pos_shape, c->Rank(len_shape), &unused));",
+    "Added lines": "+      // If len rank is known, check that pos and len have the same rank\n+      if (c->RankKnown(len_shape)) {\n+        TF_RETURN_IF_ERROR(c->WithRank(pos_shape, c->Rank(len_shape), &unused));\n+      }"
+},
+{
+    "Id": 120,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/9187be7adff07be82856add498aa3ff4b5f95998",
+    "Violation": "missing",
+    "Bug report": "add checks for compression_type and buffer_size also",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+      // `compression_type` could only be a scalar.\n+      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));\n+      // `buffer_size` could only be a scalar.\n+      TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &unused));"
+},
+{
+    "Id": 121,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/c4dea2255c71037c9cade9cbd1d7820b3429b3fa",
+    "Violation": "missing",
+    "Bug report": "Add shape check for buffer_size with TFRecordDataset",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+      // `buffer_size` could only be a scalar.\n+      TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &unused) );"
+},
+{
+    "Id": 122,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/d97ffbdf362fa7d06ef8d946c8620ff7a3a50a08",
+    "Violation": "missing",
+    "Bug report": "Add shape check for compression_type in TFrecordDataset",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+      // `compression_type` could only be a scalar.\n+      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused) );"
+},
+{
+    "Id": 123,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/851177fee860211e2fabcb019d644e75b7f701b0",
+    "Violation": "missing",
+    "Bug report": "Add shape check for shift of tf.roll",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+      // The `shift` must be scalar or 1-D.\n+      TF_RETURN_IF_ERROR(c->WithRankAtMost(c->input(1), 1, &unused));"
+},
+{
+    "Id": 124,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/3f796ff8c9e6d7ff88f99c056b78e88fb0b31114",
+    "Violation": "missing",
+    "Bug report": "Add axis shape check for tf.roll",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+      // The `axis` must be scalar or 1-D.\n+      TF_RETURN_IF_ERROR(c->WithRankAtMost(c->input(2), 1, &unused));"
+},
+{
+    "Id": 125,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/41deb95a7bde735d3c8b9adedd8b1fe8c1ef2732",
+    "Violation": "missing",
+    "Bug report": "support unknown rank, check rank>=0",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  if(rank == kUnknownRank) {\n+    return UnknownShape();\n+  }\n+  CHECK_GE(rank,0) << \"rank must not be negative\";"
+},
+{
+    "Id": 126,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/8b742f8559e88474735d0a2c03e00da65e40b412",
+    "Violation": "missing",
+    "Bug report": "Fix check error on shape overflow.",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-    input_matrix_shapes->emplace_back(\n-        std::initializer_list<int64_t>({num_rows, num_cols}));",
+    "Added lines": "+    TensorShape input_shape;\n+    OP_REQUIRES_OK(context, TensorShape::BuildTensorShape({num_rows, num_cols},\n+                                                          &input_shape));\n+    input_matrix_shapes->push_back(std::move(input_shape));"
+},
+{
+    "Id": 127,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/1595906c2192b7f402f746652042a592ad290378",
+    "Violation": "missing",
+    "Bug report": " Prevent CHECK-fail DOS in BoostedTreesSparseAggregateStatsOp. Calling `tensor->matrix` should only happen after checking that the tensor shape implies a matrix.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    OP_REQUIRES(context, TensorShapeUtils::IsMatrix(feature_indices_t->shape()),\n+                errors::InvalidArgument(\n+                    \"feature_indices must be a matrix, received shape \",\n+                    feature_indices_t->shape().DebugString()));"
+},
+{
+    "Id": 128,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/54c94431e5dd17fc46d99da1a3f132c76414c161",
+    "Violation": "missing",
+    "Bug report": " Prevent CHECK-fail DOS in BoostedTreesSparseAggregateStatsOp. Calling `tensor->matrix` should only happen after checking that the tensor shape implies a matrix.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    OP_REQUIRES(\n+        context, TensorShapeUtils::IsMatrix(hessians_t->shape()),\n+        errors::InvalidArgument(\"hessians must be a matrix, received shape \",\n+                                hessians_t->shape().DebugString()));"
+},
+{
+    "Id": 129,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/5d96267d907ac2119cbccf1416b749195e8fd8de",
+    "Violation": "missing",
+    "Bug report": " Prevent CHECK-fail DOS in BoostedTreesSparseAggregateStatsOp. Calling `tensor->matrix` should only happen after checking that the tensor shape implies a matrix.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    OP_REQUIRES(\n+        context, TensorShapeUtils::IsMatrix(gradients_t->shape()),\n+        errors::InvalidArgument(\"gradients must be a matrix, received shape \",\n+                                gradients_t->shape().DebugString()));"
+},
+{
+    "Id": 130,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/41ab69692ede0db3422fa70bc5889d470741e69c",
+    "Violation": "missing",
+    "Bug report": " Check for tensors to be vectors in BoostedTreesSparseAggregateStatsOp. Calling `tensor->vec` should only happen after checking that the tensor shape implies a vector. Otherwise, we can get denial of service via `CHECK`-fails",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    OP_REQUIRES(context, TensorShapeUtils::IsVector(feature_values_t->shape()),\n+                errors::InvalidArgument(\n+                    \"feature_values must be a vector, received shape \",\n+                    feature_values_t->shape().DebugString()));"
+},
+{
+    "Id": 131,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/8d733ecdb270dd90b2b5f53fd220d5ce17a5e20f",
+    "Violation": "missing",
+    "Bug report": " Check for tensors to be vectors in BoostedTreesSparseAggregateStatsOp. Calling `tensor->vec` should only happen after checking that the tensor shape implies a vector. Otherwise, we can get denial of service via `CHECK`-fails",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    OP_REQUIRES(\n+        context, TensorShapeUtils::IsVector(node_ids_t->shape()),\n+        errors::InvalidArgument(\"node_ids must be a vector, received shape \",\n+                                node_ids_t->shape().DebugString()));"
+},
+{
+    "Id": 132,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/80b65ab79bf8dd6ec03c570b59a1208bb27fec24",
+    "Violation": "improper",
+    "Bug report": " Small fix to axis check for tfl.pack to tosa. There was an off-by-one error when checking the axis value based on the input rank.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  if ((axis < 0) || (axis > (input_tensor_rank + 1))) {",
+    "Added lines": "+  if ((axis < 0) || (axis > input_tensor_rank)) {"
+},
+{
+    "Id": 133,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/c2ff14318050e26302785a49a1719d29ddcc91b4",
+    "Violation": "improper",
+    "Bug report": " [XNNPACK] Fix incorrect check in slice node. begin+size == input dimension is valid, e.g. input size is 3, begin is 2, size is 1.",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-      if (begin[i] + size[i] >= input_shape->data[i]) {\n-                                 \") must be less input \"",
+    "Added lines": "+      if (begin[i] + size[i] > input_shape->data[i]) {\n+                                 \") must not be greater than input \""
+},
+{
+    "Id": 134,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/d23458fdd2655c83ff9d54725062ded31b644ba4",
+    "Violation": "improper",
+    "Bug report": " [XLA:CPU] Do not check that the size of the XLA parameter buffer is exactly equal to the size of the underlying given buffer Instead, check that the underlying allocation is \"large enough\". This is also more consistent with XLA:GPU behavior. The mismatch can happen when the input comes from tf.where, which is backed by an allocation larger than is actually required.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    CHECK_EQ(allocation.size(), out.size())",
+    "Added lines": "+    CHECK_LE(allocation.size(), out.size())"
+},
+{
+    "Id": 135,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/23968a8bf65b009120c43b5ebcceaf52dbc9e943",
+    "Violation": "missing",
+    "Bug report": " Fix out of bound access in DequantizeOp by adding check for axis < input dimension",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+    OP_REQUIRES(\n+        ctx, axis_ < input.dims(),\n+        errors::InvalidArgument(\"Axis must be less than input dimension(\",\n+                                input.dims(), \"), got \", axis_));\n+"
+},
+{
+    "Id": 136,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/7e2d53c1c371f38c7f0ef13c1c06336b22a195c0",
+    "Violation": "missing",
+    "Bug report": "[tf.data] Adds the expected check for better debugging.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+        DCHECK(state_and_output.size() <=\n+               dataset()->state_types_.size() + output_dtypes().size());"
+},
+{
+    "Id": 137,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/a12b8c4afdca3ac2945d62b3b83ca2599ab360f9",
+    "Violation": "insufficient",
+    "Bug report": " [xla] Improve validation of Broadcast shape. If one misreads the semantics of this instruction, it's easy to cause an out of bounds access into the dimensions here. Add an extra check to return a proper error to the user rather than crashing in that case.",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-    TF_RET_CHECK(broadcast->shape().dimensions(output_dimension) ==\n-                 operand_shape.dimensions(operand_dimension))",
+    "Added lines": "+    TF_RET_CHECK((output_dimension < ShapeUtil::Rank(broadcast->shape())) &&\n+                 (broadcast->shape().dimensions(output_dimension) ==\n+                 operand_shape.dimensions(operand_dimension)))"
+},
+{
+    "Id": 138,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/05ec322172958f6e67e4bcaef4681e6aa54fabeb",
+    "Violation": "missing",
+    "Bug report": " Return error message with illegal input rather than check-failing in op_kernel.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+        TF_RET_CHECK(kernel->outputs[i].input_index >= 0)\n+            << \"Invalid input for outputs \" << i;"
+},
+{
+    "Id": 139,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/62cb54f2caf48480dc6b3c1ce9629eaac4688f83",
+    "Violation": "missing",
+    "Bug report": " Set 2nd output shape for SparseSegmentReduceGradV2 Fixes a debug check failure.",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  if (outputs_unique_indices) {\n+    c->set_output(1, c->Vector(InferenceContext::kUnknownDim));\n+  }"
+},
+{
+    "Id": 140,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/9b0f99ddd27e7738732a154be5469391ee8fc977",
+    "Violation": "missing",
+    "Bug report": "Add check to ensure element sizes are the same",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-",
+    "Added lines": "+  TFLITE_DCHECK_EQ(input1_shape.FlatSize(), input2_shape.FlatSize());"
+},
+{
+    "Id": 141,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/f8ec0f101bac066faa2e917ac714ca9eea310eac",
+    "Violation": "missing",
+    "Bug report": "adding checks that pad fusion works only Conv2D",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-",
+    "Added lines": "+      if(!isConv2D){\n+        OP_REQUIRES(context, padEnabled,\n+                errors::InvalidArgument(\"Pad+Conv fusion only works for 2D\"));\n+      }"
+},
+{
+    "Id": 142,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/edd9fb416e04b8ca4398c4eea65f14dc6704a44a",
+    "Violation": "unnecessary",
+    "Bug report": " TfLiteTensorCopy returns an error status when src and dest bytes are not equal. So we don't need to check them specifically if we ensure the status of the call to copy (which we should do anyways).",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-    TF_LITE_ENSURE_EQ(context, src_tensor->bytes, dst_tensor->bytes);\n-    TfLiteTensorCopy(src_tensor, dst_tensor);",
+    "Added lines": "+    TF_LITE_ENSURE_OK(context, TfLiteTensorCopy(src_tensor, dst_tensor));"
+}]
