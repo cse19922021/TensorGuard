@@ -86,17 +86,17 @@ def main():
         data = json.load(json_file)
         for j, item in enumerate(data):
             print(f"Record {j}/{len(data)}")
-        if use_base:
-            output = global_agent(item['Bug report'], item['Deleted lines'])
-        else:
-            a1 = code_observer(item['Deleted lines'], item['Added lines'])
-            a2 = bugReport_observer(item['Bug report'])
-            patch_ = path_generator(a1, a2)
-
-        data = [item['Commit Link'], patch_]
-        with open(f"output/output_2.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
-            write = csv.writer(file_writer)
-            write.writerow(data)
-                        
+            if use_base:
+                output = global_agent(item['Bug report'], item['Deleted lines'])
+            else:
+                a1 = code_observer(item['Deleted lines'], item['Added lines'])
+                a2 = bugReport_observer(item['Bug report'])
+                patch_ = path_generator(a2, a1, item['Deleted lines'])
+            
+            data = [item['Commit Link'], patch_]
+            with open(f"output/output_2.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
+                write = csv.writer(file_writer)
+                write.writerow(data)
+                            
 if __name__ == '__main__':
     main()
