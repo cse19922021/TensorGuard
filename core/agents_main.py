@@ -19,37 +19,34 @@ def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
     )
     return response
 
-def description_observer(commit_msg):
+def code_observer(code_removed, code_added):
     prompt_ = f"""
-    Please read the following bug report from a bug fixing commit that fixes a validation/checker bug and understand what is the root cause of the bug:
-    Bug report: {commit_msg}
-    Constraint: Do not explain the fixing pattern, only understand the root cause.
-    <answer start>
+    Please identify the rules for fixing the validation/checker bug in the following code change:
+    Question:{code_removed}{code_added}
+    <output>: 
     """
     response = completions_with_backoff(prompt_)
     return response.choices[0].message.content
 
-def code_observer(root_cause,deleted_code):
+def bugReport_observer(commit_message):
     prompt_ = f"""
-    You are given a buggy code and the root cause of the bug. Please try to think step by step and generate a steps to patch the bug:
-    Buggy code: {deleted_code}
-    Root cause: {root_cause}
-    Do not generate steps for testing and commiting bug. Only production code.
-    <answer start>
+    Please describe the bug based on the following commit message: {commit_message}
+    <output>
     """
     response = completions_with_backoff(prompt_)
     return response.choices[0].message.content
 
-def reasoning(root_cause, code_understanding, deleted_lines):
+def path_generator(bug_explanation, fixing_rules, code_snippet):
     prompt_ = f"""
-    Please read the root cause of the bug, the code explanation, deleted lines in the code change and 
-    think step by step and generate a steps to patch the bug.
+    You are given bug explanation and rules for fixing the bug. Then, think 
+    step by step and generate a patch for the code snippet. 
+    Please ignore any indentation problems in the code
+    snippet. Fixing indentation is not the goal of this task. If the
+    pattern can be applied, generate the patch.
 
-    Root cause: {root_cause}
-    Code explanation: {code_understanding}
-    Deleted lines: {deleted_lines}
-
-    Do not generate steps for testing and commiting bug. Only production code.
+    Bug explanation: {bug_explanation}
+    Rules for fixing the bug: {fixing_rules}
+    Code snippet: {code_snippet}
     <answer start>
     """
     response = completions_with_backoff(prompt_)
@@ -81,32 +78,25 @@ def global_agent(commit_msg, deleted_code):
     """
     response = completions_with_backoff(prompt_)
     return response.choices[0].message.content
-
+# Please combine the knowledge you gained from the commit message and the code change and describe how to fix the code.
 def main():
-    use_base = True
-    data_path = f"data/subject_data/data_2.json"
-    # for root, dirs, files in os.walk(r'data'):
-    #     for file in files:
-    #         if re.findall(r'(data\_)', file):
+    use_base = False
+    data_path = f"data/data_1.json"
     with open(data_path) as json_file:
-                    data = json.load(json_file)
-                    for j, item in enumerate(data):
-                        print(f"Record {j}/{len(data)}")
-                        if use_base:
-                            output = global_agent(item['Bug report'], item['Deleted lines'])
-                        else:
-                            a1 = description_observer(item['Bug report'])
-                            a2 = code_observer(a1, item['Deleted lines'])
-                            # a3 = reasoning(a1, a2, item['Deleted lines'])
-                            output = patch_generator(a2, item['Deleted lines'])
+        data = json.load(json_file)
+        for j, item in enumerate(data):
+            print(f"Record {j}/{len(data)}")
+        if use_base:
+            output = global_agent(item['Bug report'], item['Deleted lines'])
+        else:
+            a1 = code_observer(item['Deleted lines'], item['Added lines'])
+            a2 = bugReport_observer(item['Bug report'])
+            patch_ = path_generator(a1, a2)
 
-                        data = [
-                            item['Commit Link'],
-                            output
-                        ]
-                        with open(f"output/output_2.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
-                            write = csv.writer(file_writer)
-                            write.writerow(data)
+        data = [item['Commit Link'], patch_]
+        with open(f"output/output_2.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
+            write = csv.writer(file_writer)
+            write.writerow(data)
                         
 if __name__ == '__main__':
     main()

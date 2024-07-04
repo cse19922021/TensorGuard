@@ -133,21 +133,25 @@ def get_code_change(sha, libname):
                 changed_lines.append(cl)
                 before_union.append(modification.source_code_before.split('\n'))
                 after_union.append(modification.source_code.split('\n'))
-                stat.append([cl, modification.source_code_before, modification.diff_parsed['deleted']])
+                stat.append([cl, modification.source_code_before, modification.diff_parsed['deleted'], modification.source_code, modification.diff_parsed['added']])
     except Exception as e:
         print(e)
     return stat
 
-def slice_code_base(changed_lines, code, deleted_lines, ctx_window):
+def slice_code_base(changed_lines, code_before, deleted_lines, code, added_lines, ctx_window):
+    split_code_before = code_before.split('\n')
     split_code = code.split('\n')
     # if changed_lines[0][1][0]-ctx_window < len(split_code):
     #     lower_bound = changed_lines[0][1][0]
     #     upper_bound = changed_lines[0][1][1]+ctx_window
     # elif changed_lines[0][1][0]-ctx_window >  and
     for item in deleted_lines:
-        split_code[item[0]] = '<UPDATE>' + split_code[item[0]]
+        split_code_before[item[0]] = '-' + split_code_before[item[0]]
+    for item in added_lines:
+        split_code[item[0]] = '+' + split_code[item[0]]
+    split_code_before = split_code_before[changed_lines[0][1][0]-ctx_window:changed_lines[0][1][1]+ctx_window]
     split_code = split_code[changed_lines[0][1][0]-ctx_window:changed_lines[0][1][1]+ctx_window] 
-    return "\n".join(split_code)
+    return ["\n".join(split_code_before), "\n".join(split_code)]
 
 if __name__ == '__main__':
 
@@ -165,10 +169,13 @@ if __name__ == '__main__':
     data = pd.read_csv('data/data.csv')
     
     counter = 0
-    for ctx_ in [2]:
+    for ctx_ in [1]:
         for idx, row in data.iterrows():
-            
             print(row['Commit'])
+            
+            if row['Root Cause'] != 'edge cases':
+                continue
+            
             full_link = row['Commit'].split('/')[-1]
 
             if row['Library'] == 'tensorflow' or row['Library'] == 'pytorch':
@@ -184,9 +191,9 @@ if __name__ == '__main__':
             commit_stat = get_code_change(full_link, row['Library'])
             if commit_stat:
                 changed_lines = [commit_stat[0][0][key] for key in commit_stat[0][0]]
-                if len(changed_lines[0]) == 1 and len(commit_stat[0][2]) <= 10:
+                if len(changed_lines[0]) > 1 and len(commit_stat[0][2]) <= 5:
                     counter = counter + 1
-                    code = slice_code_base(changed_lines, commit_stat[0][1], commit_stat[0][2], ctx_)
+                    code = slice_code_base(changed_lines, commit_stat[0][1], commit_stat[0][2], commit_stat[0][3], commit_stat[0][4], ctx_)
                     
                     data_ = {
                         "Id": counter,
@@ -195,7 +202,8 @@ if __name__ == '__main__':
                         'Violation': row['Violation'],
                         'Bug report': row['bug report'],
                         "Number of deleted lines": len(commit_stat[0][2]),
-                        "Deleted lines": code}
+                        "Deleted lines": code[0],
+                        "Added lines": code[1]}
                                 
                     with open(f"data/data_{ctx_}.json", "a") as json_file:
                         json.dump(data_, json_file, indent=4)
@@ -205,6 +213,5 @@ if __name__ == '__main__':
                 else:
                     continue
         counter = 0
-        # deleted_lines, added_lines = separate_dadded_deleted(changes[0])
 
   
