@@ -1,5 +1,5 @@
 from pydriller import Repository
-import re, os, sys, json
+import re, os, sys, json, csv
 import pandas as pd
 import subprocess
 from unidiff import PatchSet
@@ -13,7 +13,11 @@ REG_CPP_CHECK = re.compile('error id=')
 FIND_CWE_IDENTIFIER = re.compile('CWE-(\d+)')
 FIND_RATS_VUL_TYPE = re.compile('<type.*>((.|\n)*?)<\/type>')
 
-
+def write_to_csv(data, agent_type):
+    with open(f"output/output_{agent_type}.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
+        write = csv.writer(file_writer)
+        write.writerow(data)
+        
 def separate_added_deleted(github_diff):
     diff_lines = github_diff.split('\n')
 
@@ -208,7 +212,7 @@ if __name__ == '__main__':
     data = pd.read_csv('data/data.csv')
     
     counter = 0
-    for ctx_ in [1]:
+    for ctx_ in [2]:
         for idx, row in data.iterrows():
             if row['Root Cause'] != 'edge cases':
                 pass
@@ -237,12 +241,12 @@ if __name__ == '__main__':
                         "Id": counter,
                         'Library': row['Library'],
                         'Commit Link': row['Commit'],
-                        'Violation': row['Violation'],
+                        'Root Cause': row['Root Cause'],
                         'Bug report': row['bug report'],
                         "Number of deleted lines": len(commit_stat[0][2]),
                         "Deleted lines": "\n".join(commit_stat[0][2]),
                         "Added lines": "\n".join(commit_stat[0][4])}
-                                
+            
                     with open(f"data/data_{ctx_}.json", "a") as json_file:
                         json.dump(data_, json_file, indent=4)
                         json_file.write(',')

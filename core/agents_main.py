@@ -3,30 +3,17 @@ from collections import Counter
 import os, re, json, tiktoken, backoff, csv
 from openai import OpenAI
 from dotenv import load_dotenv
-from transformers import RobertaTokenizer, RobertaModel
-from sklearn.metrics.pairwise import cosine_similarity
+import time
 
 load_dotenv()
 client = OpenAI(
     api_key=os.environ.get(".env")
 )
 
-tokenizer = RobertaTokenizer.from_pretrained("microsoft/codebert-base")
-model = RobertaModel.from_pretrained("microsoft/codebert-base")
-
 def write_to_csv(data, agent_type):
     with open(f"output/output_{agent_type}.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
         write = csv.writer(file_writer)
         write.writerow(data)
-
-def embed_code(input_code):
-    inputs = tokenizer(input_code, return_tensors="pt", max_length=512, truncation=True, padding="max_length")
-    outputs = model(**inputs)
-    embeddings = outputs.last_hidden_state.mean(dim=1).detach().numpy()
-    return embeddings
-    
-def calculate_similarity(src_, dest_):
-    return cosine_similarity(src_, dest_)
 
 # @backoff.on_exception(backoff.expo, openai.error.RateLimitError)
 def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
@@ -96,19 +83,21 @@ def fix_checker_bug(item, use_single_agent):
         fix_pattern = pattern_extraction_agent(item['Deleted lines'], item['Added lines'])
         patch_ = path_generation_agent(bug_understanding, fix_pattern, item['Deleted lines'])       
         #result = codebleu(item['Added lines'], patch_)
-        output_data = [item['Commit Link'], item['Added lines'], patch_, fix_pattern]
+        output_data = [item['Commit Link'], item['Added lines'], patch_, bug_understanding, fix_pattern]
     return output_data
 
     # print(f"The similarity score for records{j}::{calculate_similarity(actual_fix, patch_embed)}")
 
 def main():
     data_path = f"data/data_1.json"
+    agent_type = 'multi'
     with open(data_path) as json_file:
         data = json.load(json_file)
         for j, item in enumerate(data):
             print(f"Processing record:{j}/{len(data)}")
-            output_data = fix_checker_bug(item, use_single_agent=True)
-            write_to_csv(output_data, output_name = 'multi')
+            time.sleep(2)
+            output_data = fix_checker_bug(item, use_single_agent=False)
+            write_to_csv(output_data, agent_type)
 
                             
 if __name__ == '__main__':
