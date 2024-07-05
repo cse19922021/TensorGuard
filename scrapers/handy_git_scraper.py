@@ -211,7 +211,7 @@ if __name__ == '__main__':
     for ctx_ in [1]:
         for idx, row in data.iterrows():
             if row['Root Cause'] != 'edge cases':
-                continue
+                pass
             
             full_link = row['Commit'].split('/')[-1]
 
@@ -228,7 +228,7 @@ if __name__ == '__main__':
             commit_stat = get_code_change(full_link, row['Library'])
             if commit_stat:
                 changed_lines = [commit_stat[0][0][key] for key in commit_stat[0][0]]
-                if len(commit_stat[0][4]) < 6:
+                if len(commit_stat[0][4]) < 10:
                     print(row['Commit'])
                     counter = counter + 1
                     # code = slice_code_base(changed_lines, commit_stat[0][1], commit_stat[0][2], commit_stat[0][3], commit_stat[0][4], ctx_)
