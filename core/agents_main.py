@@ -3,12 +3,9 @@ from collections import Counter
 import os, re, json, tiktoken, backoff, csv
 from openai import OpenAI
 from dotenv import load_dotenv
-from tree_sitter import Language, Parser
-import tree_sitter as ts
-from nltk.translate.bleu_score import sentence_bleu
 from transformers import RobertaTokenizer, RobertaModel
 from sklearn.metrics.pairwise import cosine_similarity
-PY_LANGUAGE = Language(ts.language())
+
 load_dotenv()
 client = OpenAI(
     api_key=os.environ.get(".env")
@@ -21,46 +18,6 @@ def write_to_csv(data, agent_type):
     with open(f"output/output_{agent_type}.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
         write = csv.writer(file_writer)
         write.writerow(data)
-
-def parse_code(code, parser):
-    tree = parser.parse(bytes(code, "utf8"))
-    return tree
-
-def tokenize_code(tree):
-    cursor = tree.walk()
-    tokens = []
-    while True:
-        if cursor.node.type != "ERROR" and cursor.node.type != "COMMENT":
-            tokens.append(cursor.node.type)
-        if cursor.goto_first_child():
-            continue
-        if cursor.goto_next_sibling():
-            continue
-        while cursor.goto_parent():
-            if cursor.goto_next_sibling():
-                break
-        else:
-            break
-    return tokens
-
-def compute_bleu(reference_tokens, generated_tokens):
-    return sentence_bleu([reference_tokens], generated_tokens)
-
-def codebleu(reference_code, generated_code):
-    parser = Parser()
-    parser.language('cpp')
-    
-    ref_tree = parse_code(reference_code, parser)
-    gen_tree = parse_code(generated_code, parser)
-    
-    ref_tokens = tokenize_code(ref_tree)
-    gen_tokens = tokenize_code(gen_tree)
-    bleu_score = compute_bleu(ref_tokens, gen_tokens)
-    
-    codebleu_score = 0.5 * bleu_score 
-    
-    return codebleu_score
-
 
 def embed_code(input_code):
     inputs = tokenizer(input_code, return_tensors="pt", max_length=512, truncation=True, padding="max_length")
@@ -145,13 +102,11 @@ def fix_checker_bug(item, use_single_agent):
     # print(f"The similarity score for records{j}::{calculate_similarity(actual_fix, patch_embed)}")
 
 def main():
-    use_single = False
     data_path = f"data/data_1.json"
-    
     with open(data_path) as json_file:
         data = json.load(json_file)
         for j, item in enumerate(data):
-            # print(f"Record {j}/{len(data)}")
+            print(f"Processing record:{j}/{len(data)}")
             output_data = fix_checker_bug(item, use_single_agent=True)
             write_to_csv(output_data, output_name = 'multi')
 
