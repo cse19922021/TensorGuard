@@ -10,6 +10,11 @@ client = OpenAI(
     api_key=os.environ.get(".env")
 )
 
+def load_json(data_path):
+    with open(data_path) as json_file:
+        data = json.load(json_file)
+    return data
+
 def write_to_csv(data, agent_type):
     with open(f"output/output_{agent_type}.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
         write = csv.writer(file_writer)
@@ -42,14 +47,16 @@ def root_cause_analysis_agent(commit_message):
     response = completions_with_backoff(prompt_)
     return response.choices[0].message.content
 
-def path_generation_agent(bug_explanation, fixing_rules, code_snippet):
+def path_generation_agent(bug_explanation, _shot, fixing_rules, code_snippet):
     prompt_ = f"""
     You are given bug explanation and fixing pattern for fixing the bug. Then, think 
     step by step and generate a patch for the code snippet. 
     Please ignore any indentation problems in the code
     snippet. Fixing indentation is not the goal of this task. If the
     pattern can be applied, generate the patch.
-
+    
+    Example fix:{_shot['deleted']}{_shot['added']}
+    
     Bug explanation: {bug_explanation}
     Rules for fixing the bug: {fixing_rules}
     Code snippet: {code_snippet}
@@ -73,31 +80,35 @@ def single_agent(commit_msg, deleted_code):
     response = completions_with_backoff(prompt_)
     return response.choices[0].message.content
 
-def fix_checker_bug(item, use_single_agent):
+def fix_checker_bug(item, rule_data, use_single_agent):
     if use_single_agent:
         patch_ = single_agent(item['Bug report'], item['Deleted lines'])
-        #result = codebleu(item['Added lines'], patch_)
+
         output_data = [item['Commit Link'], item['Added lines'], patch_]
     else:
         bug_understanding = root_cause_analysis_agent(item['Bug report'])
         fix_pattern = pattern_extraction_agent(item['Deleted lines'], item['Added lines'])
-        patch_ = path_generation_agent(bug_understanding, fix_pattern, item['Deleted lines'])       
-        #result = codebleu(item['Added lines'], patch_)
+        _shot = rule_data[item['Root Cause']]['test']
+        patch_ = path_generation_agent(bug_understanding, _shot, fix_pattern, item['Deleted lines'])       
+
         output_data = [item['Commit Link'], item['Added lines'], patch_, bug_understanding, fix_pattern]
     return output_data
 
-    # print(f"The similarity score for records{j}::{calculate_similarity(actual_fix, patch_embed)}")
-
 def main():
-    data_path = f"data/data_1.json"
-    agent_type = 'multi'
+    data_path = f"data/data_2.json"
+    rule_path = f"data/rule_set.json"
+    agent_type = 'multi_one_shot'
+    
+    rule_data = load_json(rule_path)
+    
     with open(data_path) as json_file:
         data = json.load(json_file)
         for j, item in enumerate(data):
-            print(f"Processing record:{j}/{len(data)}")
-            time.sleep(2)
-            output_data = fix_checker_bug(item, use_single_agent=False)
-            write_to_csv(output_data, agent_type)
+            if item['Root Cause'] != 'others':
+                print(f"Processing record:{j}/{len(data)}")
+                time.sleep(2)
+                output_data = fix_checker_bug(item, rule_data, use_single_agent=False)
+                write_to_csv(output_data, agent_type)
 
                             
 if __name__ == '__main__':
