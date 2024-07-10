@@ -1,0 +1,50 @@
+[{
+    "Id": 1,
+    "Library": "pytorch",
+    "Commit Link": "https://github.com/pytorch/pytorch/commit/93cea394dee1315c7a85ead7bb7af21363157c4f",
+    "Root Cause": "device version",
+    "Bug report": "Currently we compare `CUDA_INCLUDE_DIRS` and expect exact equality with `CUDAToolkit_INCLUDE_DIR` however this fails in the presense of symbolic links or for split installs where there are multiple include paths.",
+    "Number of deleted lines": 4,
+    "Deleted lines": "-if(NOT CMAKE_CUDA_COMPILER_VERSION STREQUAL CUDAToolkit_VERSION OR\n-    NOT CUDA_INCLUDE_DIRS STREQUAL CUDAToolkit_INCLUDE_DIR)\n-  message(FATAL_ERROR \"Found two conflicting CUDA installs:\\n\"\n-                      \"V${CUDAToolkit_VERSION} in '${CUDAToolkit_INCLUDE_DIR}'\")",
+    "Added lines": "+if(NOT CMAKE_CUDA_COMPILER_VERSION VERSION_EQUAL CUDAToolkit_VERSION)\n+  message(FATAL_ERROR \"Found two conflicting CUDA versions:\\n\"\n+                      \"V${CUDAToolkit_VERSION} in '${CUDAToolkit_INCLUDE_DIRS}'\")"
+},
+{
+    "Id": 328,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/06b89ed1bdf606adb21d66664ca7ab5eaffdd58f",
+    "Root Cause": "others",
+    "Bug report": " BundleReader was not waiting for concurrents reads to complete before checking their result value. Also changed the large value reading test to actually exercise the multi-threaded reading path. Previously, the whole multi threaded path was being skipped because the reads were smaller than kBufferSize.",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    if (entry.size() > kBufferSize) {",
+    "Added lines": "+    if (entry.size() > kBufferSize || enable_multi_threading_for_testing_) {\n+        reader_pool = nullptr;  // Wait for reads to finish\n+"
+},
+{
+    "Id": 329,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/0317f64491ba42376d96b157983a02d8b31b679e",
+    "Root Cause": "tensor execution mode",
+    "Bug report": " Update RNNCell._rnn_get_variable to use Variable._trainable in TF2 mode. When using a legacy RNNCell in TF2 mode within a tf.function the \"var in trainable_variables()\" check led to treating a tf.bool tensor as a Python bool. This change makes use within a tf.function use the same logic that is used in Eager mode.",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-    if context.executing_eagerly():\n-      trainable = variable._trainable  # pylint: disable=protected-access",
+    "Added lines": "+    if ops.executing_eagerly_outside_functions():\n+      trainable = variable.trainable"
+},
+{
+    "Id": 330,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/b8c517ab4ef0bd851ef2f8187935fd3a90261af5",
+    "Root Cause": "tensor execution mode",
+    "Bug report": "Reinstate eager check inside _GradientsHelper",
+    "Number of deleted lines": 0,
+    "Deleted lines": "",
+    "Added lines": "+  if context.executing_eagerly():\n+    raise RuntimeError(\"tf.gradients is not supported when eager execution \"\n+                       \"is enabled. Use tf.GradientTape instead.\")"
+},
+{
+    "Id": 331,
+    "Library": "tensorflow",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/c9b4689bc4d4024aa16b7d6cfc1c65fa1ed8486e",
+    "Root Cause": "tensor execution mode",
+    "Bug report": "Removed no longer supported call to in_eager_execution. Swapped context.in_eager_execution() to the currently supported context.executing_eagerly(). Added negation to eager check. In all likelihood, the negation was always supposed to be there since getting default graph in eager mode does not make sense",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-  if not graph and context.in_eager_execution():",
+    "Added lines": "+  if not graph and not context.executing_eagerly():"
+}]

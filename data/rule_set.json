@@ -5,21 +5,6 @@
             {
                 "deleted": "-  TORCH_CHECK(std > 0.0, \"normal_ expects std > 0.0, but found std=\", std);  // TODO: dedupe",
                 "added": "+  TORCH_CHECK(std >= 0.0, \"normal_ expects std >= 0.0, but found std=\", std);  // TODO: dedupe"
-            },
-            "insufficient":
-            {
-                "deleted": "-        if input.dim() != 3:\n-            raise ValueError('expected 3D input (got {}D input)'",
-                "added": "+        if input.dim() != 2 and input.dim() != 3:\n+            raise ValueError('expected 2D or 3D input (got {}D input)'"
-            },
-            "missing":
-            {
-                "deleted": "",
-                "added": "+        TF_RET_CHECK(kernel->outputs[i].input_index >= 0)\n+            << \"Invalid input for outputs \" << i;"
-            },
-            "unnecessary":
-            {
-                "deleted": "-            if (idx < 0) {\n-              idx = idx + src_indexing_axis_dim;\n-            }\n-            if (idx < 0) {\n-              idx = idx + src_indexing_axis_dim;\n-            }\n-",
-                "added": ""
             }
         },
     "type checking":
@@ -28,26 +13,6 @@
                 {
                     "deleted": "-    assert isinstance(datapipe, IterDataPipe)",
                     "added": "+    assert isinstance(datapipe, (IterDataPipe, MapDataPipe))"
-                },
-            "insufficient":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "misleading":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "missing":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "unnecessary":
-                {
-                    "deleted": "",
-                    "added": ""
                 }
         },
     "null checker":
@@ -56,26 +21,6 @@
                 {
                     "deleted": "",
                     "added": "+    if (OperatorBase::InputBlob(0).GetRaw() == nullptr) {\n+      return true;\n+    }"
-                },
-            "insufficient":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "misleading":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "missing":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "unnecessary":
-                {
-                    "deleted": "",
-                    "added": ""
                 }
         },
     "boundary check":
@@ -84,26 +29,6 @@
                 {
                     "deleted": "-    TORCH_CHECK(i <= UINT32_MAX);\n-    iterShapeData[i] = (uint32_t)(iterShape[i]);\n-      strides[i][offset] = iter.strides(offset)[i];",
                     "added": "+  TORCH_CHECK(iter.can_use_32bit_indexing(), \"Can't be indexed using 32-bit iterator\");\n+    iterShapeData[i] = static_cast<uint32_t>(iterShape[i]);\n+      strides[i][offset] = static_cast<uint32_t>(iter.strides(offset)[i]);"
-                },
-            "insufficient":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "misleading":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "missing":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "unnecessary":
-                {
-                    "deleted": "",
-                    "added": ""
                 }
         },
     "misleading error message":
@@ -112,26 +37,6 @@
                 {
                     "deleted": "-                error_message += 'XPU Autocast only supports dtype of torch.bfloat16 currently.'",
                     "added": "+                error_message += 'XPU Autocast only supports dtypes of torch.bfloat16 and torch.float16 currently.'"
-                },
-            "insufficient":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "misleading":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "missing":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "unnecessary":
-                {
-                    "deleted": "",
-                    "added": ""
                 }
         },
     "device availability":
@@ -140,26 +45,6 @@
                 {
                     "deleted": "-        if not torch.cuda.is_available() and self.device == 'cuda':",
                     "added": "+        if torch.cuda.amp.common.amp_definitely_not_available() and self.device == 'cuda':"
-                },
-            "insufficient":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "misleading":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "missing":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "unnecessary":
-                {
-                    "deleted": "",
-                    "added": ""
                 }
         },
     "device version":
@@ -168,26 +53,6 @@
                 {
                     "deleted": "-#if CUDA_VERSION < 10000",
                     "added": "+#if defined(CUDA_VERSION) && (CUDA_VERSION < 10000)"
-                },
-            "insufficient":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "misleading":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "missing":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "unnecessary":
-                {
-                    "deleted": "",
-                    "added": ""
                 }
         },
     "tensor execution mode":
@@ -196,26 +61,6 @@
                 {
                     "deleted": "-    if context.executing_eagerly():\n-      trainable = variable._trainable  # pylint: disable=protected-access",
                     "added": "+    if ops.executing_eagerly_outside_functions():\n+      trainable = variable.trainable"
-                },
-            "insufficient":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "misleading":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "missing":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "unnecessary":
-                {
-                    "deleted": "",
-                    "added": ""
                 }
         },
     "computation graph":
@@ -224,26 +69,6 @@
                 {
                     "deleted": "-                if self.has_backedge():",
                     "added": "+                if self.has_backedge() and self.should_compile_partial_graph():"
-                },
-            "insufficient":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "misleading":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "missing":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "unnecessary":
-                {
-                    "deleted": "",
-                    "added": ""
                 }
         },
     "tensor quantization":
@@ -252,26 +77,6 @@
                 {
                     "deleted": "",
                     "added": "+                    if orig.is_quantized:\n+                        orig = orig.dequantize()\n+                    if ref.is_quantized:\n+                        ref = ref.dequantize()"
-                },
-            "insufficient":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "misleading":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "missing":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "unnecessary":
-                {
-                    "deleted": "",
-                    "added": ""
                 }
         },
     "backend type":
@@ -280,27 +85,7 @@
                 {
                     "deleted": "-                if self.args.ci and (\n-                    (\n-                        isinstance(e, RuntimeError)\n-                        and \"Internal Triton PTX codegen error\" in str(e)\n-                    or (isinstance(e, KeyError) and \"cubin\" in str(e))",
                     "added": "+from torch._dynamo.exc import BackendCompilerFailed\n+                if (\n+                    self.args.ci\n+                    and isinstance(e, BackendCompilerFailed)\n+                    and (\n+                        \"Internal Triton PTX codegen error\" in str(e)\n+                        or \"cubin\" in str(e)"
-                },
-            "insufficient":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "misleading":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "missing":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "unnecessary":
-                {
-                    "deleted": "",
-                    "added": ""
-                }  
+                }
         },
     "gradient status":
         {
@@ -308,26 +93,6 @@
                 {
                     "deleted": "-                        if output.is_cuda or 'cpu' in str(output.device):\n-                            convert_to_nested = True\n-                            output = torch._nested_tensor_from_mask(output, src_key_padding_mask.logical_not())",
                     "added": "+                        if not torch.is_grad_enabled() or all([not x.requires_grad for x in tensor_args]):\n+                            if output.is_cuda or 'cpu' in str(output.device):\n+                                convert_to_nested = True\n+                                output = torch._nested_tensor_from_mask(output, src_key_padding_mask.logical_not())"
-                },
-            "insufficient":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "misleading":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "missing":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "unnecessary":
-                {
-                    "deleted": "",
-                    "added": ""
                 }
         },
         "device type":
@@ -336,26 +101,6 @@
                 {
                     "deleted": "-    if device_type.lower() == \"cuda\":" ,
                     "added": "+    if device_type and device_type.lower() == \"cuda\":"
-                },
-            "insufficient":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "misleading":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "missing":
-                {
-                    "deleted": "",
-                    "added": ""
-                },
-            "unnecessary":
-                {
-                    "deleted": "",
-                    "added": ""
                 }
         }
 }
