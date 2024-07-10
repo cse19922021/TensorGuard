@@ -47,7 +47,7 @@ def get_patches(splitted_lines):
                 start += 1
     
             end = addStart+addedLines-1
-            change_info[i] = [deletedStart, deletedStart+deletedLines]
+            change_info[i] = [deletedStart, deletedStart+deletedLines, addStart, addStart+addedLines]
 
     super_temp = []
     j = 0
@@ -133,10 +133,14 @@ def split_multiple_diffs(lines):
         diffs.append('\n'.join(current_diff_block))
     return diffs
 
-def new_added_deleted_lines(lines):
+def new_added_deleted_lines(lines, cl, source_code_before, source_code, context_window):
     split_lines = lines.split('\n')
+    source_code_before = source_code_before.split('\n')
+    source_code = source_code.split('\n')
+    
     added_lines_mod = []
     deleted_lines_mod = []
+
     for line in split_lines:
         if line.startswith('+++') or line.startswith('---'):
             continue  
@@ -147,10 +151,28 @@ def new_added_deleted_lines(lines):
         else:
             pass
     
+    if cl[0]-context_window < 0:
+        before_hung = source_code_before[cl[1]:cl[1]+context_window]
+        after_hung = source_code[cl[3]:cl[3]+context_window]
+        
+        added_lines_mod = added_lines_mod + after_hung
+        deleted_lines_mod = deleted_lines_mod + before_hung
+    else:
+        deleted_hung_before = source_code_before[cl[0]-context_window:cl[0]]
+        deleted_hung_after = source_code_before[cl[1]:cl[1]+context_window]
+        added_hung_before = source_code[cl[2]-context_window-1:cl[2]]
+        added_hung_after = source_code[cl[3]:cl[3]+context_window]
+        
+        added_lines_mod = added_hung_before + added_lines_mod + added_hung_after
+        deleted_lines_mod = deleted_hung_before + deleted_lines_mod + deleted_hung_after
+
+        
+    deleted_lines_mod = list(filter(lambda x: x != '', deleted_lines_mod))
+    added_lines_mod = list(filter(lambda x: x != '', added_lines_mod))
     return added_lines_mod, deleted_lines_mod
     
 
-def get_code_change(sha, libname):
+def get_code_change(sha, libname, context_window):
     changes = []
     changed_lines = []
     before_union = []
@@ -166,8 +188,9 @@ def get_code_change(sha, libname):
                 cl_list = changed_lines_to_list(cl)
                 added_lines = []
                 deleted_lines = []
-                for diff in diffs:
-                    added_, deleted_ = new_added_deleted_lines(diff)
+                for i, diff in enumerate(diffs):
+                    current_cl = cl[raw_name[0]][i+1]
+                    added_, deleted_ = new_added_deleted_lines(diff, current_cl, modification.source_code_before, modification.source_code, context_window)
                     added_lines = added_lines + added_
                     deleted_lines = deleted_lines + deleted_
                     # added_lines = get_added_deleted_lines(modification.diff_parsed['added'])
@@ -212,8 +235,9 @@ if __name__ == '__main__':
     data = pd.read_csv('data/data.csv')
     
     counter = 0
-    for ctx_ in [2]:
-        for idx, row in data.iterrows():
+    context_window = 4
+    
+    for idx, row in data.iterrows():
             if row['Root Cause'] != 'edge cases':
                 pass
             
@@ -229,7 +253,7 @@ if __name__ == '__main__':
             if not os.path.exists(repository_path):
                 subprocess.call('git clone '+v+' '+repository_path, shell=True)
                 
-            commit_stat = get_code_change(full_link, row['Library'])
+            commit_stat = get_code_change(full_link, row['Library'], context_window)
             if commit_stat:
                 changed_lines = [commit_stat[0][0][key] for key in commit_stat[0][0]]
                 if len(commit_stat[0][4]) < 10:
@@ -247,13 +271,13 @@ if __name__ == '__main__':
                         "Deleted lines": "\n".join(commit_stat[0][2]),
                         "Added lines": "\n".join(commit_stat[0][4])}
             
-                    with open(f"data/data_{ctx_}.json", "a") as json_file:
+                    with open(f"data/data.json", "a") as json_file:
                         json.dump(data_, json_file, indent=4)
                         json_file.write(',')
                         json_file.write('\n')
                     
                 else:
                     continue
-        counter = 0
+            counter = 0
 
   

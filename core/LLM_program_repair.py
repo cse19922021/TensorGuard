@@ -158,7 +158,7 @@ def main():
     data_path = f"data/data.json"
     rule_path = f"data/rule_set.json"
     exec_type = ['zero','one']
-    num_iter = 10
+    num_iter = 5
 
     rule_data = load_json(rule_path)
     data = load_json(data_path)
