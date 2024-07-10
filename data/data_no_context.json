@@ -4247,13 +4247,4 @@
     "Number of deleted lines": 2,
     "Deleted lines": "-    proto->CopyFrom(*proto_ptr);\n-    return Status::OK();",
     "Added lines": "+    if (proto_ptr->GetDescriptor() == proto->GetDescriptor()) {\n+      proto->CopyFrom(*proto_ptr);\n+      return Status::OK();\n+    }"
-}]{
-    "Id": 1,
-    "Library": "pytorch",
-    "Commit Link": "https://github.com/pytorch/pytorch/commit/45296f87ec865a7a500a6fd98353035c040d0cb7",
-    "Root Cause": "edge cases",
-    "Bug report": "Prior to this change ROCm was not exiting check_cuda, causing an exception at packaging.version.parse(torch.version.cuda),",
-    "Number of deleted lines": 8,
-    "Deleted lines": "    return packaging.version.parse(hip_str_version)\ndef check_cuda():\n-    if not torch.cuda.is_available():\n    # check if torch cuda version matches system cuda version\n    cuda_ver = get_cuda_version()\n    if cuda_ver != torch_cuda_ver:\n        # raise VerifyDynamoError(\n        warnings.warn(",
-    "Added lines": "    return packaging.version.parse(hip_str_version)\ndef check_cuda():\n+    if not torch.cuda.is_available() or torch.version.hip is not None:\n    # check if torch cuda version matches system cuda version\n    cuda_ver = get_cuda_version()\n    if cuda_ver != torch_cuda_ver:\n        # raise VerifyDynamoError(\n        warnings.warn("
-},
+}]

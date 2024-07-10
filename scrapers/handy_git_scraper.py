@@ -133,7 +133,7 @@ def split_multiple_diffs(lines):
         diffs.append('\n'.join(current_diff_block))
     return diffs
 
-def new_added_deleted_lines(lines, cl, source_code_before, source_code, context_window):
+def new_added_deleted_lines(lines, cl, source_code_before, source_code, context_window, use_context):
     split_lines = lines.split('\n')
     source_code_before = source_code_before.split('\n')
     source_code = source_code.split('\n')
@@ -150,29 +150,29 @@ def new_added_deleted_lines(lines, cl, source_code_before, source_code, context_
             deleted_lines_mod.append(line)
         else:
             pass
-    
-    if cl[0]-context_window < 0:
-        before_hung = source_code_before[cl[1]:cl[1]+context_window]
-        after_hung = source_code[cl[3]:cl[3]+context_window]
-        
-        added_lines_mod = added_lines_mod + after_hung
-        deleted_lines_mod = deleted_lines_mod + before_hung
-    else:
-        deleted_hung_before = source_code_before[cl[0]-context_window:cl[0]]
-        deleted_hung_after = source_code_before[cl[1]:cl[1]+context_window]
-        added_hung_before = source_code[cl[2]-context_window-1:cl[2]]
-        added_hung_after = source_code[cl[3]:cl[3]+context_window]
-        
-        added_lines_mod = added_hung_before + added_lines_mod + added_hung_after
-        deleted_lines_mod = deleted_hung_before + deleted_lines_mod + deleted_hung_after
+    if use_context:
+        if cl[0]-context_window < 0:
+            before_hung = source_code_before[cl[1]:cl[1]+context_window]
+            after_hung = source_code[cl[3]:cl[3]+context_window]
+            
+            added_lines_mod = added_lines_mod + after_hung
+            deleted_lines_mod = deleted_lines_mod + before_hung
+        else:
+            deleted_hung_before = source_code_before[cl[0]-context_window:cl[0]]
+            deleted_hung_after = source_code_before[cl[1]:cl[1]+context_window]
+            added_hung_before = source_code[cl[2]-context_window-1:cl[2]]
+            added_hung_after = source_code[cl[3]:cl[3]+context_window]
+            
+            added_lines_mod = added_hung_before + added_lines_mod + added_hung_after
+            deleted_lines_mod = deleted_hung_before + deleted_lines_mod + deleted_hung_after
 
-        
-    deleted_lines_mod = list(filter(lambda x: x != '', deleted_lines_mod))
-    added_lines_mod = list(filter(lambda x: x != '', added_lines_mod))
+            
+        deleted_lines_mod = list(filter(lambda x: x != '', deleted_lines_mod))
+        added_lines_mod = list(filter(lambda x: x != '', added_lines_mod))
     return added_lines_mod, deleted_lines_mod
     
 
-def get_code_change(sha, libname, context_window):
+def get_code_change(sha, libname, context_window, use_context):
     changes = []
     changed_lines = []
     before_union = []
@@ -190,7 +190,7 @@ def get_code_change(sha, libname, context_window):
                 deleted_lines = []
                 for i, diff in enumerate(diffs):
                     current_cl = cl[raw_name[0]][i+1]
-                    added_, deleted_ = new_added_deleted_lines(diff, current_cl, modification.source_code_before, modification.source_code, context_window)
+                    added_, deleted_ = new_added_deleted_lines(diff, current_cl, modification.source_code_before, modification.source_code, context_window, use_context)
                     added_lines = added_lines + added_
                     deleted_lines = deleted_lines + deleted_
                     # added_lines = get_added_deleted_lines(modification.diff_parsed['added'])
@@ -235,49 +235,52 @@ if __name__ == '__main__':
     data = pd.read_csv('data/data.csv')
     
     counter = 0
-    context_window = 4
+    context_window = 2
+    line_of_code = 10
+    use_context = False
     
+    if use_context:
+        fname = f"data_{line_of_code}_{context_window}_context.json"
+    else:
+        fname = f"data_no_context.json"
     for idx, row in data.iterrows():
-            if row['Root Cause'] != 'edge cases':
-                pass
-            
-            full_link = row['Commit'].split('/')[-1]
+        full_link = row['Commit'].split('/')[-1]
 
-            if row['Library'] == 'tensorflow' or row['Library'] == 'pytorch':
-                repository_path = ROOT_DIR+'/ml_repos/'+row['Library']
-            else:
-                repository_path = ROOT_DIR+'/ml_repos/'+row['Library']+'/'+dir.split('_')[1].split('.')[0]
+        if row['Library'] == 'tensorflow' or row['Library'] == 'pytorch':
+            repository_path = ROOT_DIR+'/ml_repos/'+row['Library']
+        else:
+            repository_path = ROOT_DIR+'/ml_repos/'+row['Library']+'/'+dir.split('_')[1].split('.')[0]
 
-            v = f"https://github.com/{row['Library']}/{row['Library']}.git"
+        v = f"https://github.com/{row['Library']}/{row['Library']}.git"
 
-            if not os.path.exists(repository_path):
-                subprocess.call('git clone '+v+' '+repository_path, shell=True)
+        if not os.path.exists(repository_path):
+            subprocess.call('git clone '+v+' '+repository_path, shell=True)
                 
-            commit_stat = get_code_change(full_link, row['Library'], context_window)
-            if commit_stat:
-                changed_lines = [commit_stat[0][0][key] for key in commit_stat[0][0]]
-                if len(commit_stat[0][4]) < 10:
-                    print(row['Commit'])
-                    counter = counter + 1
+        commit_stat = get_code_change(full_link, row['Library'], context_window, use_context)
+        if commit_stat:
+            changed_lines = [commit_stat[0][0][key] for key in commit_stat[0][0]]
+            if len(commit_stat[0][4]) < line_of_code:
+                print(row['Commit'])
+                counter = counter + 1
                     # code = slice_code_base(changed_lines, commit_stat[0][1], commit_stat[0][2], commit_stat[0][3], commit_stat[0][4], ctx_)
                     
-                    data_ = {
-                        "Id": counter,
-                        'Library': row['Library'],
-                        'Commit Link': row['Commit'],
-                        'Root Cause': row['Root Cause'],
-                        'Bug report': row['bug report'],
-                        "Number of deleted lines": len(commit_stat[0][2]),
-                        "Deleted lines": "\n".join(commit_stat[0][2]),
-                        "Added lines": "\n".join(commit_stat[0][4])}
-            
-                    with open(f"data/data.json", "a") as json_file:
-                        json.dump(data_, json_file, indent=4)
-                        json_file.write(',')
-                        json_file.write('\n')
+                data_ = {
+                    "Id": counter,
+                    'Library': row['Library'],
+                    'Commit Link': row['Commit'],
+                    'Root Cause': row['Root Cause'],
+                    'Bug report': row['bug report'],
+                    "Number of deleted lines": len(commit_stat[0][2]),
+                    "Deleted lines": "\n".join(commit_stat[0][2]),
+                    "Added lines": "\n".join(commit_stat[0][4])}
+                
+                with open(f"data/{fname}", "a") as json_file:
+                    json.dump(data_, json_file, indent=4)
+                    json_file.write(',')
+                    json_file.write('\n')
                     
-                else:
-                    continue
-            counter = 0
+            else:
+                continue
+            
 
   

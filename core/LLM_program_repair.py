@@ -3,7 +3,7 @@ from collections import Counter
 import os, re, json, tiktoken, backoff, csv
 from openai import OpenAI
 from dotenv import load_dotenv
-import time
+import time, random
 
 load_dotenv()
 client = OpenAI(
@@ -35,8 +35,8 @@ def load_json(data_path):
         data = json.load(json_file)
     return data
 
-def write_to_csv(data, agent_type, iteration):
-    with open(f"output/{agent_type}/output_{iteration}.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
+def write_to_csv(data, agent_type):
+    with open(f"output/{agent_type}/results.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
         write = csv.writer(file_writer)
         write.writerow(data)
 
@@ -155,14 +155,15 @@ def detect_fix_checker_bug(item, exec_mode,_shot_list, use_single_agent):
     return output_data
 
 def main():
-    data_path = f"data/data.json"
+    data_path = f"data/data_no_context.json"
     rule_path = f"data/rule_set.json"
-    exec_type = ['zero','one']
+    exec_type = ['zero', 'one']
     num_iter = 5
 
     rule_data = load_json(rule_path)
     data = load_json(data_path)
     
+    # data = random.sample(data, 3)
     for exec_mode in exec_type:        
         output_mode = f"{exec_mode}_shot"
         if exec_mode == 'one':
@@ -182,7 +183,8 @@ def main():
                     print(f"Running {exec_mode} shot: Iteration {i}: Record:{j}/{len(data)}")
                     time.sleep(2)
                     output_data = detect_fix_checker_bug(item, exec_mode, _shot, use_single_agent=False)
-                    write_to_csv(output_data, output_mode, i)
+                    output_data.insert(0, i)
+                    write_to_csv(output_data, output_mode)
                 else:
                     print('This commit has been already processed!')
 
