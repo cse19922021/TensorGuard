@@ -95,11 +95,11 @@ def pattern_extraction_agent(code_removed, code_added):
 def path_generation_agent(bug_explanation, _shot, fixing_rules, code_snippet, exec_mode):
     if exec_mode == 'zero':
         prompt_ = f"""
-        You are given bug explanation and fixing pattern for fixing the bug. Then, think 
-        step by step and generate a patch for the code snippet. 
-        Please ignore any indentation problems in the code
-        snippet. Fixing indentation is not the goal of this task. If the
-        pattern can be applied, generate the patch.
+        You are given bug explanation and fixing pattern for fixing a buggy code snippet. Please think 
+        step by step and generate a patch to fix the bug in the code snippet. 
+        Please neglect any issues related to the indentation in the code
+        snippet. Fixing indentation is not the goal of this task. If you think the given pattern can be applied,
+        generate the patch.
         
         Bug explanation: {bug_explanation}
         Rules for fixing the bug: {fixing_rules}
@@ -108,11 +108,11 @@ def path_generation_agent(bug_explanation, _shot, fixing_rules, code_snippet, ex
         """
     else:
         prompt_ = f"""
-        You are given bug explanation and fixing pattern for fixing the bug. Then, think 
-        step by step and generate a patch for the code snippet. 
-        Please ignore any indentation problems in the code
-        snippet. Fixing indentation is not the goal of this task. If the
-        pattern can be applied, generate the patch.
+        You are given bug explanation and fixing pattern for fixing a buggy code snippet. Please think 
+        step by step and generate a patch to fix the bug in the code snippet. 
+        Please neglect any issues related to the indentation in the code
+        snippet. Fixing indentation is not the goal of this task. If you think the given pattern can be applied, 
+        generate the patch.
         
         Example fix:{_shot['deleted']}{_shot['added']}
         
@@ -157,7 +157,7 @@ def detect_fix_checker_bug(item, exec_mode,_shot_list, use_single_agent):
 def main():
     data_path = f"data/data_no_context.json"
     rule_path = f"data/rule_set.json"
-    exec_type = ['zero', 'one']
+    exec_type = ['one']
     num_iter = 5
 
     rule_data = load_json(rule_path)
