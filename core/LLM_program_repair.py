@@ -65,7 +65,8 @@ def bug_detection_agent(commit_message, deleted_lines, added_lines, exec_mode, _
         You are an AI trained to detect bugs in code based on commit messages and code changes. 
         Given a commit message and code change, identify if it indicates a bug fix or not. Please generate YES or NO.
         
-        Example bug:{_shot['deleted']}{_shot['added']}
+        Example One:{_shot[0]['Deleted lines']}{_shot[0]['Added lines']}
+        Example Two:{_shot[1]['Deleted lines']}{_shot[1]['Added lines']}
         
         Commit message: {commit_message}
         Code change:{deleted_lines}{added_lines}
@@ -114,7 +115,8 @@ def path_generation_agent(bug_explanation, _shot, fixing_rules, code_snippet, ex
         snippet. Fixing indentation is not the goal of this task. If you think the given pattern can be applied, 
         generate the patch.
         
-        Example fix:{_shot['deleted']}{_shot['added']}
+        Example One:{_shot[0]['Deleted lines']}{_shot[0]['Added lines']}
+        Example Two:{_shot[1]['Deleted lines']}{_shot[1]['Added lines']}
         
         Bug explanation: {bug_explanation}
         Rules for fixing the bug: {fixing_rules}
@@ -138,7 +140,7 @@ def single_agent(commit_msg, deleted_code):
     response = completions_with_backoff(prompt_)
     return response.choices[0].message.content
 
-def detect_fix_checker_bug(item, exec_mode,_shot_list, use_single_agent):
+def tensorGuard(item, exec_mode,_shot_list, use_single_agent):
     if use_single_agent:
         patch_ = single_agent(item['Bug report'], item['Deleted lines'])
         output_data = [item['Commit Link'], item['Added lines'], patch_]
@@ -155,7 +157,7 @@ def detect_fix_checker_bug(item, exec_mode,_shot_list, use_single_agent):
     return output_data
 
 def main():
-    data_path = f"data/data_no_context.json"
+    data_path = f"data/data_no_context_new.json"
     rule_path = f"data/rule_set.json"
     exec_type = ['one']
     num_iter = 5
@@ -177,16 +179,19 @@ def main():
                 if item['Commit Link'] not in hist:
                     write_list_to_txt(item['Commit Link'], f'logs/{exec_mode}_shot/{exec_mode}_processed_commits_{i}.txt')
                     if exec_mode == 'one':
-                        _shot = rule_data[item['Root Cause']]['test']
+                        _shot = [rule_data[item['Root Cause']]['example1'], rule_data[item['Root Cause']]['example2']]
                     else:
                         _shot = []
+                    if item['Commit Link'] == _shot[0]['Commit Link'] or item['Commit Link'] == _shot[1]['Commit Link']:
+                        print('This instance is among one of the shots, so I am skipping this one!')
+                        continue
                     print(f"Running {exec_mode} shot: Iteration {i}: Record:{j}/{len(data)}")
                     time.sleep(2)
-                    output_data = detect_fix_checker_bug(item, exec_mode, _shot, use_single_agent=False)
+                    output_data = tensorGuard(item, exec_mode, _shot, use_single_agent=False)
                     output_data.insert(0, i)
                     write_to_csv(output_data, output_mode)
                 else:
-                    print('This commit has been already processed!')
+                    print('This instance has been already processed!')
 
                             
 if __name__ == '__main__':

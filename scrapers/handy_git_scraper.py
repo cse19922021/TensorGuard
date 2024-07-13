@@ -235,14 +235,14 @@ if __name__ == '__main__':
     data = pd.read_csv('data/data.csv')
     
     counter = 0
-    context_window = 2
+    context_window = 0
     line_of_code = 10
     use_context = False
     
     if use_context:
         fname = f"data_{line_of_code}_{context_window}_context.json"
     else:
-        fname = f"data_no_context.json"
+        fname = f"data_no_context_new.json"
     for idx, row in data.iterrows():
         full_link = row['Commit'].split('/')[-1]
 
