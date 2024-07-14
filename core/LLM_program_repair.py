@@ -86,7 +86,7 @@ def root_cause_analysis_agent(commit_message):
 
 def pattern_extraction_agent(code_removed, code_added):
     prompt_ = f"""
-    Please identify the common fixing pattern in the following code change.
+    Please identify the fixing pattern in the following code change.
     Question:{code_removed}{code_added}
     <output>: 
     """
@@ -146,7 +146,6 @@ def tensorGuard(item, exec_mode,_shot_list, use_single_agent):
         output_data = [item['Commit Link'], item['Added lines'], patch_]
     else:
         bug_label = bug_detection_agent(item['Bug report'], item['Deleted lines'], item['Added lines'], exec_mode, _shot_list)
-        print(bug_label)
         if is_buggy(bug_label):
             bug_understanding = root_cause_analysis_agent(item['Bug report'])
             fix_pattern = pattern_extraction_agent(item['Deleted lines'], item['Added lines'])
