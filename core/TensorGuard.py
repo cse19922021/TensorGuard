@@ -53,21 +53,17 @@ def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
 def bug_detection_agent(commit_message, deleted_lines, added_lines, exec_mode, _shot):
     if exec_mode == 'zero':
         prompt_ = f"""
-        You are an AI trained to detect bugs in code based on commit messages and code changes. 
-        Given a commit message and code change, detect if it is bug or not. Please generate YES or NO.
-        
-        Commit message: {commit_message}
-        Code change:{deleted_lines}{added_lines}
-        <output>
-        """
-    else:
-        prompt_ = f"""
-        You are an AI trained to detect bugs in code based on commit messages and code changes. 
-        Given a commit message and code change, identify if it indicates a bug fix or not. Please generate YES or NO.
-        
-        Example One:{_shot[0]['Deleted lines']}{_shot[0]['Added lines']}
-        Example Two:{_shot[1]['Deleted lines']}{_shot[1]['Added lines']}
-        
+        You are a skilled software engineer specializing in code review and bug detection.
+        Your task is to analyze the following commit message and code change to determine 
+        if there are any bugs related to checking or validation. 
+
+        Focus specifically on:
+        1. Missing validations: Are there any inputs or conditions that should be checked but aren't?
+        2. Improper validations: Are there any checks that are implemented incorrectly or incompletely?
+        3. Redundant validations: Are there any unnecessary or duplicate checks that could be removed?
+        4. Insufficient conditions: Are there any checks or validations that don't cover all necessary cases or scenarios?
+        5. Misleading conditions: Are there any conditions that could lead to incorrect program behavior or misinterpret the actual state?
+
         Commit message: {commit_message}
         Code change:{deleted_lines}{added_lines}
         <output>

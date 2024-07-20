@@ -17,15 +17,43 @@ REPO_LIST = ["https://github.com/pytorch/pytorch"]
 
 THIS_PROJECT = os.getcwd()
 
+def commit_has_less_than_10_loc(commit_hash):
+
+    diff_command = f"git diff-tree --no-commit-id --name-status -r {commit_hash}"
+    diff_output = subprocess.check_output(diff_command, shell=True, text=True)
+    
+    python_files = [line.split('\t')[1] for line in diff_output.splitlines() 
+                    if line.endswith('.py')]
+    
+    total_loc = 0
+    for file in python_files:
+
+        file_diff_command = f"git diff {commit_hash}^ {commit_hash} -- {file}"
+        file_diff = subprocess.check_output(file_diff_command, shell=True, text=True)
+
+        added_lines = len(re.findall(r'^\+(?!\+\+\+)', file_diff, re.MULTILINE))
+        removed_lines = len(re.findall(r'^-(?!---)', file_diff, re.MULTILINE))
+        
+        total_loc += added_lines + removed_lines
+    
+    return total_loc < 10
+
 def write_list_to_txt4(data, filename):
     with open(filename, "a", encoding='utf-8') as file:
         file.write(data+'\n')
+        
+def no_matches_in_commit(commit_message, patterns):
+    for pattern in patterns:
+        if re.findall(pattern, commit_message):
+            return False 
+    return True  
+
 
 def save_commit(data, lib):
-    if not os.path.exists(f'mining/commits/{lib}/'):
-        os.makedirs(f'mining/commits/{lib}/')
+    if not os.path.exists(f'mining/commits_new/{lib}/'):
+        os.makedirs(f'mining/commits_new/{lib}/')
 
-    with open(f"mining/commits/{lib}/{lib}.csv","a", newline="\n",) as fd:
+    with open(f"mining/commits_new/{lib}/{lib}.csv","a", newline="\n",) as fd:
         writer_object = csv.writer(fd)
         writer_object.writerow(data)
 
@@ -94,21 +122,21 @@ def main():
     v = REPO_LIST[0] + ".git"
 
     if not os.path.exists(
-        THIS_PROJECT + "/ml_repos_cloned/" + r_prime[3] + "/" + r_prime[4]
+        THIS_PROJECT + "/ml_repos/" + r_prime[3] + "/" + r_prime[4]
     ):
         subprocess.call(
             "git clone "
             + v
             + " "
             + THIS_PROJECT
-            + "/ml_repos_cloned/"
+            + "/ml_repos/"
             + r_prime[3]
             + "/"
             + r_prime[4],
             shell=True,
         )
 
-    r = Repo(THIS_PROJECT + "/ml_repos_cloned/" + r_prime[3] + "/" + r_prime[4])
+    r = Repo(THIS_PROJECT + "/ml_repos/" + r_prime[3] + "/" + r_prime[4])
 
     # subprocess.check_call(
     #     "./mining/checkout.sh %s "
@@ -141,15 +169,17 @@ def main():
     try:
         temp = []
         for i, com in enumerate(all_commits):
+            com.diff
             if com.hexsha not in hist:
                 write_list_to_txt4(com.hexsha, f'logs/{r_prime[3]}_parsed_commits.txt')
                 _date = datetime.fromtimestamp(com.committed_date)
 
-                _match1 = re.findall(rule_checks_initial, com.message)
-                _match2 = re.findall(rule_checks_l1, com.message)
-                _match3 = re.findall(rule_checks_l2, com.message)
-                _match4 = re.findall(rule_checks_l3, com.message)
-
+                # _match1 = re.findall(rule_checks_initial, com.message)
+                # _match2 = re.findall(rule_checks_l1, com.message)
+                # _match3 = re.findall(rule_checks_l2, com.message)
+                # _match4 = re.findall(rule_checks_l3, com.message)
+                patterns = [rule_checks_initial, rule_checks_l1, rule_checks_l2, rule_checks_l3]
+                _match1 = True
                 print("Analyzed commits: {}/{}".format(i, len(all_commits)))
 
                 parent = com.parents[0]
@@ -160,7 +190,8 @@ def main():
                 if len(diffs) == 1:
                     file_name = list(diffs.keys())
                     if 'test' not in file_name[0] and 'bug' in com.message:
-                        if _match1 or _match2 or _match3 or _match4:
+                        if no_matches_in_commit(com.message, patterns):
+                        # if _match1 or _match2 or _match3 or _match4:
                                 # prompt_ = stage_2_prompting(com.message, r_prime[3])
                                 # t_count = get_token_count(prompt_)
                                 # if t_count <= 4097:

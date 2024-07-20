@@ -14,7 +14,7 @@ FIND_CWE_IDENTIFIER = re.compile('CWE-(\d+)')
 FIND_RATS_VUL_TYPE = re.compile('<type.*>((.|\n)*?)<\/type>')
 
 def write_to_csv(data, agent_type):
-    with open(f"output/output_{agent_type}.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
+    with open(f"output_{agent_type}.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
         write = csv.writer(file_writer)
         write.writerow(data)
         
@@ -179,7 +179,8 @@ def get_code_change(sha, libname, context_window, use_context):
     after_union = []
     stat = []
     try:
-        for commit in Repository(f'ml_repos/{libname}', single=sha).traverse_commits():
+        for commit in Repository(f'ml_repos/{libname}/{libname}', single=sha).traverse_commits():
+            date_ = commit.author_date.strftime('%Y/%m/%d')
             for modification in commit.modified_files:
                 lines = modification.diff.splitlines()
                 diffs = split_multiple_diffs(lines)
@@ -199,7 +200,7 @@ def get_code_change(sha, libname, context_window, use_context):
                 changed_lines.append(cl)
                 before_union.append(modification.source_code_before.split('\n'))
                 after_union.append(modification.source_code.split('\n'))
-                stat.append([cl, modification.source_code_before, deleted_lines, modification.source_code, added_lines])
+                stat.append([cl, modification.source_code_before, deleted_lines, modification.source_code, added_lines, date_, commit])
     except Exception as e:
         print(e)
     return stat
@@ -232,17 +233,17 @@ if __name__ == '__main__':
         'code': []
     }
 
-    data = pd.read_csv('data/data.csv')
+    data = pd.read_csv('data/buggy_clean_data.csv')
     
     counter = 0
     context_window = 0
-    line_of_code = 10
+    line_of_code = 20
     use_context = False
     
     if use_context:
-        fname = f"data_{line_of_code}_{context_window}_context.json"
+        fname = f"data_{line_of_code}_{context_window}_buggy_clean_data.json"
     else:
-        fname = f"data_no_context_new.json"
+        fname = f"buggy_clean_data.json"
     for idx, row in data.iterrows():
         full_link = row['Commit'].split('/')[-1]
 
@@ -263,16 +264,33 @@ if __name__ == '__main__':
                 print(row['Commit'])
                 counter = counter + 1
                     # code = slice_code_base(changed_lines, commit_stat[0][1], commit_stat[0][2], commit_stat[0][3], commit_stat[0][4], ctx_)
+                
+                if row['Label'] == 'buggy':       
+                    data_ = {
+                        "Id": counter,
+                        'Library': row['Library'],
+                        'Date': commit_stat[-2],
+                        'Commit Link': row['Commit'],
+                        'Root Cause': row['Root Cause'],
+                        'Bug report': row['bug report'],
+                        "Number of deleted lines": len(commit_stat[0][2]),
+                        "Deleted lines": "\n".join(commit_stat[0][2]),
+                        "Added lines": "\n".join(commit_stat[0][4]),
+                        'Label': row['Label']}
+                else:
+                    data_ = {
+                        "Id": counter,
+                        'Library': row['Library'],
+                        'Date': commit_stat[0][-2],
+                        'Commit Link': row['Commit'],
+                        'Root Cause': row['Root Cause'],
+                        'Bug report': commit_stat[0][-1].msg,
+                        "Number of deleted lines": len(commit_stat[0][2]),
+                        "Deleted lines": "\n".join(commit_stat[0][2]),
+                        "Added lines": "\n".join(commit_stat[0][4]),
+                        'Label': row['Label']}
                     
-                data_ = {
-                    "Id": counter,
-                    'Library': row['Library'],
-                    'Commit Link': row['Commit'],
-                    'Root Cause': row['Root Cause'],
-                    'Bug report': row['bug report'],
-                    "Number of deleted lines": len(commit_stat[0][2]),
-                    "Deleted lines": "\n".join(commit_stat[0][2]),
-                    "Added lines": "\n".join(commit_stat[0][4])}
+                # write_to_csv([commit_stat[0][-1]], 'test')
                 
                 with open(f"data/{fname}", "a") as json_file:
                     json.dump(data_, json_file, indent=4)
