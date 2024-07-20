@@ -3,3 +3,10 @@ https://github.com/tensorflow/tensorflow/commit/471101427983a1e591e2661a873eb207
 https://github.com/tensorflow/tensorflow/commit/67352edf6c6a99c6e3d16bd10a55828428ad8f04
 https://github.com/tensorflow/tensorflow/commit/b7c807287d23254e04da48033cabd63e7380628f
 https://github.com/pytorch/pytorch/commit/601112fdb4107d0c0c4d9a3766789d5075b9af10
+https://github.com/pytorch/pytorch/commit/e00282fecfcb53790aebfb24cc48a8703577778e
+https://github.com/pytorch/pytorch/commit/f688d7a2f7dcb6caf5ded0e1eabedd5a7a6dc43b
+https://github.com/pytorch/pytorch/commit/235f24fc66078538249f978c275dc07c9e79d07e
+https://github.com/pytorch/pytorch/commit/ed5ea15714361db57aff7f8b6dbf6f9d6cb3e95c
+https://github.com/pytorch/pytorch/commit/479ce1c3a0dad2c3d182fc0b3f26e647b99c1253
+https://github.com/pytorch/pytorch/commit/cbd1c519c46186eb7c70590ba02f126297ee251f
+https://github.com/pytorch/pytorch/commit/16ecd6f99c468027e4a08feb273e4fb31bee50bb
