@@ -112,28 +112,6 @@
     "Added lines": "+    const bool isUndefined = toDestroy == UndefinedTensorImpl::singleton();\n+        toDestroy->refcount_ == 1 || (toDestroy->refcount_ == 0 && isUndefined),\n+        \"ExclusivelyOwned<Tensor> destroyed with isUndefined \", isUndefined, \" and refcount \", toDestroy->refcount_, \", expected 1 or, if isUndefined, 0!\");\n+        \"ExclusivelyOwned<Tensor> destroyed with isUndefined \", isUndefined, \" and weakcount \", toDestroy->weakcount_, \", expected 1 or, if isUndefined, 0!\");\n+    if (!isUndefined) {",
     "Label": "clean"
 },{
-    "Id": 1258,
-    "Library": "pytorch",
-    "Date": "2019/11/19",
-    "Commit Link": "https://github.com/pytorch/pytorch/commit/8e3486de81d848e5c9a375134b3b14998ac36654",
-    "Root Cause": "N.A",
-    "Bug report": "No debug symbols in release android buidls (#30123)\n\nSummary:\nPull Request resolved: https://github.com/pytorch/pytorch/pull/30123\n\nIn groovy string `'false'` is resolved as boolean `true`\n\nthats why even as in `gradle.properties`:\n```\nnativeLibsDoNotStrip=false\n```\nbranch `if (nativeLibsDoNotStrip)` always passed\n\nTest Plan: Imported from OSS\n\nDifferential Revision: D18606907\n\nPulled By: IvanKobzarev\n\nfbshipit-source-id: c10140e775624294c732e78ae3c41e05c7c9ad92",
-    "Number of deleted lines": 1,
-    "Deleted lines": "-        if (nativeLibsDoNotStrip) {",
-    "Added lines": "+        if (nativeLibsDoNotStrip.toBoolean()) {\n+            logger.warn('WARNING: nativeLibsDoNotStrip==true; debug symbols included')",
-    "Label": "clean"
-},{
-    "Id": 1295,
-    "Library": "pytorch",
-    "Date": "2019/03/20",
-    "Commit Link": "https://github.com/pytorch/pytorch/commit/bd1271338ada8eda28a72e028a5521480d118bfb",
-    "Root Cause": "N.A",
-    "Bug report": "Add python_variable._is_view for debugging. (#18197)\n\nSummary:\nI don't know if we actually want to expose this or not, but it's useful for debugging.\nPull Request resolved: https://github.com/pytorch/pytorch/pull/18197\n\nReviewed By: ezyang\n\nDifferential Revision: D14530712\n\nPulled By: gchanan\n\nfbshipit-source-id: 98fdba9cf113738f0db3a198c49365de536b9919",
-    "Number of deleted lines": 0,
-    "Deleted lines": "",
-    "Added lines": "+static PyObject * THPVariable__is_view(PyObject *self, PyObject* args)\n+{\n+  HANDLE_TH_ERRORS\n+  auto& self_ = reinterpret_cast<THPVariable*>(self)->cdata;\n+  if (self_.is_view()) {\n+    Py_RETURN_TRUE;\n+  } else {\n+    Py_RETURN_FALSE;\n+  }\n+  END_HANDLE_TH_ERRORS\n+}\n+\n+  {\"_is_view\", (PyCFunction)THPVariable__is_view, METH_NOARGS, NULL},",
-    "Label": "clean"
-},{
     "Id": 1311,
     "Library": "pytorch",
     "Date": "2018/12/13",

@@ -26,7 +26,7 @@ def is_buggy(input_string):
 def filter_dataset(dataset):
     filtered_dataset = []
     for item in dataset:
-        if item['Root Cause'] != 'others':
+        if item['Root Cause'] != 'Others' or item['Root Cause'] != 'others':
             filtered_dataset.append(item)
     return filtered_dataset
 
@@ -53,19 +53,24 @@ def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
 def bug_detection_agent(commit_message, deleted_lines, added_lines, exec_mode, _shot):
     if exec_mode == 'zero':
         prompt_ = f"""
-        You are a skilled software engineer specializing in code review and bug detection.
-        Your task is to analyze the following commit message and code change to determine 
-        if there are any bugs related to checking or validation. 
-
-        Focus specifically on:
-        1. Missing validations: Are there any inputs or conditions that should be checked but aren't?
-        2. Improper validations: Are there any checks that are implemented incorrectly or incompletely?
-        3. Redundant validations: Are there any unnecessary or duplicate checks that could be removed?
-        4. Insufficient conditions: Are there any checks or validations that don't cover all necessary cases or scenarios?
-        5. Misleading conditions: Are there any conditions that could lead to incorrect program behavior or misinterpret the actual state?
-
+        You are an AI trained to detect bugs in deep learning library backend code-base based on commit messages and code changes. 
+        Given a commit message and code change, detect if it is bug or not. Please generate YES or NO.
+        
         Commit message: {commit_message}
         Code change:{deleted_lines}{added_lines}
+        <output>
+        """
+    else:
+        prompt_ = f"""
+        You are an AI trained to detect bugs in deep learning library backend code-base based on commit messages and code changes. 
+        Given a commit message and code change, detect if it is bug or not. Please generate YES or NO.
+        
+        Example One:{_shot[0]['Deleted lines']}{_shot[0]['Added lines']}
+        Example Two:{_shot[1]['Deleted lines']}{_shot[1]['Added lines']}
+        
+        Commit message: {commit_message}
+        Code change:{deleted_lines}{added_lines}
+
         <output>
         """
         
@@ -101,6 +106,7 @@ def path_generation_agent(bug_explanation, _shot, fixing_rules, code_snippet, ex
         Bug explanation: {bug_explanation}
         Rules for fixing the bug: {fixing_rules}
         Code snippet: {code_snippet}
+        Your must generate a patch, with no additional explanation.
         <output>
         """
     else:
@@ -117,6 +123,7 @@ def path_generation_agent(bug_explanation, _shot, fixing_rules, code_snippet, ex
         Bug explanation: {bug_explanation}
         Rules for fixing the bug: {fixing_rules}
         Code snippet: {code_snippet}
+        Your must generate a patch, with no additional explanation.
         <output>
         """
     response = completions_with_backoff(prompt_)
@@ -152,10 +159,10 @@ def tensorGuard(item, exec_mode,_shot_list, use_single_agent):
     return output_data
 
 def main():
-    data_path = f"data/data_no_context_new.json"
+    data_path = f"data/inference_data.json"
     rule_path = f"data/rule_set.json"
-    exec_type = ['one']
-    num_iter = 5
+    exec_type = ['zero']
+    num_iter = 1
 
     rule_data = load_json(rule_path)
     data = load_json(data_path)
@@ -163,7 +170,7 @@ def main():
     # data = random.sample(data, 3)
     for exec_mode in exec_type:        
         output_mode = f"{exec_mode}_shot"
-        if exec_mode == 'one':
+        if exec_mode == 'few':
             data = filter_dataset(data)
         for i in range(num_iter):
             hisotry_file = f'logs/{exec_mode}_shot/{exec_mode}_processed_commits_{i}.txt'
@@ -173,17 +180,18 @@ def main():
             for j, item in enumerate(data):
                 if item['Commit Link'] not in hist:
                     write_list_to_txt(item['Commit Link'], f'logs/{exec_mode}_shot/{exec_mode}_processed_commits_{i}.txt')
-                    if exec_mode == 'one':
+                    if exec_mode == 'few':
                         _shot = [rule_data[item['Root Cause']]['example1'], rule_data[item['Root Cause']]['example2']]
+                        if item['Commit Link'] == _shot[0]['Commit Link'] or item['Commit Link'] == _shot[1]['Commit Link']:
+                            print('This instance is among one of the shots, so I am skipping this one!')
+                            continue
                     else:
                         _shot = []
-                    if item['Commit Link'] == _shot[0]['Commit Link'] or item['Commit Link'] == _shot[1]['Commit Link']:
-                        print('This instance is among one of the shots, so I am skipping this one!')
-                        continue
                     print(f"Running {exec_mode} shot: Iteration {i}: Record:{j}/{len(data)}")
                     time.sleep(2)
                     output_data = tensorGuard(item, exec_mode, _shot, use_single_agent=False)
                     output_data.insert(0, i)
+                    output_data.insert(1, item['Label'])
                     write_to_csv(output_data, output_mode)
                 else:
                     print('This instance has been already processed!')

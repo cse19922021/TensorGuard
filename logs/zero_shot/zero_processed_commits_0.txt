@@ -1,0 +1,4 @@
+https://github.com/tensorflow/tensorflow/commit/8405f33e590e1639927dcf0658724b03a5ee6ddc
+https://github.com/tensorflow/tensorflow/commit/471101427983a1e591e2661a873eb20790b93199
+https://github.com/tensorflow/tensorflow/commit/67352edf6c6a99c6e3d16bd10a55828428ad8f04
+https://github.com/tensorflow/tensorflow/commit/b7c807287d23254e04da48033cabd63e7380628f

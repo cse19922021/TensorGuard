@@ -1,5 +1,5 @@
 {
-    "edge cases":
+    "Edge Cases":
         {
             "example1":
                 {
@@ -15,7 +15,7 @@
                 }
             
         },
-    "type checking":
+    "Type Checking":
         {
             "example1":
                 {
@@ -30,7 +30,7 @@
                     "Commit Link": "https://github.com/pytorch/pytorch/commit/3611d26a25bd889627403a808ea667ac99c09904"
                 }
         },
-    "null checker":
+    "Null Value":
         {
             "example1":
                 {
@@ -45,7 +45,7 @@
                     "Commit Link": "https://github.com/pytorch/pytorch/commit/bde7b81f34925491fbcbb9e355697eb594e36923"
                 }
         },
-    "boundary check":
+    "Boundary Value":
         {
             "example1":
                 {
@@ -60,7 +60,7 @@
                     "Commit Link": "https://github.com/tensorflow/tensorflow/commit/1908d7ef706f0f3f8c7a300068355bf795fb3d17"
                 }
         },
-    "misleading error message":
+    "Error Message":
         {
             "example1":
                 {
@@ -75,7 +75,7 @@
                     "Commit Link": "https://github.com/pytorch/pytorch/commit/faa7eb81c634492b70fcc0327622bb0aa812cacd"
                 }
         },
-    "device availability":
+    "Device Availability":
         {
             "example1":
                 {
@@ -90,7 +90,7 @@
                     "Commit Link": "https://github.com/tensorflow/tensorflow/commit/b234ff0ee4ce87d21a3e5306b678e1fb4b1fedfc"
                 }
         },
-    "device version":
+    "Device Version":
         {
             "example1":
                 {
@@ -105,7 +105,7 @@
                     "Commit Link": "https://github.com/tensorflow/tensorflow/commit/6c472f6632c4864da749e7a4aee8c001a905287f"
                 }
         },
-    "tensor execution mode":
+    "Execution Mode":
         {
             "example1":
                 {
@@ -120,7 +120,7 @@
                     "Commit Link": "https://github.com/tensorflow/tensorflow/commit/8c3822edbb31cf71cedaf49f2167e45c1e2d0b83"
                 }
         },
-    "computation graph":
+    "Computation Graph":
         {
             "example1":
                 {
@@ -135,7 +135,7 @@
                     "Commit Link": "https://github.com/tensorflow/tensorflow/commit/264eb6ed1dbfb5e078c7dd977da8d7e633106fc5"
                 }
         },
-    "tensor quantization":
+    "Tensor Quantization":
         {
             "example1":
                 {
@@ -150,7 +150,7 @@
                     "Commit Link": "https://github.com/tensorflow/tensorflow/commit/2adf1114d4dc7ca30e5117acd2dc7aeb3279feb7"
                 }
         },
-    "backend type":
+    "Backend Type":
         {
             "example1":
                 {
@@ -165,7 +165,7 @@
                     "Commit Link": "https://github.com/pytorch/pytorch/commit/678c08bb55eef0c2e707a17d0cd6e50f5b9bd427"
                 }
         },
-    "device type":
+    "Device Type":
         {
             "example1":
                 {
@@ -178,6 +178,21 @@
                     "Deleted lines": "-    if (indices.is_cuda()) {",
                     "Added lines": "+    if (!indices.is_cpu()) {",
                     "Commit Link": "https://github.com/pytorch/pytorch/commit/a9deda5469a6ef73692a9dd796cc4eeba4436d6c"
+                }
+        },
+    "N.A":
+        {
+            "example1":
+                {
+                    "Deleted lines": "-        if (nativeLibsDoNotStrip) {",
+                    "Added lines": "+        if (nativeLibsDoNotStrip.toBoolean()) {\n+            logger.warn('WARNING: nativeLibsDoNotStrip==true; debug symbols included')",
+                    "Commit Link": "https://github.com/pytorch/pytorch/commit/8e3486de81d848e5c9a375134b3b14998ac36654"
+                },
+            "example2":
+                {
+                    "Deleted lines": "",
+                    "Added lines": "+static PyObject * THPVariable__is_view(PyObject *self, PyObject* args)\n+{\n+  HANDLE_TH_ERRORS\n+  auto& self_ = reinterpret_cast<THPVariable*>(self)->cdata;\n+  if (self_.is_view()) {\n+    Py_RETURN_TRUE;\n+  } else {\n+    Py_RETURN_FALSE;\n+  }\n+  END_HANDLE_TH_ERRORS\n+}\n+\n+  {\"_is_view\", (PyCFunction)THPVariable__is_view, METH_NOARGS, NULL},",
+                    "Commit Link": "https://github.com/pytorch/pytorch/commit/bd1271338ada8eda28a72e028a5521480d118bfb"
                 }
         }
 }

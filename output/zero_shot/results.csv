@@ -1,0 +1,44 @@
+0,clean,https://github.com/tensorflow/tensorflow/commit/8405f33e590e1639927dcf0658724b03a5ee6ddc,"+#include ""file/base/helpers.h""
++#ifdef PLATFORM_GOOGLE
++  // Exports the model for debugging.
++  bool dump_model = false;
++  if (dump_model) {
++    operations_research::MPModelProto model_proto;
++    solver->ExportModelToProto(&model_proto);
++    auto write_status = file::SetTextProto(
++        // Modify this file path if needed.
++        absl::StrCat(""/tmp/model_"", solver->NumVariables(), "".proto""),
++        model_proto, file::Defaults());
++    if (!write_status.ok()) {
++      LOG(ERROR) << write_status.message();
++    }
++  }
++#endif","#ifdef PLATFORM_GOOGLE
+    solver.ExportModelToProtoFile(""debug_model.proto"");
+#endif","The bug was caused by exporting the solver model for debugging, which likely led to unintended changes in the behavior of the solver or introduced errors in the exported model itself. This could have affected the accuracy or reliability of the solver's calculations, leading to incorrect results or unexpected behavior in the system.",This code change adds a conditional block that exports a model to a proto file for debugging purposes. The block is only executed if the `PLATFORM_GOOGLE` conditional compilation flag is defined.
+0,clean,https://github.com/tensorflow/tensorflow/commit/471101427983a1e591e2661a873eb20790b93199,"+  if (failed(mlir::hlo::verifyReplicaGroups(*this, /*isUniformSized=*/true)))
++      /*operandTypes=*/{operand().getType()},
++      /*resultTypes=*/{getType()},
++      /*scatterDimension=*/scatter_dimension());","- if (failed(mlir::hlo::verifyReplicaGroups(*this, /*isUniformSized=*/true)))
+-      /*operandTypes=*/{operand().getType()},
+-      /*resultTypes=*/{getType()},
+-      /*scatterDimension=*/scatter_dimension());",The root cause of the bug is related to a violation of the bugprone-argument-comment clang-tidy check in the hlo_ops.cc file. The commit message indicates that this bug was fixed by applying clang-tidy fixes for this specific issue.,"The fixing pattern in the code change is updating the variable names from camelCase to lowerCamelCase to match the naming convention used in the codebase. 
+
+Specifically, the following changes were made:
+- `/*is_uniform_sized=*/true` was changed to `/*isUniformSized=*/true`
+- `/*operand_types=*/{operand().getType()}` was changed to `/*operandTypes=*/{operand().getType()}`
+- `/*result_types=*/{getType()}` was changed to `/*resultTypes=*/{getType()}`
+- `/*scatter_dimension=*/scatter_dimension()` was changed to `/*scatterDimension=*/scatter_dimension()`"
+0,clean,https://github.com/tensorflow/tensorflow/commit/67352edf6c6a99c6e3d16bd10a55828428ad8f04,"+    if (VLOG_IS_ON(3)) {
++      bool src_override =
++          send_args.alloc_attrs.on_host() && !(parsed.src.type == ""CPU"");
++      bool dst_override =
++          recv_args.alloc_attrs.on_host() && !(parsed.dst.type == ""CPU"");
++      if (src_override || dst_override) {
++        VLOG(3) << ""Shortcut to keep tensor on host (src_override ""
++                << src_override << "" and dst_override "" << dst_override
++                << "") tensor dtype:"" << DataTypeString(in.dtype()) << "" ""
++                << parsed.FullKey();
++      }
++    }","if source.device != ""CPU"" or dst_device != ""CPU"":
+    logging.log(3, ""Data transfer override - Moving data from {} to {} for tensor key: {}"".format(source.device, dst_device, key))","The root cause of the bug is that data is always kept on the host even when it should be on a device like GPU, due to a missing condition check in the SameWorkerRecvDone function. This results in extra data transfer between the host and device, potentially impacting performance. To address this issue, debug logging is added to identify when this scenario occurs.","This code change adds a logging statement with the level set to 3. The condition checks if either the source or destination of data transfer is on the host and the source or destination type is not ""CPU"". If this condition is met, a log message is outputted to provide information on the override along with relevant details such as the tensor data type and the full key."
