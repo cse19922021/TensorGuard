@@ -128,3 +128,21 @@ In the original code, the condition for checking if `toDestroy` is `UndefinedTen
             .mapToObj(c -> (char) (c < 0x20 || c > 0x7F ? '?' : c))
             .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
             .toString();","The root cause of the bug was that when using ProtoBuf-Lite and calling ProtoDebugString, the SerializeAsString method was used, which produces binary output. This binary output caused problems when trying to add the debug string to a Java exception message, which requires valid UTF-8. The bug was resolved by replacing all non-ASCII bytes with ""?"" in order to ensure that the output is valid UTF-8.","The fixing pattern in this code change is to serialize the protobuf object, then iterate through each character in the serialized string and replace any character that is not a printable ASCII character (with ASCII values between 0x20 and 0x7f) with a question mark '?' before returning the sanitized serialized string."
+0,clean,https://github.com/pytorch/pytorch/commit/16ecd6f99c468027e4a08feb273e4fb31bee50bb,"+  if (${CMAKE_BUILD_TYPE} MATCHES ""Debug"")
++    set (MSVC_RUNTIME_LIBRARY_FLAG ""/MDd"")
++  else()
++    set (MSVC_RUNTIME_LIBRARY_FLAG ""/MD"")
++  endif()
++  
++    ${MSVC_RUNTIME_LIBRARY_OPTION}","if(CMAKE_BUILD_TYPE STREQUAL ""Debug"")
+    set(MSVC_RUNTIME_LIBRARY_FLAG ""/MDd"")
+else()
+    set(MSVC_RUNTIME_LIBRARY_FLAG ""/MD"")
+endif()",The root cause of the bug was that the files in torch/csrc were not being compiled with the /MDd runtime library option for debug builds on Windows. This caused issues with the debug build on Windows.,"The fixing pattern in the code change is adding an if-else condition based on the value of `${CMAKE_BUILD_TYPE}` to set the MSVC runtime library flag (MSVC_RUNTIME_LIBRARY_FLAG) either to ""/MDd"" for Debug build or ""/MD"" for other builds. This ensures that the correct MSVC runtime library flag is set based on the build type."
+0,clean,https://github.com/tensorflow/tensorflow/commit/84002d3519423aa5edca41e47761e5702173d7cf,"+  auto ptxas_version_tuple = GetAsmCompilerVersion(options.preferred_cuda_dir);
++  if (ptxas_version_tuple.value() == std::array<int64_t, 3>{12, 3, 1}) {
++    return tsl::errors::Internal(
++        absl::StrFormat(""ptxas 12.3.1 has a bug that we think can affect XLA. ""
++                        ""Please use a different version.""));
++  }","if ptxas_version_tuple == (12, 3, 1):
+    raise RuntimeError(""PTXAS version 12.3.1 is not supported due to known issues affecting XLA functionality. Please upgrade to a newer version."")","The root cause of the bug is that ptxas version 12.3.1 has a known issue that can affect XLA functionality. To prevent potential issues, the decision was made to explicitly error out when this version is detected.",This code change is to add a conditional check based on the value of the `ptxas_version_tuple` to return an error message if it matches a specific version (12.3.1).
