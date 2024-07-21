@@ -1,4 +1,48 @@
 [{
+    "Id": 73,
+    "Library": "tensorflow",
+    "Date": "2023/07/13",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/9335670d00c995294f8cb3eeb70ecc93fcae6bfe",
+    "Root Cause": "N.A",
+    "Bug report": "Do not run pjrt_c_api_gpu_test in debug mode due to failure.\n\nPiperOrigin-RevId: 547940227",
+    "Number of deleted lines": 1,
+    "Deleted lines": "-    tags = tf_cuda_tests_tags(),",
+    "Added lines": "+    tags = tf_cuda_tests_tags() + [\"nodebug\"],  # TODO(b/291073132): Test failing in debug mode.",
+    "Label": "clean"
+},{
+    "Id": 32,
+    "Library": "tensorflow",
+    "Date": "2024/01/22",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/ffc4b2535c52c03fd8da451c3333ef5588466234",
+    "Root Cause": "N.A",
+    "Bug report": "Suppress debug message when TryCast fails\n\nPiperOrigin-RevId: 600388683",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-    llvm::dbgs() << \"Failed to match \" << name << \" (\" << T::getOperationName()\n-                 << \").\\n\";",
+    "Added lines": "+    DEBUG_WITH_TYPE(\"mlir-quant-attrs-and-constraints\",\n+                    llvm::dbgs() << \"Failed to match \" << name << \" (\"\n+                                 << T::getOperationName() << \").\\n\");",
+    "Label": "clean"
+},{
+    "Id": 31,
+    "Library": "tensorflow",
+    "Date": "2024/01/22",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/072c9076d56230c72ef27c948abec5e5f6101adb",
+    "Root Cause": "N.A",
+    "Bug report": "Register IFFT2D for complex128.\n\nIt's required for the gradient of FFT2D, which already does have that type registered.  The XLA\nimplementation also seems to already be tested in `//third_party/tensorflow/python/kernel_tests/signal:fft_ops_test_xla_gpu` -\nadding debug statements, the kernel is compiled and executed correctly, even without the registration.\n\nPiperOrigin-RevId: 600503329",
+    "Number of deleted lines": 3,
+    "Deleted lines": "-REGISTER_XLA_OP(Name(\"IFFT\").TypeConstraint(\"Tcomplex\", DT_COMPLEX64),\n-REGISTER_XLA_OP(Name(\"IFFT2D\").TypeConstraint(\"Tcomplex\", DT_COMPLEX64),\n-REGISTER_XLA_OP(Name(\"IFFT3D\").TypeConstraint(\"Tcomplex\", DT_COMPLEX64),",
+    "Added lines": "+REGISTER_XLA_OP(Name(\"IFFT\").TypeConstraint(\"Tcomplex\",\n+                                            {DT_COMPLEX64, DT_COMPLEX128}),\n+REGISTER_XLA_OP(Name(\"IFFT2D\").TypeConstraint(\"Tcomplex\",\n+                                              {DT_COMPLEX64, DT_COMPLEX128}),\n+REGISTER_XLA_OP(Name(\"IFFT3D\").TypeConstraint(\"Tcomplex\",\n+                                              {DT_COMPLEX64, DT_COMPLEX128}),",
+    "Label": "clean"
+},{
+    "Id": 20,
+    "Library": "tensorflow",
+    "Date": "2024/03/20",
+    "Commit Link": "https://github.com/tensorflow/tensorflow/commit/33e9917b87b81e82eae5a7a8cade883f3d58203a",
+    "Root Cause": "N.A",
+    "Bug report": "PR #10687: [CPU] Add SimplifyFPConversions only if xla_allow_excess_precision\n\nImported from GitHub PR https://github.com/openxla/xla/pull/10687\n\nSeveral weeks ago it was a change which enables \"simplify-fp-conversions\" pass in cpu_compiler.cc for intel cpus unconditionally.\n\n[PR-8402](https://github.com/openxla/xla/pull/8402) - [XLA:CPU] [oneDNN] Enable Dot op (MatMul) in BF16 Type\n\nI noticed the following issue with having \"simplify-fp-conversions\" pass in cpu_compiler.cc enabled unconditionally.\n\nMy model uses bf16 operators (e.g. convolution). I want to jit compile and run it on CPU preserving intermediate bf16 accuracy.\n\nCpu compiler uses`float-normalization-bf16` pass which converts bf16 convolution to f32_convolution + convert_to_bf16 + convert_to_f32. (because typical cpu does not support bf16 computation)\n\nCpu compiler (on XEON) also uses `simplify-fp-conversions` pass which simplifies `f32_convolution + convert_to_bf16 + convert_to_f32` to just `f32_convolution`.\n\nAs the result - the whole model was converted to f32 precision internally and conversion to bf16 happens only at the very end.\n\nIn some cases we want to execute bf16 model on CPU but get results with accuracy similar to the case when it is executed on bf16 hardware.\n\nTo control the accuracy we can use debug_option `xla_allow_excess_precision`\nBy default it is true - hence, `simplify-fp-conversions` pass is enabled.\n\nIf we need to emulate bf16 computation on intel cpu we can set `XLA_FLAGS=\"--xla_allow_excess_precision=false\"` - in this case `simplify-fp-conversions` will not be added to cpu_compiler pipeline. f32 ops results will be converted to bf16 immediately. This will preserve bf16 accuracy internally.\n\n[gpu_compiler.cc](https://github.com/openxla/xla/blob/main/xla/service/gpu/gpu_compiler.cc#L1359) already enables `SimplifyFPConversions` pass only if `debug_options.xla_allow_excess_precision()` is true.\nCopybara import of the project:\n\n--\n796dc83ef34455e53b83c02dc68cd6d71306e654 by Alexander Pivovarov <pivovaa@amazon.com>:\n\n[CPU] Add SimplifyFPConversions only if xla_allow_excess_precision\n\nMerging this change closes #10687\n\nPiperOrigin-RevId: 617460913",
+    "Number of deleted lines": 2,
+    "Deleted lines": "-    pipeline.AddPass<SimplifyFPConversions>();\n-    pipeline.AddPass<SimplifyFPConversions>();",
+    "Added lines": "+    auto debug_options = module->config().debug_options();\n+    // Remove `f32 -> bf16 -> f32` casts inserted by bf16 normalization.\n+    if (debug_options.xla_allow_excess_precision()) {\n+      pipeline.AddPass<SimplifyFPConversions>();\n+    }\n+    if (debug_options.xla_allow_excess_precision()) {\n+      pipeline.AddPass<SimplifyFPConversions>();\n+    }",
+    "Label": "clean"
+},{
     "Id": 162,
     "Library": "tensorflow",
     "Date": "2023/01/09",

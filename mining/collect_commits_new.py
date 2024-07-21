@@ -5,7 +5,7 @@ from datetime import datetime
 from datetime import datetime, timezone
 from openai import OpenAI
 import backoff, time
-import openai
+import openai, sys
 import tiktoken
 from dotenv import load_dotenv
 load_dotenv()
@@ -13,30 +13,8 @@ load_dotenv()
 client = OpenAI(
     api_key=os.environ.get(".env")
 )
-REPO_LIST = ["https://github.com/pytorch/pytorch"]
 
 THIS_PROJECT = os.getcwd()
-
-def commit_has_less_than_10_loc(commit_hash):
-
-    diff_command = f"git diff-tree --no-commit-id --name-status -r {commit_hash}"
-    diff_output = subprocess.check_output(diff_command, shell=True, text=True)
-    
-    python_files = [line.split('\t')[1] for line in diff_output.splitlines() 
-                    if line.endswith('.py')]
-    
-    total_loc = 0
-    for file in python_files:
-
-        file_diff_command = f"git diff {commit_hash}^ {commit_hash} -- {file}"
-        file_diff = subprocess.check_output(file_diff_command, shell=True, text=True)
-
-        added_lines = len(re.findall(r'^\+(?!\+\+\+)', file_diff, re.MULTILINE))
-        removed_lines = len(re.findall(r'^-(?!---)', file_diff, re.MULTILINE))
-        
-        total_loc += added_lines + removed_lines
-    
-    return total_loc < 10
 
 def write_list_to_txt4(data, filename):
     with open(filename, "a", encoding='utf-8') as file:
@@ -45,8 +23,8 @@ def write_list_to_txt4(data, filename):
 def no_matches_in_commit(commit_message, patterns):
     for pattern in patterns:
         if re.findall(pattern, commit_message):
-            return False 
-    return True  
+            return True 
+    return False
 
 
 def save_commit(data, lib):
@@ -115,8 +93,8 @@ def get_token_count(string):
 
     return num_tokens
 
-def main():
-
+def main(library_name):
+    REPO_LIST = [f"https://github.com/{library_name}/{library_name}"]
     r_prime = REPO_LIST[0].split("/")
 
     v = REPO_LIST[0] + ".git"
@@ -174,12 +152,11 @@ def main():
                 write_list_to_txt4(com.hexsha, f'logs/{r_prime[3]}_parsed_commits.txt')
                 _date = datetime.fromtimestamp(com.committed_date)
 
-                # _match1 = re.findall(rule_checks_initial, com.message)
-                # _match2 = re.findall(rule_checks_l1, com.message)
-                # _match3 = re.findall(rule_checks_l2, com.message)
-                # _match4 = re.findall(rule_checks_l3, com.message)
+                _match1 = re.findall(rule_checks_initial, com.message)
+                _match2 = re.findall(rule_checks_l1, com.message)
+                _match3 = re.findall(rule_checks_l2, com.message)
+                _match4 = re.findall(rule_checks_l3, com.message)
                 patterns = [rule_checks_initial, rule_checks_l1, rule_checks_l2, rule_checks_l3]
-                _match1 = True
                 print("Analyzed commits: {}/{}".format(i, len(all_commits)))
 
                 parent = com.parents[0]
@@ -187,11 +164,14 @@ def main():
                 diffs  = {
                     diff.a_path: diff for diff in com.diff(parent)
                 }
-                if len(diffs) == 1:
-                    file_name = list(diffs.keys())
-                    if 'test' not in file_name[0] and 'bug' in com.message:
-                        if no_matches_in_commit(com.message, patterns):
-                        # if _match1 or _match2 or _match3 or _match4:
+                # if len(diffs) == 1:
+                file_name = list(diffs.keys())
+                if len(file_name) == 1:
+                    if 'test' in file_name or 'tests' in file_name:
+                        print('this change is related to tests, so I am ignoring it.')
+                        continue
+                        # if no_matches_in_commit(com.message, patterns):
+                if _match1 or _match2 or _match3 or _match4:
                                 # prompt_ = stage_2_prompting(com.message, r_prime[3])
                                 # t_count = get_token_count(prompt_)
                                 # if t_count <= 4097:
@@ -205,10 +185,9 @@ def main():
                                 commit_date = com.committed_date
                                 dt_object = datetime.fromtimestamp(commit_date)
                                 commit_date = dt_object.replace(tzinfo=timezone.utc)
-                                data = [commit_link, commit_date.strftime("%Y-%m-%d %H:%M:%S")]
-                                save_commit(data, r_prime[3])
-                    else:
-                        print("+++++++++++++++++++++++++++++++++++")
+                                if commit_date.year > 2021:
+                                    data = [commit_link, commit_date.strftime("%Y-%m-%d")]
+                                    save_commit(data, r_prime[3])
             else:
                 print('This commit has been already analyzed!')
 
@@ -216,4 +195,6 @@ def main():
         print(e)
 
 if __name__ == "__main__":
-    main()
+    library_name = sys.argv[1]
+    # library_name = 'pytorch'
+    main(library_name)

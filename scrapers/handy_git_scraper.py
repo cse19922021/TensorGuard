@@ -182,6 +182,8 @@ def get_code_change(sha, libname, context_window, use_context):
         for commit in Repository(f'ml_repos/{libname}/{libname}', single=sha).traverse_commits():
             date_ = commit.author_date.strftime('%Y/%m/%d')
             for modification in commit.modified_files:
+                if 'test' in modification.filename or 'tests' in modification.filename:
+                    continue
                 lines = modification.diff.splitlines()
                 diffs = split_multiple_diffs(lines)
                 #if file_name.split('/')[-1] == modification.filename:
@@ -233,17 +235,17 @@ if __name__ == '__main__':
         'code': []
     }
 
-    data = pd.read_csv('data/buggy_clean_data.csv')
+    data = pd.read_csv('mining/commits_new/pytorch/pytorch.csv')
     
     counter = 0
     context_window = 0
-    line_of_code = 20
+    line_of_code = 10
     use_context = False
     
     if use_context:
-        fname = f"data_{line_of_code}_{context_window}_buggy_clean_data.json"
+        fname = f"pytorch_json_data.json"
     else:
-        fname = f"buggy_clean_data.json"
+        fname = f"pytorch_json_data.json"
     for idx, row in data.iterrows():
         full_link = row['Commit'].split('/')[-1]
 
@@ -263,28 +265,14 @@ if __name__ == '__main__':
             if len(commit_stat[0][4]) < line_of_code:
                 print(row['Commit'])
                 counter = counter + 1
-                    # code = slice_code_base(changed_lines, commit_stat[0][1], commit_stat[0][2], commit_stat[0][3], commit_stat[0][4], ctx_)
-                
-                if row['Label'] == 'buggy':       
-                    data_ = {
+                    # code = slice_code_base(changed_lines, commit_stat[0][1], commit_stat[0][2], commit_stat[0][3], commit_stat[0][4], ctx_) 
+                data_ = {
                         "Id": counter,
                         'Library': row['Library'],
                         'Date': commit_stat[-2],
                         'Commit Link': row['Commit'],
                         'Root Cause': row['Root Cause'],
                         'Bug report': row['bug report'],
-                        "Number of deleted lines": len(commit_stat[0][2]),
-                        "Deleted lines": "\n".join(commit_stat[0][2]),
-                        "Added lines": "\n".join(commit_stat[0][4]),
-                        'Label': row['Label']}
-                else:
-                    data_ = {
-                        "Id": counter,
-                        'Library': row['Library'],
-                        'Date': commit_stat[0][-2],
-                        'Commit Link': row['Commit'],
-                        'Root Cause': row['Root Cause'],
-                        'Bug report': commit_stat[0][-1].msg,
                         "Number of deleted lines": len(commit_stat[0][2]),
                         "Deleted lines": "\n".join(commit_stat[0][2]),
                         "Added lines": "\n".join(commit_stat[0][4]),
