@@ -10,6 +10,19 @@ client = OpenAI(
     api_key=os.environ.get(".env")
 )
 
+def separate_added_deleted(github_diff):
+    diff_lines = github_diff.split('\n')
+
+    added_lines = ""
+    deleted_lines = ""
+
+    for line in diff_lines:
+        if line.startswith('+'):
+            added_lines += line[0:] + '\n'
+        elif line.startswith('-'):
+            deleted_lines += line[0:] + '\n'
+    return deleted_lines, added_lines
+
 def read_txt(fname):
     with open(fname, "r") as fileReader:
         data = fileReader.read().splitlines()
@@ -146,20 +159,19 @@ def single_agent(commit_msg, deleted_code):
 def tensorGuard(item, exec_mode,_shot_list, use_single_agent):
     if use_single_agent:
         patch_ = single_agent(item['Bug report'], item['Deleted lines'])
-        output_data = [item['Commit Link'], item['Added lines'], patch_]
     else:
         bug_label = bug_detection_agent(item['Bug report'], item['Deleted lines'], item['Added lines'], exec_mode, _shot_list)
         if is_buggy(bug_label):
             bug_understanding = root_cause_analysis_agent(item['Bug report'])
             fix_pattern = pattern_extraction_agent(item['Deleted lines'], item['Added lines'])
             patch_ = path_generation_agent(bug_understanding, _shot_list, fix_pattern, item['Deleted lines'], exec_mode)       
-            output_data = [item['Commit Link'], item['Added lines'], patch_, bug_understanding, fix_pattern]
+            output_data = [item['Deleted lines'], item['Added lines'], patch_, bug_understanding, fix_pattern]
         else:
-            output_data = [item['Commit Link'], item['Added lines'], 'Clean']
+            output_data = [item['Deleted lines'], item['Added lines'], 'No']
     return output_data
 
 def main():
-    data_path = f"data/inference_data.json"
+    data_path = f"tensorflow_data.json"
     rule_path = f"data/rule_set.json"
     exec_type = ['zero']
     num_iter = 1
@@ -178,21 +190,32 @@ def main():
                 f1 = open(hisotry_file, 'a')
             hist = read_txt(f'logs/{exec_mode}_shot/{exec_mode}_processed_commits_{i}.txt')
             for j, item in enumerate(data):
-                if item['Commit Link'] not in hist:
-                    write_list_to_txt(item['Commit Link'], f'logs/{exec_mode}_shot/{exec_mode}_processed_commits_{i}.txt')
-                    if exec_mode == 'few':
-                        _shot = [rule_data[item['Root Cause']]['example1'], rule_data[item['Root Cause']]['example2']]
-                        if item['Commit Link'] == _shot[0]['Commit Link'] or item['Commit Link'] == _shot[1]['Commit Link']:
-                            print('This instance is among one of the shots, so I am skipping this one!')
-                            continue
-                    else:
-                        _shot = []
-                    print(f"Running {exec_mode} shot: Iteration {i}: Record:{j}/{len(data)}")
-                    time.sleep(2)
-                    output_data = tensorGuard(item, exec_mode, _shot, use_single_agent=False)
-                    output_data.insert(0, i)
-                    output_data.insert(1, item['Label'])
-                    write_to_csv(output_data, output_mode)
+                if item['commit_link'] not in hist:
+                    write_list_to_txt(item['commit_link'], f'logs/{exec_mode}_shot/{exec_mode}_processed_commits_{i}.txt')
+                    for change in item['changes']:
+                        for patch_ in change['patches']:
+                            deleted_lines, added_lines = separate_added_deleted(patch_['content'])
+                            if exec_mode == 'few':
+                                _shot = [rule_data[item['Root Cause']]['example1'], rule_data[item['Root Cause']]['example2']]
+                                if item['commit_link'] == _shot[0]['commit_link'] or item['commit_link'] == _shot[1]['commit_link']:
+                                    print('This instance is among one of the shots, so I am skipping this one!')
+                                    continue
+                            else:
+                                _shot = []
+                            print(f"Running {exec_mode} shot: Iteration {i}: Record:{j}/{len(data)}")
+                            time.sleep(2)
+                            new_item = {
+                                'commit_link': item['commit_link'],
+                                'Bug report': item['message'],
+                                'Added lines': added_lines,
+                                'Deleted lines': deleted_lines
+                            }
+                            output_data = tensorGuard(new_item, exec_mode, _shot, use_single_agent=False)
+                            output_data.insert(0, i)
+                            output_data.insert(1, item['commit_link'])
+                            output_data.insert(2, change['path'])
+                            output_data.insert(5, item['label'])
+                            write_to_csv(output_data, output_mode)
                 else:
                     print('This instancee has been already processed!')
 

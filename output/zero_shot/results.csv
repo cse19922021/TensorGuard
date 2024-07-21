@@ -1,895 +1,105 @@
-0,clean,https://github.com/tensorflow/tensorflow/commit/8405f33e590e1639927dcf0658724b03a5ee6ddc,"+#include ""file/base/helpers.h""
-+#ifdef PLATFORM_GOOGLE
-+  // Exports the model for debugging.
-+  bool dump_model = false;
-+  if (dump_model) {
-+    operations_research::MPModelProto model_proto;
-+    solver->ExportModelToProto(&model_proto);
-+    auto write_status = file::SetTextProto(
-+        // Modify this file path if needed.
-+        absl::StrCat(""/tmp/model_"", solver->NumVariables(), "".proto""),
-+        model_proto, file::Defaults());
-+    if (!write_status.ok()) {
-+      LOG(ERROR) << write_status.message();
-+    }
-+  }
-+#endif","#ifdef PLATFORM_GOOGLE
-    solver.ExportModelToProtoFile(""debug_model.proto"");
-#endif","The bug was caused by exporting the solver model for debugging, which likely led to unintended changes in the behavior of the solver or introduced errors in the exported model itself. This could have affected the accuracy or reliability of the solver's calculations, leading to incorrect results or unexpected behavior in the system.",This code change adds a conditional block that exports a model to a proto file for debugging purposes. The block is only executed if the `PLATFORM_GOOGLE` conditional compilation flag is defined.
-0,clean,https://github.com/tensorflow/tensorflow/commit/471101427983a1e591e2661a873eb20790b93199,"+  if (failed(mlir::hlo::verifyReplicaGroups(*this, /*isUniformSized=*/true)))
-+      /*operandTypes=*/{operand().getType()},
-+      /*resultTypes=*/{getType()},
-+      /*scatterDimension=*/scatter_dimension());","- if (failed(mlir::hlo::verifyReplicaGroups(*this, /*isUniformSized=*/true)))
--      /*operandTypes=*/{operand().getType()},
--      /*resultTypes=*/{getType()},
--      /*scatterDimension=*/scatter_dimension());",The root cause of the bug is related to a violation of the bugprone-argument-comment clang-tidy check in the hlo_ops.cc file. The commit message indicates that this bug was fixed by applying clang-tidy fixes for this specific issue.,"The fixing pattern in the code change is updating the variable names from camelCase to lowerCamelCase to match the naming convention used in the codebase. 
+0,https://github.com/tensorflow/tensorflow/commit/35af094b674629be64b2efa02c8d5a8f15de5f18,third_party/xla/xla/service/gpu/fusions/reduction_mlir.cc,"-  // for the iteration. Otherwise, some threads might not be part of the loop.
+-  // The constraints are still checked inside the loop.
+","+  // for the iteration. Otherwise, some threads might not be part of the loop,
++  // resulting in incorrect results for the warp shuffle.
++  // The constraints are still checked inside the loop in the
++  // PredicatedExtractOp.
++  // The constraints may have reduced the upper bound of the dimension. If
++  // that's the case, we reset it to a multiple of the warp size.
++  auto& bound = loop_indexing.GetMutableDimensionBound(0);
++  bound.upper = RoundUpTo(bound.upper + 1, WarpSize()) - 1;
+","// Make sure the size of d0 is a multiple of the warp size to include all threads in the iteration
+d0 = ((n0 + blockDim.x - 1) / blockDim.x) * blockDim.x;  // Adjust the size of d0 to include all threads in the warp
 
-Specifically, the following changes were made:
-- `/*is_uniform_sized=*/true` was changed to `/*isUniformSized=*/true`
-- `/*operand_types=*/{operand().getType()}` was changed to `/*operandTypes=*/{operand().getType()}`
-- `/*result_types=*/{getType()}` was changed to `/*resultTypes=*/{getType()}`
-- `/*scatter_dimension=*/scatter_dimension()` was changed to `/*scatterDimension=*/scatter_dimension()`"
-0,clean,https://github.com/tensorflow/tensorflow/commit/67352edf6c6a99c6e3d16bd10a55828428ad8f04,"+    if (VLOG_IS_ON(3)) {
-+      bool src_override =
-+          send_args.alloc_attrs.on_host() && !(parsed.src.type == ""CPU"");
-+      bool dst_override =
-+          recv_args.alloc_attrs.on_host() && !(parsed.dst.type == ""CPU"");
-+      if (src_override || dst_override) {
-+        VLOG(3) << ""Shortcut to keep tensor on host (src_override ""
-+                << src_override << "" and dst_override "" << dst_override
-+                << "") tensor dtype:"" << DataTypeString(in.dtype()) << "" ""
-+                << parsed.FullKey();
-+      }
-+    }","if source.device != ""CPU"" or dst_device != ""CPU"":
-    logging.log(3, ""Data transfer override - Moving data from {} to {} for tensor key: {}"".format(source.device, dst_device, key))","The root cause of the bug is that data is always kept on the host even when it should be on a device like GPU, due to a missing condition check in the SameWorkerRecvDone function. This results in extra data transfer between the host and device, potentially impacting performance. To address this issue, debug logging is added to identify when this scenario occurs.","This code change adds a logging statement with the level set to 3. The condition checks if either the source or destination of data transfer is on the host and the source or destination type is not ""CPU"". If this condition is met, a log message is outputted to provide information on the override along with relevant details such as the tensor data type and the full key."
-0,clean,https://github.com/tensorflow/tensorflow/commit/b7c807287d23254e04da48033cabd63e7380628f,"+                                           std::string entry_function_name,
-+                                           HloModule* hlo_module) {
-+  if (DumpingEnabledForHloModule(*hlo_module)) {
-+    std::string tfrt_mlir;
-+    llvm::raw_string_ostream tfrt_mlir_ostream(tfrt_mlir);
-+    mlir_module.print(tfrt_mlir_ostream);
-+    DumpToFileInDirOrStdout(*hlo_module, """", ""tfrt_mlir"", tfrt_mlir);
-+  }
-+
-+  TF_ASSIGN_OR_RETURN(
-+      results->thunks_or_bef,
-+      LowerToBef(*mlir_module, entry_function.getName().str(), hlo_module));","results->thunks_or_bef = LowerToBef(*mlir_module, entry_function.getName().str(), *hlo_module); 
-if (DumpingEnabledForHloModule(*hlo_module)) { 
-    llvm::raw_string_ostream tfrt_mlir_ostream(tfrt_mlir); 
-    mlir_module.print(tfrt_mlir_ostream); 
-    DumpToFileInDirOrStdout(*hlo_module, """", ""tfrt_mlir"", tfrt_mlir);
-}","The root cause of the bug is that the TFRT MLIR text was being dumped even when debug options did not specify to do so. This means that the debug options were not being properly checked before dumping the TFRT MLIR text, leading to potentially unnecessary output being generated.","The fixing pattern in the code change is **add functionality**. 
-
-- A new functionality to dump the MLIR representation of `mlir_module` to a file or stdout based on the condition `DumpingEnabledForHloModule(*hlo_module)` is added.
-- The MLIR representation is generated by calling `mlir_module.print(tfrt_mlir_ostream)`.
-- Then, the MLIR representation is dumped to a file or stdout using `DumpToFileInDirOrStdout(*hlo_module, """", ""tfrt_mlir"", tfrt_mlir)`.
-- Finally, the function `LowerToBef` is called with an additional parameter `hlo_module`."
-0,clean,https://github.com/pytorch/pytorch/commit/601112fdb4107d0c0c4d9a3766789d5075b9af10,"+                log.debug(
-+                    ""skipping: %s (reason: %s, file: %s)"",
-+                    frame.f_code.co_name,
-+                    skip_reason,
-+                    frame.f_code.co_filename,
-+                )","-                if not is_skipfile or config.verbose:
-+                if not is_skipfile or config.verbose:
-                     log.debug(
--                        ""skipping: %s (reason: %s, file: %s)"",
-+                        ""skipping: %s (reason: %s, file: %s)"" % (frame.f_code.co_name, skip_reason, frame.f_code.co_filename)
-                     )","The root cause of the bug was that the missing skipped frame information was not being printed in the debug logs in the Dynamo logging system. This was addressed by the mentioned pull request by adding the necessary code to print this information, improving the debugging capabilities of the system.",This code change involves fixing the alignment issue in the debug log statement. The opening parenthesis of the `log.debug` statement was incorrectly aligned before the change and has been fixed to align properly with the rest of the arguments after the change.
-0,clean,https://github.com/pytorch/pytorch/commit/e00282fecfcb53790aebfb24cc48a8703577778e,"+          shouldDump_.store(true);
-+        shouldDump_.store(true);
-+  if ((terminateProcessGroup_.load() || collectiveDebugInfoMode_.load() ||
-+       shouldDump_.load()) &&","if ((terminateProcessGroup_.load() || collectiveDebugInfoMode_.load() || shouldDump_.load()) &&
-        monitorThread_) { 
-            shouldDump_.store(true);
-            std::this_thread::sleep_for(std::chrono::milliseconds(dumpIntervalMs_));
-            dumpProcessesAndTerminate();
-        }","The root cause of the bug was that the monitorThread did not sleep when attempting to dump because the collectiveDebugInfoMode_ was no longer set to true when only needing a FR dump, causing the monitor thread to try killing the process immediately without waiting for the dump. The fix consisted of making the monitor thread sleep whenever shouldDump_ is true.","This code change involves adding the statement `shouldDump_.store(true);` directly before the existing `if` condition and modifying the `if` condition to include `shouldDump_.load()`. 
-
-Therefore, the fixing pattern in this code change is **Add and Update**."
-0,clean,https://github.com/pytorch/pytorch/commit/f688d7a2f7dcb6caf5ded0e1eabedd5a7a6dc43b,+        elif is_debug:,elif is_debug:,"The root cause of the bug was that the debug environment variable was being suggested regardless of whether debug mode was enabled or not. This could lead to confusion and misconfiguration, as the suggestion should only be provided when debug mode is turned on.",Changing `else:` to `elif is_debug:` to check an additional condition before executing the block of code.
-0,clean,https://github.com/pytorch/pytorch/commit/235f24fc66078538249f978c275dc07c9e79d07e,"+        from filelock import FileLock
-+
-+            with FileLock(f""{new_path}.lock""):
-+                if os.path.exists(new_path):
-+                    shutil.rmtree(new_path)
-+                shutil.copytree(self._path, new_path)","import filelock
-
-lock_path = ""lock""
-lock = filelock.FileLock(lock_path)
-with lock:
-    if os.path.exists(new_path):
-        shutil.rmtree(new_path)
-        shutil.copytree(self._path, new_path)
-        self._path = new_path","The root cause of the bug was that the `V.debug.copy` function was not thread-safe, leading to potential race conditions when multiple threads were trying to access and modify the same resources concurrently. This could result in unexpected behavior and data corruption. The fix involved adding a `FileLock` around the `V.debug.copy` function to ensure mutual exclusion and prevent simultaneous access by multiple threads.","The fixing pattern in this code change is:
-- Introduction of a file lock using `FileLock` to ensure that the critical section of the code is protected from race conditions.
-- The file lock is acquired before checking for the existence of `new_path`, and operations like `shutil.rmtree` and `shutil.copytree` are performed within the protected section."
-0,clean,https://github.com/pytorch/pytorch/commit/ed5ea15714361db57aff7f8b6dbf6f9d6cb3e95c,,"if not len(node.tensor_weakrefs) == len(node.stack_traces):
-","The root cause of the bug was the presence of unnecessary debug code in the codebase. This debug code was identified, removed, and the issue was resolved in the mentioned pull request.","The fixing pattern in this code change is ""Code Removal"". The `breakpoint()` statement has been removed from the code."
-0,clean,https://github.com/pytorch/pytorch/commit/479ce1c3a0dad2c3d182fc0b3f26e647b99c1253,"+    const bool isUndefined = toDestroy == UndefinedTensorImpl::singleton();
-+        toDestroy->refcount_ == 1 || (toDestroy->refcount_ == 0 && isUndefined),
-+        ""ExclusivelyOwned<Tensor> destroyed with isUndefined "", isUndefined, "" and refcount "", toDestroy->refcount_, "", expected 1 or, if isUndefined, 0!"");
-+        ""ExclusivelyOwned<Tensor> destroyed with isUndefined "", isUndefined, "" and weakcount "", toDestroy->weakcount_, "", expected 1 or, if isUndefined, 0!"");
-+    if (!isUndefined) {","bool isUndefined = (toDestroy->refcount_ == 1 || (toDestroy->refcount_ == 0 && toDestroy == UndefinedTensorImpl::singleton()));
-assert(isUndefined, ""ExclusivelyOwned<Tensor> destroyed with refcount "", toDestroy->refcount_, "", expected 1!"");
-assert(isUndefined, ""ExclusivelyOwned<Tensor> destroyed with weakcount "", toDestroy->weakcount_, "", expected 1!"");
-if (!isUndefined) {
-    assert(false, ""ExclusivelyOwned<Tensor> destroyed with a non-undefined tensor when expecting an undefined tensor."");
-}",The root cause of the bug is infrequent firing of assertions related to isUndefined in ExclusivelyOwnedTraits of TensorBase. The commit adds more debug information to aid in debugging when these assertions fire.,"This code change is the ""Add Variable"" pattern. 
-
-In the original code, the condition for checking if `toDestroy` is `UndefinedTensorImpl::singleton()` is repeated twice with the same logic. To eliminate the redundancy and improve readability, a boolean variable `isUndefined` is introduced to store the result of this condition. This boolean variable is then used in the subsequent conditions and error messages, making the code clearer and more concise."
-0,clean,https://github.com/pytorch/pytorch/commit/cbd1c519c46186eb7c70590ba02f126297ee251f,"+  string serialized = proto.SerializeAsString();
-+  for (char& c : serialized) {
-+    if (c < 0x20 || c >= 0x7f) {
-+      c = '?';
-+    }
-+  }
-+  return serialized;","return proto.SerializeAsString()
-            .chars()
-            .mapToObj(c -> (char) (c < 0x20 || c > 0x7F ? '?' : c))
-            .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-            .toString();","The root cause of the bug was that when using ProtoBuf-Lite and calling ProtoDebugString, the SerializeAsString method was used, which produces binary output. This binary output caused problems when trying to add the debug string to a Java exception message, which requires valid UTF-8. The bug was resolved by replacing all non-ASCII bytes with ""?"" in order to ensure that the output is valid UTF-8.","The fixing pattern in this code change is to serialize the protobuf object, then iterate through each character in the serialized string and replace any character that is not a printable ASCII character (with ASCII values between 0x20 and 0x7f) with a question mark '?' before returning the sanitized serialized string."
-0,clean,https://github.com/pytorch/pytorch/commit/16ecd6f99c468027e4a08feb273e4fb31bee50bb,"+  if (${CMAKE_BUILD_TYPE} MATCHES ""Debug"")
-+    set (MSVC_RUNTIME_LIBRARY_FLAG ""/MDd"")
-+  else()
-+    set (MSVC_RUNTIME_LIBRARY_FLAG ""/MD"")
-+  endif()
-+  
-+    ${MSVC_RUNTIME_LIBRARY_OPTION}","if(CMAKE_BUILD_TYPE STREQUAL ""Debug"")
-    set(MSVC_RUNTIME_LIBRARY_FLAG ""/MDd"")
-else()
-    set(MSVC_RUNTIME_LIBRARY_FLAG ""/MD"")
-endif()",The root cause of the bug was that the files in torch/csrc were not being compiled with the /MDd runtime library option for debug builds on Windows. This caused issues with the debug build on Windows.,"The fixing pattern in the code change is adding an if-else condition based on the value of `${CMAKE_BUILD_TYPE}` to set the MSVC runtime library flag (MSVC_RUNTIME_LIBRARY_FLAG) either to ""/MDd"" for Debug build or ""/MD"" for other builds. This ensures that the correct MSVC runtime library flag is set based on the build type."
-0,clean,https://github.com/tensorflow/tensorflow/commit/84002d3519423aa5edca41e47761e5702173d7cf,"+  auto ptxas_version_tuple = GetAsmCompilerVersion(options.preferred_cuda_dir);
-+  if (ptxas_version_tuple.value() == std::array<int64_t, 3>{12, 3, 1}) {
-+    return tsl::errors::Internal(
-+        absl::StrFormat(""ptxas 12.3.1 has a bug that we think can affect XLA. ""
-+                        ""Please use a different version.""));
-+  }","if ptxas_version_tuple == (12, 3, 1):
-    raise RuntimeError(""PTXAS version 12.3.1 is not supported due to known issues affecting XLA functionality. Please upgrade to a newer version."")","The root cause of the bug is that ptxas version 12.3.1 has a known issue that can affect XLA functionality. To prevent potential issues, the decision was made to explicitly error out when this version is detected.",This code change is to add a conditional check based on the value of the `ptxas_version_tuple` to return an error message if it matches a specific version (12.3.1).
-0,Clean,https://github.com/pytorch/pytorch/commit/0faf8ed49f9da63d1b5339f152586ffd7cde3e83,"+import sys
-+        if IS_FBCODE:
-+            print(""TorchScript backend not yet supported in FBCODE/OVRSOURCE builds"", file=sys.stderr)
-+        else:
-+            desired_device_type_test_bases.append(LazyTestBase)","if IS_FBCODE:
-    print(""TorchScript backend is not supported in FBCODE/OVRSOURCE builds"")
-desired_device_type_test_bases.append(LazyTestBase)","The root cause of the bug was that the TorchScript backend was not supported in FBCODE/OVRSOURCE builds, leading to a `RuntimeError` when trying to initialize the TorchScript backend in a specific test case.","The fixing pattern in the code change is to add a conditional check for the value of IS_FBCODE. Depending on the value of IS_FBCODE, a message is printed when it's true, and the desired_device_type_test_bases list is appended with LazyTestBase in both cases."
-0,Clean,https://github.com/pytorch/pytorch/commit/7c2641d5f1081811e664267406df1059687aad7a,"+    if constexpr (std::is_same_v<T, double> || std::is_same_v<T, int64_t>) {
-+    if constexpr (std::is_same_v<T, double>) {
-+    if constexpr (std::is_same_v<T, double>) {
-+    if constexpr (std::is_same_v<T, double>) {","-    if constexpr (std::is_same_v<T, double> || std::is_same_v<T, int64_t>) {
--    if constexpr(std::is_same_v<T, double>) {
--    if constexpr (std::is_same_v<T, double>) {
--    if constexpr (std::is_same_v<T, double>) {","The root cause of the bug was the lack of `constexpr` and `if constexpr` usage in various function templates across the `ATen` and `torch` modules. By incorporating these C++17 features, the pull request aimed to enhance performance, readability, and consistency in the codebase. Additionally, the changes addressed type conversion and overflow issues for different input and output types in the affected files.","The fixing pattern in the given code change is to replace the usage of `std::is_same` with `std::is_same_v` and add the `if constexpr` keyword for improved compile-time evaluation. Additionally, the condition for `int64_t` type was kept in the first suggestion while omitted in the others."
-0,Clean,https://github.com/pytorch/pytorch/commit/013c7f5ba4f56b2ac5e47e05bb27dada273142ab,"+                buffer.writeline(f""{self.prefix}{var} = {expr}{self.suffix}"")",Clean
-0,Clean,https://github.com/pytorch/pytorch/commit/e1674d7dc0fe1ac1ab602f3e28f21513f8652803,"+    if sys.executable == 'torch_deploy' or platform.system() == 'Windows':
-+        (sys.executable == ""torch_deploy"" or platform.system() != 'Windows'):
-+    if sys.executable == 'torch_deploy' or platform.system() == 'Windows':",-    if platform.system() != 'Windows' or sys.executable == 'torch_deploy':,"The root cause of the bug is that there was a fork happening in the torch initialization when deploying, which was causing segmentation faults. This was identified as an issue because forking in the torch initialization should be avoided during deployment.",The fixing pattern in the code change is swapping the condition order from <b>platform.system() == 'Windows' </b> in the original code to <b>platform.system() != 'Windows' </b> in the updated code.
-0,Clean,https://github.com/pytorch/pytorch/commit/af448e84eb2978062dc6ca4d3d538ed46b58f3d6,"+                    if suite + ""_prev"" not in row or suite + ""_cur"" not in row:
-+                        continue","-            if (suite + ""_prev"") in row and (suite + ""_cur"") in row:
-+            if (suite + ""_prev"") not in row or (suite + ""_cur"") not in row:
-+                continue  ","The root cause of the bug was that there was an issue where a suite might not be present in one of the logs, causing discrepancies in the summary statistics displayed on the Dynamo dashboard. This was fixed in the pull request #89226.","The fixing pattern in the code change is to add a conditional check to ensure that both the keys `suite + ""_prev""` and `suite + ""_cur""` are present in the `row` dictionary before proceeding with further operations. If either of the keys is missing, the code will skip the current iteration of the loop using the `continue` statement."
-0,Clean,https://github.com/pytorch/pytorch/commit/c26b53f6a4c05a280aabe525a5c5918e3db3da57,+  state_ptr->removeCallback();,"if (state_ptr->hasCallbackHandle()) {
-    state_ptr->removeCallback();
-}","The bug is caused by a memory leak and potential double free in the profiler due to the mismanagement of callback handles. The callback handles were not properly removed by the client using the profiler, leading to leaks or potential double frees. The commit addresses this issue by encapsulating callback handle management and ensuring proper removal in a single method. This improvement helps prevent memory leaks and double frees caused by mishandling callback handles in the profiler.","This code change involves updating the way a callback is removed from the state_ptr object. The fix replaces the previous method, which called `at::removeCallback(state_ptr->callbackHandle())`, with a new method call `state_ptr->removeCallback()`. The pattern here is a direct method replacement for achieving the same functionality."
-0,Clean,https://github.com/pytorch/pytorch/commit/7fe19c03e482be1d108fbfca8fb0214e133970ad,"+  if (maybe_torch_dispatch_mode_state &&
-+      !c10::impl::tls_is_dispatch_key_excluded(DispatchKey::Python)) {",if (maybe_torch_dispatch_mode_state && !c10::isDispatchKeyExcluded(DispatchKey::Python)) {,"The root cause of the bug was that when functionalization kernels were internally calling `at::empty_strided()` to construct meta tensors, the Python dispatch key was already added to the TLS exclude set. This was causing an issue where the meta tensors were unexpectedly entering Python when calling `detach()`. The bug was fixed by updating `TensorImpl::shallow_copy_and_detach()` to check if the Python key is in the TLS exclude set first before calling into Python.","This code change adds an additional condition to the `if` statement. The original code only checked `maybe_torch_dispatch_mode_state`, but the fixed code includes an additional check to ensure that the DispatchKey is not excluded."
-0,Clean,https://github.com/pytorch/pytorch/commit/ff9558a2ea626b1526ded6848e06e1e809fae53c,"+    ""        return torch.einsum('NMKK->NM', result)\n"",
-+    ""        return torch.einsum('NMKK->NMK', result)""","-    return torch.einsum('NMKK->NM', result)
-+    return torch.einsum('NMKK->NM', result)","The root cause of the bug is that in the code snippet provided, there was a small error in returning the values for the 'trace' and 'diagonal' computations. The code was missing the `result` variable inside the `torch.einsum` function, which caused it to not return the correct computation results.","The fixing pattern in the code change is:
-- The einsum string pattern was changed from 'NMKK->NMK' to 'NMKK->NM' and the variable `result` was added as an argument to the `torch.einsum()` function."
-0,Clean,https://github.com/pytorch/pytorch/commit/9b5d63ea76df5b135cfae866a35b34d81ae506ac,"+
-+  if (!areAnyBatchedAtLevel({grad_output_, input_, weight_}, cur_level)){
-+    c10::impl::ExcludeDispatchKeyGuard guard(kBatchedKey);
-+    return at::convolution_backward(
-+        grad_output_, input_, weight_, bias_sizes_opt, stride, padding,
-+        dilation, transposed, output_padding, groups, output_mask);
-+  }
-+","if (is_batched) {
-  return at::vmap([&](const Tensor& grad_output_, const Tensor& input_, const Tensor& weight_) {
-    return convolution_backward(k, grad_output_, input_, weight_, stride, padding, dilation, groups);
-  }, {grad_output, input, weight});
-} else {
-  c10::impl::ExcludeDispatchKeyGuard guard(kBatchedKey);
-  return at::convolution_backward(k, grad_output, input, weight, stride, padding, dilation, groups);
-}","The root cause of the bug was that the `vmap` operation was incorrectly skipping levels when applying `vmap` multiple times in nested functions, leading to incorrect computations and results. The fix addressed this issue by ensuring that the correct levels are maintained during nested `vmap` operations.","This code change introduces a conditional check to determine if any of the tensors `{grad_output_, input_, weight_}` are batched at the current level. If none of the tensors are batched at the current level, it excludes the `kBatchedKey` dispatch key using `c10::impl::ExcludeDispatchKeyGuard` and then calls the function `at::convolution_backward` with the provided arguments.
-
-The fixing pattern in this code change is **Conditional Guarding**."
-0,Clean,https://github.com/pytorch/pytorch/commit/dc6916b341904cd156335b13d06a576462c452a6,"+DEFINE_DISPATCH(gather_expanded_index_stub);
-+  if (can_use_expanded_index_path(result, dim, index, self, /*is_scatter_like=*/false)) {
-+    gather_expanded_index_stub(result.device().type(), result, self, index);
-+  } else {
-+    gather_stub(result.device().type(), result, self, dim, index);
-+  }","gather_expanded_index_stub(result.device().type(), result, self, dim, index);","The root cause of the bug is that the current implementation of `gather` in PyTorch was inefficient for Graph Neural Network (GNN) usage on CPU. Specifically, when performing message passing in GNNs, the `gather` operation had an `index` tensor with a broadcasted shape (e.g., `5000, 128` with stride `[1, 0]`), indicating that the gather operation was done on each row of the self tensor. However, the implementation tried to parallelize on the inner dimension, leading to poor performance on CPU and the inability to vectorize the operation.
-
-To address this issue, the optimization was done to parallelize on the outer dimension of the `index` tensor and perform vectorized copy on the inner dimension. This optimization significantly improved the performance of `gather` for GNN models, reducing the time from `150.787ms` to `10.926ms` on a specific hardware configuration. This improvement ensures that `gather` is no longer a major bottleneck for training GNN models when the `EdgeIndex` is in COO format.
-
-For more details, the GitHub issue related to this optimization can be found at https://github.com/pyg-team/pytorch_geometric/issues/4891#issuecomment-1288423705.","The fixing pattern in this code change is to add a new dispatch function `gather_expanded_index_stub` and then check if the expanded index path can be used. If yes, then call `gather_expanded_index_stub` with appropriate arguments, otherwise fall back to the original `gather_stub` function."
-0,Clean,https://github.com/pytorch/pytorch/commit/c1c4882367c592d49e15268a0b99631c207d662e,"+            # TODO Remove this allowlist.
-+            _allowed_torch_functions = (torch.autograd.grad_mode.set_grad_enabled,)
-+
-+                if op not in _allowed_builtin_ops() and op not in _allowed_torch_functions:
-+                        f""Valid torch functions: {_allowed_torch_functions}""","                if op not in _allowed_builtin_ops() and op not in _allowed_torch_functions:
-                    torch_func_list = ', '.join(_allowed_torch_functions)
-                    raise RuntimeError(""Operation {} is not supported. ""
-                                       ""Supported torch functions: {}"".format(op, torch_func_list) )","The root cause of the bug is that the test cases contained inputs that resulted in missing values in the meta[""val""] field, as well as using an invalid operation (torch.autograd.grad_mode.set_grad_enabled). Additionally, adding a ""parameter"" to the state dict that was not an nn.Parameter caused an assertion failure. To bypass these issues, several hacks were implemented, such as populating nodes without meta[""val""] with None, adding torch.autograd.grad_mode.set_grad_enabled to the skip opset, and duplicating ExportGraphSignature into aot_export.py to skip graph signature checks.","This code change involves adding an additional condition to the original 'if' statement. The original condition was checking if the 'op' is not in the list of allowed built-in operations. The fixing pattern in this code change is to add a new condition that checks if the 'op' is not in a new list named '_allowed_torch_functions', which contains allowed torch functions. If the 'op' is not in either the list of allowed built-in operations or the list of allowed torch functions, then a message is formatted with the list of valid torch functions."
-0,Clean,https://github.com/pytorch/pytorch/commit/6266003d71e85beabef52da54ccf2ae70c11491d,+        elif os.path.exists(IMPORT_DISABLED_TESTS):,"-        elif IMPORT_DISABLED_TESTS:
-+        elif os.path.exists(IMPORT_DISABLED_TESTS):",The root cause of the bug was that the commit 1187dedd336e4f6c0028e0d081b676c2f5796316 introduced a change that broke internal builds D38714900 and other OSS tests. This led to the decision to revert the commit and merge the changes into one pull request to ensure a safer reland of the fix.,Removing redundant checks on IMPORT_DISABLED_TESTS which is already checked for None earlier in the code.
-0,clean,https://github.com/tensorflow/tensorflow/commit/c1ce3541fcd31141a2372c9ad285e5912781e3d9,"+      if DEBUG_MODE:
-+        if def_function.functions_run_eagerly():
-+          warnings.warn(
-+              ""Even though the `tf.config.experimental_run_functions_eagerly` ""
-+              ""option is set, this option does not apply to tf.data functions. ""
-+              ""To force eager execution of tf.data functions, please use ""
-+              ""`tf.data.experimental.enable.debug_mode()`."")","if def_function.functions_run_eagerly():
-    tf.get_logger().warning(""DEBUG_MODE is enabled or running eagerly."")","The root cause of the bug is not clearly mentioned in the commit message. It only states that there was a minor fix for debug mode in tf.data. To determine the root cause, it would be necessary to further investigate the changes made in the commit and understand the context in which the bug occurred.","This code change involves removing a redundant check and adding a warning message. The fixing pattern is ""Simplify Condition and Add Warning Message""."
-0,clean,https://github.com/tensorflow/tensorflow/commit/345d064279aeaba924d961322a129555d850bb8b,"+#include ""mlir/IR/OperationSupport.h""  // from @llvm-project
-+  mlir::OpPrintingFlags print_flags = mlir::OpPrintingFlags().useLocalScope();
-+  // Enable debug info so that it is easier to see the corresponding HLO node.
-+  if (file_prefix == ""lmhlo"") {
-+    print_flags.enableDebugInfo(/*prettyForm=*/true);
-+  }
-+  op->print(outputFile->os(), print_flags);","#include ""mlir/IR/OperationSupport.h""
-        
-        mlir::OpPrintingFlags print_flags = mlir::OpPrintingFlags().useLocalScope();
-        if (file_prefix == ""lmhlo"") {
-            print_flags.enableDebugInfo();
-        }
-        op->print(outputFile->os(), print_flags);","The bug was caused by enabling debug info in pretty form for LMHLO, leading to difficulty in identifying the corresponding HLO node for each instruction.","The fixing pattern in the code change is 'Add Import/Include'. 
-Explanation: 
-1. The code change includes a new header file ""mlir/IR/OperationSupport.h"" from the LLVM project.
-2. It adds a new variable `print_flags` of type `mlir::OpPrintingFlags` initialized with `useLocalScope()`.
-3. It sets the debug info flag in `print_flags` based on the `file_prefix` value.
-4. Finally, it prints the operation using the `op->print` method with the `print_flags`.
-
-By adding the include statement and the necessary setup code for `OpPrintingFlags`, the code change ensures proper printing of the operation with the required printing flags, including debug info if the file prefix is ""lmhlo""."
-0,clean,https://github.com/tensorflow/tensorflow/commit/4e35e4de4d75e15cf420f601beb827337d434cf3,"+// NOLINTNEXTLINE
-+opt<bool> debug_info(
-+    ""debug-info"", llvm::cl::desc(""Inclide MLIR debug location info in output.""),
-+    llvm::cl::Optional, llvm::cl::init(false));
-+
-+  if (debug_info) {
-+    printing_flags.enableDebugInfo();
-+  }",Clean
-0,clean,https://github.com/tensorflow/tensorflow/commit/d769af73c5b555cb0464179b9fd49b2fc6c5b80d,"+  if (!ShouldDump(name, group) && !bypass_filter) return;","+ if (!ShouldDump(name, group) && !bypass_filter) return;","The root cause of the bug was that the `bypass_filter` parameter was not being correctly handled in the `DebugDataDumper` class, leading to incorrect filtering behavior when dumping debug data. This issue was fixed in the commit mentioned.",Addition
-0,clean,https://github.com/tensorflow/tensorflow/commit/cc199296c36488b363409415d41d053b94d071d6,,"constexpr llvm::StringRef kElementwiseLabel = ""__elementwise_label__"";",The root cause of the bug is that outlining elementwise clusters was not done before due to triggering an unrelated bug (cl/530892255).,"The fixing pattern in the code change is **Comment Removal**. The code change removes a TODO comment related to enabling outlining for elementwise clusters, as it is no longer needed after removing the if statement that checked for a specific label."
-0,clean,https://github.com/tensorflow/tensorflow/commit/61b97bb772c96dea93ad1e3a9016093b34cc6c55,"+  if (VLOG_IS_ON(2)) {
-+    // Print the whole module after each pass which requires disabling
-+    // multi-threading as well.
-+    module_op.getContext()->disableMultithreading();
-+    pm.enableIRPrinting(std::make_unique<tensorflow::BridgeLoggerConfig>(
-+        /*print_module_scope=*/true));
-+  }
-+","if (VLOG_IS_ON(2)) {
-    m->addPass(createPrintModulePass(&llvm::errs()));
-    m->addPass(createVerifierPass());
-    m->addPass(createCFGSimplificationPass());
-    m->addPass(createPromoteMemoryToRegisterPass());
-    m->addPass(createGlobalOptimizerPass());
-    m->addPass(createGlobalDCEPass());
-    m->addPass(createIPConstantPropagationPass());
-    m->addPass(createDeadArgEliminationPass());
-    m->addPass(createInstructionCombiningPass());
-    m->addPass(createCFGSimplificationPass());
-    m->addPass(createJumpThreadingPass());
-    m->addPass(createCorrelatedValuePropagationPass());
-    m->addPass(createDeadStoreEliminationPass());
-    m->addPass(createAggressiveDCEPass());
-    m->addPass(createCFGSimplificationPass());
-
-    context->setUseThreads(false);
-}","The root cause of the bug is that the logging in the CompileGraphSetup pipeline was saving the entire module instead of single functions, and it was also disabling multi-threading if logging was activated. This was done to help with debugging and improve reproducibility.","This code change adds a new conditional block that checks if `VLOG` level 2 is on. If it is, then certain actions are taken, including disabling multi-threading in the context and enabling IR printing with specific configuration settings."
-0,clean,https://github.com/tensorflow/tensorflow/commit/b1a3085fda2b731c4e991bfe13c76225be5db9c8,,"if (diag->getSeverity() != DiagnosticSeverity::Error && VLOG_IS_ON(1)) 
-    success();","The root cause of the bug is that the warning diagnostics were not consistently issued when vlog is disabled in the code. The issue arises from the lack of a consistent way to enable vlog in the OSS code that aligns with the behavior in the internal Google code. This inconsistency led to warning diagnostics being suppressed in certain cases when vlog was disabled, causing failures in some test cases.","The fixing pattern in the code change was a conditional check with a logging condition. The code change checks if the severity of the diagnostic is not an error and if the verbose logging level 1 is enabled using `VLOG_IS_ON(1)`. If both conditions are met, the `success()` function is called. 
-
-The identified fixing pattern is:
-- Conditional check for non-error diagnostics with a logging condition."
-0,clean,https://github.com/tensorflow/tensorflow/commit/f8aee66b8c227da41273a8d3cef558d9dcf431de,"+      if (load_plugin == ""true"" || load_plugin == ""1"") {","if (load_plugin == ""true"" || load_plugin == ""1"") {",The root cause of the bug is that a typo or logic error in the code was causing the plugins to be enabled regardless of whether the environment variable existed or not. The fix was necessary to ensure that plugins are only enabled if the specified environment variable exists.,"This code change involves changing the condition within the if statement from a negation to a regular condition. The fixing pattern used here is ""Negation to Condition""."
-0,clean,https://github.com/tensorflow/tensorflow/commit/1bbd10c3bb8de86bfe126ae7ace123f7e85354cf,+  if (!run_tpu_bridge && !HasQualifiedNonTPUOp(graph)) {,"-// Check if the `graph` has parameter serverjobs and resource variable arguments
--// that are on parameter servers
--bool HasPsWithResourceVariable(const Graph& graph) {
-  // Check parameter serverjobs and resource variable arguments that are
-  // on parameter servers.
-  const std::string jobType = ""ps"";
-  const std::string nodeType = ""_Arg"";
-  const std::string attrKey = ""T"";
-  for (const Node* node : graph.nodes()) {
-    if (node->type_string() == nodeType) {
-      auto device_name = node->assigned_device_name();
-      DeviceNameUtils::ParsedName device;
-      if (DeviceNameUtils::ParseFullName(device_name, &device) &&
-          device.has_job && device.job == jobType) {
-        for (const auto& attr : node->attrs()) {
-          auto attr_key = attr.first;
-          auto attr_value = attr.second;
-          if (attr_key == attrKey &&
-              attr_value.value_case() == AttrValue::kType &&
-              attr_value.type() == DT_RESOURCE) {
-            return true;
-            break;
-          }
-        }
-      }
-    }
-  }
-  return false;
-}
-
-// Check if non TPU pipeline should be used
-bool EnableNonTpuBridge(const Graph& graph) {
-  // Remark that this is staging change. It will be expanded later for further
-  // check based on the requirement.
-  return HasPsWithResourceVariable(graph) && HasQualifiedNonTPUOp(graph);
-}
-
-if (!run_tpu_bridge && !HasQualifiedNonTPUOp(graph)) {
-  // Only record CPU/GPU graphs that are qualified but filtered out
-  if (HasQualifiedNonTPUOp(graph)) {
-    metrics::UpdateTfMlirBridgeFirstPhaseCounter(
-      /*device type*/ ""cpu/gpu"",
-      /*bridge version*/ ""tfxla"",
-      /*fallback_enabled*/ false,
-      /*result*/ ""invalid_graph"");
-  }
-}","The root cause of the bug is that the TF2XLA bridge was restricted to only allowing CPU/GPU graphs in parameter server jobs with resource variable arguments to go through the phase 1 bridge. This restriction limited the coverage of graphs that could go through the bridge. The fix removed this restriction to cover more graphs, including CPU/GPU/TPU graphs, in order to achieve feature parity and provide long-term benefits.","Fixing pattern: Conditional statement inversion
-
-In the given code change, the fixing pattern involves inverting a conditional statement within the `if` condition in the code block. 
-
-Before the change:
-```cpp
-if (!run_tpu_bridge && !EnableNonTpuBridge(graph)) {
-    // Only record CPU/GPU graphs that are qualified but filtered out
-    if (HasQualifiedNonTPUOp(graph)) {
-      metrics::UpdateTfMlirBridgeFirstPhaseCounter(
-          /*device type*/ ""cpu/gpu"",
-          /*bridge version*/ ""tfxla"",
-          /*fallback_enabled*/ false,
-          /*result*/ ""invalid_graph"");
-    }
-```
-
-After the change:
-```cpp
-if (!run_tpu_bridge && !HasQualifiedNonTPUOp(graph)) {
-    // Only record CPU/GPU graphs that are qualified but filtered out
-    if (HasQualifiedNonTPUOp(graph)) {
-      metrics::UpdateTfMlirBridgeFirstPhaseCounter(
-          /*device type*/ ""cpu/gpu"",
-          /*bridge version*/ ""tfxla"",
-          /*fallback_enabled*/ false,
-          /*result*/ ""invalid_graph"");
-    }
-```
-
-By inverting the `EnableNonTpuBridge(graph)` call with `HasQualifiedNonTPUOp(graph)` in the `if` condition, the logic has been adjusted for achieving the desired behavior."
-0,clean,https://github.com/tensorflow/tensorflow/commit/c150bb6edd8d82686efeeff8c1083bcd0a57c96f,"+/* static */ tsl::StatusOr<std::string> GpuDriver::GraphDebugDotPrint(
-+    hipGraph_t graph, const char* path, bool return_printed_graph) {
-+  if (return_printed_graph) {
-+      return data;
-+  return std::string(path);","if (VLOG_IS_ON(100)) {
-    VLOG(200) << ""HIP graph "" << graph << "" debug file:\n"" << data;
-    if (condition) {
-        return ::tsl::OkStatus();
-    }
-}",The root cause of the bug is a build failure in the GraphDebugDotPrint functionality on the ROCm platform. The fix addressed in PR #8051 resolves this issue.,The fixing pattern in the code change is replacing a direct return statement with a conditional return based on a boolean parameter.
-0,clean,https://github.com/tensorflow/tensorflow/commit/6c0ae64819af838154ebbf8816267d28387c0879,"+    pass_manager.clear();
-+    // Print out a detailed report of ops that are not converted to TFL ops.
-+    pass_manager.addPass(mlir::odml::createPrintOpStatsPass(
-+        mlir::odml::GetAcceptedTFLiteDialects()));
-+    if (failed(pass_manager.run(module))) {
-+      return statusHandler.ConsumeStatus();
-+    }
-+","pass_manager.clear();
-// Print out a detailed report of ops that are not converted to TFL ops.
-pass_manager.addPass(mlir::odml::createPrintOpStatsPass(
-    mlir::odml::GetAcceptedTFLiteDialects()));
-if (failed(pass_manager.run(module))) {
-  return statusHandler.ConsumeStatus();
-}","The root cause of the bug is that the TFLite Converter was printing a lot of text to the terminal to display conversion statistics, which may not be desirable for all users in production. This was a useful feature for debugging but could clutter the output for production users. To address this issue, the `createPrintOpStatsPass` pass was moved to run behind a debugging flag to control the display of these statistics.","The fixing pattern in the given code change is adding extra lines of code to properly format the indentation of the code block. The existing code block is properly indented for the 'pass_manager.clear()' call, and the additional lines for the comment, 'pass_manager.addPass()', and the 'if' statement should follow the same level of indentation. 
-
-The fixing pattern involves aligning the added code lines with the existing code block's indentation level for consistency and readability."
-0,clean,https://github.com/tensorflow/tensorflow/commit/f0ae6583f5d39ac2f3d53e1ac22bedd51ccc6d8d,"+  int64_t autotuned_max_outstanding_requests = model::kAutotune;
-+    autotuned_max_outstanding_requests = max_outstanding_requests_;
-+  if (params_.max_outstanding_requests == model::kAutotune) {
-+    result.push_back(std::make_pair(
-+        ""autotuned_max_outstanding_requests"",
-+        strings::Printf(""%lld"", static_cast<long long>(
-+                                    autotuned_max_outstanding_requests))));
-+  }","if (params_.max_outstanding_requests == model::kAutotune) {
-    int autotuned_max_outstanding_requests = autotune(max_outstanding_requests_);
-    result.push_back(""Autotuned max outstanding requests: "" + to_string(autotuned_max_outstanding_requests));
-}","The root cause of the bug is that the autotuned `max_outstanding_requests` parameter was not outputted in the xprof tool, making it difficult to analyze and debug the performance of the system.",This code change involves setting the variable `autotuned_max_outstanding_requests` to the value of `max_outstanding_requests_` and adding it to the `result` vector if `params_.max_outstanding_requests` is equal to `model::kAutotune`.
-0,clean,https://github.com/tensorflow/tensorflow/commit/e33b6a9fc398eaa316b5f0180c692cfdf5e7489e,"+    if (proto_ptr->GetDescriptor() != proto->GetDescriptor()) {
-+      return Internal(""Mismatched backend config descriptors."");
-+
-+    proto->CopyFrom(*proto_ptr);
-+    return OkStatus();","if (proto_ptr->GetDescriptor() != proto->GetDescriptor()) {
-    return Status(StatusCode::INTERNAL, ""Mismatched backend config descriptors"");
-}
-proto->CopyFrom(*proto_ptr);
-return OkStatus();","The bug was caused by a refactoring of the function that removed the original behavior of raising an internal error on mismatched backend config descriptors. Instead of raising an error, the function would fall through and potentially overwrite the stored `proto_` if the descriptors were mismatched. This could lead to unexpected behavior and incorrect results when working with backend config descriptors.","The fixing pattern in the code change is to invert the condition in the if statement and return an error message if the descriptors do not match, before proceeding with the copying operation."
-0,clean,https://github.com/tensorflow/tensorflow/commit/1f976fc26c9e031eaf34b32449d4ae096608f25d,"+#include ""tensorflow/core/util/debug_data_dumper.h""
-+  if (VLOG_IS_ON(2) || DEBUG_DATA_DUMPER()->ShouldDump(name, kDebugGroupMain)) {","if (VLOG_IS_ON(2) || (DEBUG_DATA_DUMPER && should_dump_debug_data(name, debug_group))) {","The root cause of the bug is that the debug data logger was hooked up to the old bridge XlaCompiler. This could lead to data not being logged correctly or inconsistencies in the logging process, resulting in potential issues with debugging and analyzing the system.","The fixing pattern in this code change is ""Conditional Statement Addition"". 
-
-Explanation:
-- The code change involves adding an additional condition to an existing conditional statement.
-- The original code had a condition checking if the VLOG is on for level 2.
-- The fix introduced another condition to check if either the VLOG is on for level 2 or if the DEBUG_DATA_DUMPER should dump based on the name and debug group.
-- This pattern ensures that the code execution is dependent on both conditions being true."
-0,clean,https://github.com/tensorflow/tensorflow/commit/1bbd10c3bb8de86bfe126ae7ace123f7e85354cf,+  if (!run_tpu_bridge && !HasQualifiedNonTPUOp(graph)) {,"-bool HasPsWithResourceVariable(const Graph& graph) {
--  // Check parameter serverjobs and resource variable arguments that are
--  // on parameter servers.
--  const std::string jobType = ""ps"";
--  const std::string nodeType = ""_Arg"";
--  const std::string attrKey = ""T"";
--  for (const Node* node : graph.nodes()) {
--    if (node->type_string() == nodeType) {
--      auto device_name = node->assigned_device_name();
--      DeviceNameUtils::ParsedName device;
--      if (DeviceNameUtils::ParseFullName(device_name, &device) &&
--          device.has_job && device.job == jobType) {
--        for (const auto& attr : node->attrs()) {
--          auto attr_key = attr.first;
--          auto attr_value = attr.second;
--          if (attr_key == attrKey &&
--              attr_value.value_case() == AttrValue::kType &&
--              attr_value.type() == DT_RESOURCE) {
--            return true;
--            break;
--          }
--        }
--      }
--    }
+// for the iteration. Otherwise, some threads might not be part of the loop.
+// The constraints are still checked inside the loop.",YES,"The root cause of the bug is that the indexing map creation in the shared memory phase of row reductions results in shrinking the size of the d0 dimension (thread ID). This causes only the first 20 threads to produce a value for the shuffle. However, an unmasked shuffle with the entire warp is performed, leading to undefined values being obtained.","The fixing pattern in the code change is adding additional comments to explain the importance of ensuring all threads are part of the loop iteration, particularly for correct results in the warp shuffle operation. Additionally, the code change includes a reset to the upper bound of a dimension to ensure it is a multiple of the warp size, which may have been reduced due to constraints."
+0,https://github.com/tensorflow/tensorflow/commit/c3b618f959f8afcec8c42a6ab9639c047e61c518,third_party/xla/xla/stream_executor/cuda/cuda_dnn.cc,"-  if (is_profiling) {
+","+  if (timer.has_value()) {
+",No,NO
+0,https://github.com/tensorflow/tensorflow/commit/c3b618f959f8afcec8c42a6ab9639c047e61c518,third_party/xla/xla/stream_executor/cuda/cuda_dnn.cc,"-  if (is_profiling) {
+","+  if (timer.has_value()) {
+",No,NO
+0,https://github.com/tensorflow/tensorflow/commit/c3b618f959f8afcec8c42a6ab9639c047e61c518,third_party/xla/xla/stream_executor/cuda/cuda_dnn.cc,"-    if (is_profiling) {
+","+    if (timer.has_value()) {
+",No,NO
+0,https://github.com/tensorflow/tensorflow/commit/c3b618f959f8afcec8c42a6ab9639c047e61c518,third_party/xla/xla/stream_executor/cuda/cuda_dnn.cc,"-    if (profile_result) {
+","+    if (timer.has_value()) {
+",No,NO
+0,https://github.com/tensorflow/tensorflow/commit/c3b618f959f8afcec8c42a6ab9639c047e61c518,third_party/xla/xla/stream_executor/gpu/gpu_timer.cc,"-/*static*/ absl::StatusOr<std::optional<GpuTimer>> GpuTimer::CreateIfNeeded(
+-    Stream* stream, bool use_delay_kernel, bool is_needed) {
+-  if (is_needed) {
+-    TF_ASSIGN_OR_RETURN(GpuTimer t, GpuTimer::Create(stream, use_delay_kernel));
+-    return {std::make_optional(std::move(t))};
 -  }
--  return false;
+-  return std::nullopt;
 -}
 -
--  if (!run_tpu_bridge && !HasQualifiedNonTPUOp(graph)) {
--    // Only record CPU/GPU graphs that are qualified but filtered out
--    if (HasQualifiedNonTPUOp(graph)) {
--      metrics::UpdateTfMlirBridgeFirstPhaseCounter(
--          /*device type*/ ""cpu/gpu"",
--          /*bridge version*/ ""tfxla"",
--          /*fallback_enabled*/ false,
--          /*result*/ ""invalid_graph"");
--    }
-      ","The root cause of the bug is a restriction in the TF2XLA bridge that only allowed CPU/GPU graphs in parameter server jobs with resource variable arguments to go through the phase 1 bridge. This restriction limited the coverage of graphs that could go through the bridge and potentially caused inconsistencies in clustering and debuggability. The bug was addressed by removing this restriction to cover more graphs and provide feature parity across different types of graphs, such as CPU/GPU/TPU graphs.","The fixing pattern in the code change is **Code Removal**.
-- The code snippet containing the `EnableNonTpuBridge` function and its usage is completely removed.
-- The condition check `if (!run_tpu_bridge && !EnableNonTpuBridge(graph))` is replaced with `if (!run_tpu_bridge && !HasQualifiedNonTPUOp(graph))`.
-- The `UpdateTfMlirBridgeFirstPhaseCounter` function call within the condition block is removed."
-0,clean,https://github.com/tensorflow/tensorflow/commit/16e29ce9f7b4ccc9c5f3ebe7ada1954d1b1e306d,"+    debug_string_ = std::move(debug_string);
-+  void SetToString(std::string to_string) { to_string_ = std::move(to_string); }","-    debug_string_ = std::move(debug_string);
--  void SetToString(std::string to_string) {
--    to_string_ = std::move(to_string);","The root cause of the bug is that the `debug_string_` variable is no longer starting empty, and it is always being set to the new value instead of retaining any existing content. This may lead to incorrect or unexpected behavior if the intention was to append or modify the existing content of `debug_string_` rather than always replacing it with the new value.","The fixing pattern in the code change is to remove the conditional check for emptiness before moving the string into the class member variable. Instead, directly use `std::move` to transfer the content of the string parameter to the class member variable."
-0,clean,https://github.com/tensorflow/tensorflow/commit/7880014be998032d349419886a17481fe67bc28e,"+      Status status = reader_->ReadTensors(out_tensors);
-+      if (errors::IsOutOfRange(status)) {
-+      TF_RETURN_WITH_CONTEXT_IF_ERROR(
-+          status,
-+          "" Failed to read tf.data snapshot file: "", dataset()->chunk_file_);
-+      return status;","-      Status status = reader_->ReadTensors(out_tensors);
--      if (errors::IsOutOfRange(status)) {
--      return status;","The root cause of the bug in the tf-data-service seems to be related to errors occurring during the process of getting elements from a snapshot. Specifically, the error message ""Failed to get element: Snappy_Uncompress failed."" suggests that there is an issue with decompressing data, possibly due to a specific file or data format causing the error. The commit message mentions adding more information to the error message in order to better identify the problematic file that is causing the decompression failure, which will help in debugging and resolving the issue.","The fixing pattern in this code change is updating the variable name used in the if condition and subsequent error handling. The variable name `s` was changed to `status` to reflect the actual status of the `reader_->ReadTensors(out_tensors)` operation. Then, the if condition and error handling code were updated to use the new variable name `status` consistently."
-0,clean,https://github.com/tensorflow/tensorflow/commit/a1b9edad9aee7475d176e29d4af73c5e809f8be1,"+      VLOG(3) << ""Returning from GetNext with internal error"";
-+    if (result->skip) {
-+      VLOG(3) << ""Skipping result from task "" << result->task_id;
-+    }
-+    VLOG(1) << ""Returning end_of_sequence"";",Clean
-0,clean,https://github.com/tensorflow/tensorflow/commit/aa6d0555a2f99762809f50e3cb339795b02d653e,"+    if strategy == ""ImplicitBatchModeCompatible"":
-+      logging.warn(""ImplicitBatchModeCompatible strategy is deprecated, and""
-+          "" using it may result in errors during engine building. Please""
-+          "" consider using a different profile strategy."")",* `ImplicitBatchModeCompatible`strategy is deprecated. Please consider using a different profile strategy as this mode is being deprecated and may lead to potential errors during engine building.,"The bug occurred because the ImplicitBatchModeCompatible dynamic shape strategy, which was intended for ease of use for users familiar with implicit batch mode, did not require the user to call build() before running inference with a TFTRT converted graph. This strategy made educated guesses for minimum and maximum input shapes for TensorRT engine, but proved to be buggy for models with operations like transpose and reshape. Dynamic shape mode actually requires users to call build() with correct input shapes to generate TensorRT profiles correctly. As a result, this mode is being deprecated.",This is a deprecation pattern change. The code change identified the `ImplicitBatchModeCompatible` strategy as deprecated and issued a warning message. Developers are encouraged to use a different profile strategy to avoid potential errors during engine building.
-0,clean,https://github.com/tensorflow/tensorflow/commit/5b6f7d228f4bb57ec1282eb7bc0c8f738233432d,"+#include ""tensorflow/compiler/xla/mlir/ir/runtime/rt_dialect.h""
-+  if (std::unique_ptr<Type> converted = ConvertCanonicalType(type, *this))
-+    return std::move(converted);
-+    if (std::unique_ptr<Type> converted = conversion(type))
-+      return std::move(converted);","#include ""tensorflow/compiler/xla/mlir/ir/runtime/rt_ops.h""
-std::unique_ptr<Type> converted;
-if (converted = ConvertCanonicalType(type, *this)) return std::move(converted);
-if (converted = conversion(type)) return std::move(converted);",The bug was caused by compiler bugs that necessitated the addition of explicit std::move to work around the issues. Adding std::move was a workaround to address problems in the compiler's behavior that were impacting the code.,"This code change involves replacing the usage of the auto keyword with std::unique_ptr<Type> for defining unique pointers to Type objects. Additionally, moves have been added to std::move(converted) to ensure that ownership is transferred correctly when returning the unique pointers."
-0,clean,https://github.com/tensorflow/tensorflow/commit/2768a9e9073ac46f2be1779dfeaa635ef5bbe2d3,"+    if (failed(symbolTable.replaceAllSymbolUses(gpuModuleOp, symbol, funcOp)))
-+      return rewriter.notifyMatchFailure(fusionOp, ""failed to replace symbol"");","funcOp->getParentOfType<ModuleOp>().walk([&](gpu::LaunchFuncOp launch) {
-  launch.replaceAllSymbolUses(symbol, gpuModuleOp.getNameAttr());
-});","The bug was caused by a temporary work-around that was implemented to address a previous issue related to XLA on the GPU. The fix has now been made in the LLVM project, which means the work-around is no longer necessary.","This is a code change to replace a pattern of checking if a symbol equals a certain value and then manually updating all uses of that symbol with a new value. 
-The fixing pattern here is to use the `replaceAllSymbolUses` method provided by `SymbolTable` to automatically replace all uses of the old symbol with the new symbol."
-0,clean,https://github.com/tensorflow/tensorflow/commit/45d7d254a5736a1702c2378aa24ec7c4e26daaf2,"+      string attr_str = absl::Substitute(""('$0', $1)"", attr.first,
-+                                         attr.second.ShortDebugString());","-#include ""tensorflow/core/platform/protobuf.h""
--      string attr_str =
--          absl::Substitute(""('$0', $1)"", attr.first, attr.second.ShortDebugString());","The root cause of the bug is that DebugString was being used to create a text proto instead of Protobuf TextFormat. This could lead to inconsistencies or unexpected behavior when serializing the proto message. DebugString is meant for debugging purposes and may not produce the intended output format for a text proto. By switching to Protobuf TextFormat, the text proto will be generated correctly according to the expected format.",The fixing pattern in the code change is replacing the manual formatting of the `attr_second_text` with the `ShortDebugString()` method provided by the `attr.second` object. This simplifies the code by directly obtaining the debug string representation of `attr.second` instead of manually formatting and handling the `attr_second_text` string.
-0,clean,https://github.com/tensorflow/tensorflow/commit/6ab00d035f162354cbb946b775b354e02dcd73dc,"+  if (DumpingEnabledForHloModule(*hlo_module)) {
-+    DumpToFileInDirOrStdout(*hlo_module, """", ""tfrt_bef"", bef);
+",,No,NO
+0,https://github.com/tensorflow/tensorflow/commit/c3b618f959f8afcec8c42a6ab9639c047e61c518,third_party/xla/xla/stream_executor/gpu/gpu_timer.h,"-  // An ugly but a very convenient helper: creates a timer only when we need
+-  // one, but always returns an object. If `is_needed` is false, returns an
+-  // empty optional, acts like `Create` otherwise.
+-  static absl::StatusOr<std::optional<GpuTimer>> CreateIfNeeded(
+-      Stream* stream, bool use_delay_kernel, bool is_needed);
+-
+",,No,NO
+0,https://github.com/tensorflow/tensorflow/commit/c3b618f959f8afcec8c42a6ab9639c047e61c518,third_party/xla/xla/stream_executor/rocm/rocm_blas.cc,"-  TF_ASSIGN_OR_RETURN(
+-      auto timer,
+-      GpuTimer::CreateIfNeeded(
+-          stream, profile_result && profile_result->warmup_run_executed(),
+-          profile_result != nullptr));
+","+  std::optional<GpuTimer> timer = std::nullopt;
++  if (profile_result != nullptr) {
++    TF_ASSIGN_OR_RETURN(
++        timer, GpuTimer::Create(stream, profile_result->warmup_run_executed()));
 +  }
-+","if (debug_options_.enable_dump_ir_to_disk()) {
-  hlo_module->DumpToFileInDirOrStdout(/*dir*/ """", /*file_name*/ ""original"", /*append_timestamp*/ true);
-}","The bug was caused by not dumping the TFRT BEF binary file when the debug options were enabled. This meant that crucial debugging information was not being captured, making it difficult to diagnose issues with the code.","This code change shows the addition of a conditional block that checks if dumping is enabled for an HLO module. If dumping is enabled, then the code calls the `DumpToFileInDirOrStdout` function with specific parameters. 
-
-The fixing pattern in this code change is **Conditional Addition**."
-0,clean,https://github.com/pytorch/pytorch/commit/e5cc7ada6706f737959d8488d96028b3eb29aeea,"+            # https://github.com/python/cpython/issues/106905
-+            if (
-+                sys.version_info.major == 3
-+                and sys.version_info.minor == 11
-+                and sys.version_info.micro <= 8
-+            ):
-+                return no_op
-+","if sys.version_info >= (3, 11, 0) and sys.version_info < (3, 11, 9):
-    return no_op()","The root cause of the bug is a CPython bug from version 3.11.0 to 3.11.7 where the abstract syntax tree (AST) parsing state is global and can result in errors when multiple threads are involved. This bug led to issues with Triton template precompilation in PyTorch version 311.0-3.11.7. To work around this issue, the Triton template precompilation was skipped in this specific version range.",This code change adds a condition to return a specific function `no_op` when the Python version is 3.11.0 to 3.11.8 inclusive.
-0,clean,https://github.com/pytorch/pytorch/commit/be49d3b1702c629057560893db20f2a6b6901656,"+        if (
-+            args.ci
-+            and args.accuracy
-+            and args.training
-+            and args.only in {""dla102"", ""gernet_l""}
-+        ):
-+            # Log generated code for flaky tests, to check if there is any codegen difference
-+            inductor_config.debug = True
-+","if hasattr(args, 'ci') and args.ci in ['dla102', 'gernet_l'] \
-    and hasattr(args, 'accuracy') and args.accuracy in ['dla102', 'gernet_l'] \
-    and hasattr(args, 'training') and args.training in ['dla102', 'gernet_l'] \
-    and hasattr(args, 'only') and args.only in ['dla102', 'gernet_l']:
-    inductor_config.debug = True","The root cause of the bug was flaky tests in dla102 and gernet_l. In order to investigate the issue, debug logging was turned on to log the generated code for these tests. This was done to check for any codegen differences when the tests failed.","Adding conditions to check if `args.ci`, `args.accuracy`, `args.training`, and `args.only` are present and have specific values: ""dla102"" or ""gernet_l"". If all conditions pass, then the `inductor_config.debug` flag is set to True."
-0,clean,https://github.com/pytorch/pytorch/commit/6c604c9262307ffcaf1d7dd68bfa5f6b44513d06,"+  for (; alignment < 16; alignment *= 2) {
-+    if (address % (alignment * 2)) {
-+      return alignment;
-+    }
-+  }","for (; alignment < 16; alignment *= 2) {
-    if (address % (alignment * 2) != 0) {
-        return alignment;
-    }
-}","The root cause of the bug was an issue with the alignment function in the quantized cuDNN V8 path. The bug caused the returned alignment to be doubled if the alignment was smaller than 16, leading to incorrect alignment calculations. The bug was fixed in the cuDNN V8 API integration, but the fix was not applied to this specific codebase until the mentioned pull request was made.","This code change replaces a while loop with a for loop and if condition. 
-- The original while loop checked if the address is divisible by the alignment and the alignment is less than 16. If true, it multiplied the alignment by 2. 
-- The updated code uses a for loop that only increments the alignment by multiplying it by 2 until it reaches 16. 
-- Inside the for loop, an if condition is added to check if the address is not divisible by (alignment * 2). If true, it returns the alignment."
-0,clean,https://github.com/pytorch/pytorch/commit/adfd8f382331adbf9cbfa14039ef3b61f2f4e10c,"+        if not self._is_root:
-+            raise RuntimeError(
-+                ""`no_sync()` on inner FSDP instances is not supported. Please call `no_sync()` on root FSDP module.""
-+            )","raise RuntimeError(""`no_sync()` on inner FSDP instances is not supported"")","The root cause of the bug was that an `assert` statement was used in the code to validate certain conditions. However, using `assert` is meant to catch developer bugs, but in this case, it was possible for a user action to trigger the error path as well. To address this issue, the `assert` statement was replaced with a raise runtime error.",This code change is correcting an assertion error by replacing it with a `RuntimeError` exception with a more descriptive error message. The pattern is replacing an assert statement with explicit exception handling for better error messaging.
-0,clean,https://github.com/pytorch/pytorch/commit/e09a84a184e1687f4ddc7f3fc875eaaf5b9ec74f,,"
-if config.debug_partitioner:
-    fw_outs = call_func_with_args(compiled_fw_func, deduped_flat_args)
-    #-            activation_sizes = 0
-    #-            for out in fw_outs[_num_outs:]:
-    #-                if isinstance(out, torch.Tensor):
-    #-                    activation_sizes += out.storage().nbytes()
-    #-            print(f""Real Activations Stored(GB): {activation_sizes/1e9}"")","The root cause of the bug was that debug output code that relied on real tensors was removed from the codebase. This code did not work with fake tensors, resulting in errors.","The identified fixing pattern in the code change is **Code Removal**. Specifically, the code block responsible for calculating and printing the size of real activations stored in gigabytes has been removed from the if block."
-0,clean,https://github.com/pytorch/pytorch/commit/cec251fc4bfa76ad77ad748559d52055cc579f27,+          if ! lintrunner --force-color --all-files --tee-json=lint.json; then,Clean
-0,Buggy,https://github.com/pytorch/pytorch/commit/f3a2094065c8b4b7bae426e71c923a8a8abb74b5,"+            and not isinstance(
-+                call_to_inspect, (torch._ops.OpOverloadPacket, torch._ops.OpOverload)
-+            )","if not isinstance(call_to_inspect, (torch._ops.OpOverloadPacket, torch._ops.OpOverload)):
-            return default
-        return self._fallthrough(call_to_inspect)","The root cause of the bug was the usage of internal APIs in some tests that caused an assertion error when using the `torch._dynamo.export` function with `torch.ops.aten.scaled_dot_product_attention`. The fix addressed this issue by updating the export mechanism to only support `nn.Module` as the top-level entry function, thereby mitigating the problem.",The fixing pattern in the code change is adding a condition to check if the variable `call_to_inspect` is not an instance of either `torch._ops.OpOverloadPacket` or `torch._ops.OpOverload`.
-0,Buggy,https://github.com/pytorch/pytorch/commit/012829eb3657aff2d58cead0bd166089c6e90c7f,+    return false;,"} else {
-    return false;
-}","The root cause of the bug is that the `canFuseOnDevice` function in the code crashes when the target device is unsupported. This prevents devices like XLA and Lazy from working on models implemented in `jit.script`. The proposed fix is to remove the checker and simply return false for all unsupported cases, or to add specific handling for XLA and Lazy devices if necessary.","The fixing pattern in the code change is: 
-- Removing the TORCH_CHECK_NOT_IMPLEMENTED condition and replacing it with a return statement."
-0,Buggy,https://github.com/pytorch/pytorch/commit/027c0d7f8e37e583c02b372df5331d73793c06b1,"+    # Tensor printing performs tensor operations like slice, indexing, etc to make it in a
-+    # representable format. These operations on xla/lazy tensor results in compilations. Hence,
-+    # to avoid compilations, copying the tensor to cpu before printing.
-+    if self.device.type == 'xla' or self.device.type == 'lazy':
-+        self = self.to('cpu')
-+","if tensor.device.type == 'xla' or tensor.device.type == 'lazy':
-    tensor = tensor.cpu()
-print(tensor)","The root cause of the bug was multiple compilations occurring during tensor printing on XLA devices. Torch was performing tensor operations like slicing to make the tensor readable, which resulted in compilations. To address this issue and avoid unnecessary compilations, the solution involved copying the tensor to the CPU before printing it. This approach eliminated the need for repetitive compilations during tensor printing on XLA devices.","This code change is implementing a pattern for fixing issues related to tensor operations like slice, indexing, etc for XLA/lazy tensors that may result in compilations. To avoid these compilations, the code is checking if the device type is 'xla' or 'lazy', and if so, it is copying the tensor to the CPU before printing it."
-0,Buggy,https://github.com/pytorch/pytorch/commit/02e2158e754bafda46e663052c838aeb6ab6b560,"+          if (inst.N == 0 || inst.N > stack.size()) {
-+            TORCH_CHECK(
-+                false,
-+                ""INTERFACE_CALL N="",
-+                inst.N,
-+                "" not in range [1, "",
-+                stack.size(),
-+                ""]"");
-+          }","TORCH_CHECK(inst.N >= 1 && inst.N <= stack.size(), ""Invalid number of inputs for INTERFACE_CALL opcode"");
-        </output>",The root cause of the bug was an out of bounds read issue in the mobile TorchScript interpreter's INTERFACE_CALL opcode handler. This issue could lead to memory corruption. The fix added an explicit check to ensure that the number of inputs passed to the format method called when handling the INTERFACE_CALL opcode is valid and within bounds of the stack.,"This code change adds input validation to ensure that the value of `inst.N` is within the range of [1, stack.size()]. If the condition is not met, it will trigger a `TORCH_CHECK` error message stating that the value of `inst.N` is not within the specified range."
-0,Buggy,https://github.com/pytorch/pytorch/commit/07f0f383fa23e63eca164036ab58ab983e9437eb,"+    return type(inp) is torch.Tensor or hasattr(inp, ""__torch_function__"")","return isinstance(inp, torch.Tensor) or hasattr(inp, ""__torch_function__"")","The root cause of the bug was that the `tensor_like` function was checking the type of the input instance for a torch function implementation, instead of checking the instance itself. This was leading to incorrect behavior when determining if an instance was suitable for a torch function implementation.",Replacing `type(inp)` with `inp` to directly check if `inp` is a torch tensor instead of checking the type of `inp`.
-0,Buggy,https://github.com/pytorch/pytorch/commit/097defb1608827d82b18b27adeec0a98b72a9281,"+            if (
-+                world_size > num_devices_per_host
-+                and world_size % num_devices_per_host != 0
-+            ):","if world_size % num_devices_per_host != 0 or (device_mesh is not None and len(device_mesh) != world_size):
-            raise ValueError(""Invalid device mesh configuration for the given world size"")","The root cause of the bug was that the device mesh was only being checked when the world size was greater than the number of devices per host. This meant that the device mesh was not being properly validated in cases where the world size was less than or equal to the number of devices per host. The fix in the commit ensures that the device mesh is checked regardless of the size of the world, preventing potential issues with the device mesh configuration.","This code change involves adding additional conditions to the existing `if` statement. The fixing pattern here is ""Adding additional condition checks""."
-0,Buggy,https://github.com/pytorch/pytorch/commit/1359d16fe8ca0cb7041674c455f2f99a9636fec0,"+            # Two eager runs should have exactly same result
-+                fp64_ref=None,
-+                cos_similarity=False,
-+                tol=0,
-+        torch.use_deterministic_algorithms(True)
-+        os.environ[""CUBLAS_WORKSPACE_CONFIG""] = "":4096:8""
-+        torch.backends.cudnn.deterministic = True
-+        torch.backends.cuda.matmul.allow_tf32 = False","torch.backends.cudnn.deterministic = True
-+        torch.use_deterministic_algorithms(True)
-+        torch.set_deterministic(True)","The root cause of the bug is related to nondeterminism in eager runs, which the commit attempted to address by tightening the checking in two eager runs.",This code change involves adding new configurations for deterministic behavior and performance tuning in a machine learning codebase. The fixing pattern is adding new configurations for deterministic behavior and performance tuning.
-0,Buggy,https://github.com/pytorch/pytorch/commit/152f665dee05377f7459d985d60dc1edb782d40e,"+#include <torch/csrc/Exceptions.h>
-+  if (!THPVariableClass)
-+      return false;
-+
-+  const auto result = PyObject_IsInstance(obj, THPVariableClass);
-+  if (result == -1)
-+      throw python_error();
-+  return result;","if (!THPVariableClass) {
-    return false;
-}
-
-int check = PyObject_IsInstance(obj, THPVariableClass);
-if (check == -1) {
-    throw python_error();
-}
-
-return check;","The root cause of the bug was that the `THPVariable_Check` function did not handle the case in which `PyObject_IsInstance` returned -1, indicating an exception. This resulted in an unhandled exception and potential crash. The fix inserted a check for the return value of `PyObject_IsInstance` and added logic to throw a `python_error` in case of an exception, properly handling the error scenario.","The fixing pattern in the code change is ""Adding error handling and proper return statement"". 
-
-Explanation:
-1. In the original code, there was a check for `THPVariableClass` before calling `PyObject_IsInstance`, but no error handling was present for the case where `THPVariableClass` is null.
-2. In the fixed code, additional error handling is added. If `THPVariableClass` is null, the function returns false immediately, preventing a potential crash.
-3. The result of `PyObject_IsInstance` is now stored in a variable and checked for errors (-1) before returning the result. If an error occurs, a `python_error` is thrown."
-0,Buggy,https://github.com/pytorch/pytorch/commit/157d478a30f27fd9d866c1235841721a559c8d0b,"+                        index.shape[j] == self.shape[k + j],","index[j] == self.shape[k + j],","The root cause of the bug was an omission of the shape in the size check in the index. This omission caused incorrect size checks to be performed, leading to potential errors or unexpected behavior when working with tensors in PyTorch.",Replacing the less than equal to operator (<=) with an equality operator (==) in the code.
-0,Buggy,https://github.com/pytorch/pytorch/commit/175ccfc4c8443bcc65c87d9c942272d3ebf16b0b,"+      ivalues && module->object_types(),
-+      ""Parsing flatbuffer module: Corrupted ivalues/object_types field"");
-+  TORCH_CHECK(
-+      reinterpret_cast<const char*>(ivalues) < end, ""Corrupted ivalues field"");"," assert(ivalues != nullptr && reinterpret_cast<const char*>(ivalues) < end, ""Corrupted ivalues field or out of memory range"");","The root cause of the bug was that there was no validation check to ensure that all required fields in the flatbuffer module were initialized. This led to a segmentation fault issue when certain fields were not properly set. To address this problem, validation checks were added to make sure all necessary fields are initialized, preventing the segfaults.","The fixing pattern in the code change is surrounding the existing assert statement with a new assert statement along with an additional condition check. 
-
-The code change maintains the original condition check for `ivalues` not being `nullptr` and module's `object_types` being valid. It adds a new assert statement for checking the condition `reinterpret_cast<const char*>(ivalues) < end`, which ensures that `ivalues` is within a valid memory range. Additionally, it updates the error message to provide more accurate information about the issue."
-0,Buggy,https://github.com/pytorch/pytorch/commit/1becd2c314f45bded8d3fbec91d785e7190b4afe,"+      (log_probs.device().type() == at::kCUDA) &&
-+      (targets.device().type() == at::kCPU) &&
-+      (targets.is_contiguous()) &&
-+      (log_probs.dim() == 3);","if (log_probs.device().type() == at::kCUDA && 
-        targets.device().type() == at::kCPU && 
-        targets.is_contiguous() && 
-        log_probs.dim() == 3) {
-            // continue with cuDNN implementation
-        } else {
-            // continue with CPU implementation
-        }","The root cause of the bug was that not all the necessary checks present in `_cudnn_ctc_loss` were also present in `_use_cudnn_ctc_loss`. This caused a RuntimeError when using `CTCLoss` with CUDA tensors that were not properly accounted for. To address this issue, the checks were aligned between the two functions to ensure that the appropriate path is taken based on the input conditions.","The fixing pattern in the code change is adding additional conditions to the existing check. The original code was checking if the `log_probs` tensor is on a CUDA device, and now additional conditions have been added to also check if the `targets` tensor is on a CPU device, if `targets` tensor is contiguous, and if the `log_probs` tensor has a dimension of 3."
-0,Buggy,https://github.com/pytorch/pytorch/commit/1c5a8125798392f8d7c57e88735f43a14ae0beca,"+  } else if (PyList_Check(args)) {
-+  } else if (PyTuple_Check(args)) {
-+  } else {
-+    throw torch::TypeError(""expected List or Tuple (got %s)"", Py_TYPE(args)->tp_name);
-+  } else if (PyList_Check(args)) {
-+  } else if (PyTuple_Check(args)) {
-+  } else {
-+    throw torch::TypeError(""expected List or Tuple (got %s)"", Py_TYPE(args)->tp_name);",Clean
-0,Buggy,https://github.com/pytorch/pytorch/commit/1f819ee965894b8332cb364a67c91855c91c9dcc,"+                        if not torch.is_grad_enabled() or all([not x.requires_grad for x in tensor_args]):
-+                            if output.is_cuda or 'cpu' in str(output.device):
-+                                convert_to_nested = True
-+                                output = torch._nested_tensor_from_mask(output, src_key_padding_mask.logical_not())","if output.is_cuda or 'cpu' in str(output.device):
-    convert_to_nested = False
-else:
-    convert_to_nested = True
-    output = torch._nested_tensor_from_mask(output, src_key_padding_mask.logical_not())","The bug was caused by allowing inputs with gradients to be converted to NestedTensors, which caused issues when autograd tried to find the size of the NestedTensor. This occurred in the context of nn.TransformerEncoder, where calls with gradients enabled would fail due to this conversion issue. The fix involved adding a check for no gradients in the transformer encoder to prevent the conversion of tensors with gradients to nested tensors.","The fixing pattern in the code change is Conditional Statement Transformation. 
-
-The code change modified the conditional statement to check if `output.is_cuda` or `'cpu' in str(output.device)` instead of checking if `torch.is_grad_enabled()` is False or all elements in `tensor_args` do not require gradients. 
-
-This change ensures that the condition for `convert_to_nested` and `output` transformation is based on the properties of the `output` tensor rather than the gradient status of the tensors in `tensor_args`."
-0,Buggy,https://github.com/pytorch/pytorch/commit/232fbd90ff6d93362120d955befeeb297179ddad,"+    is_cpu = all(
-+        input.get_device().type == ""cpu""
-+        for input in (x, weight, bias)
-+        if input is not None
-+    )
-+            bias if is_cpu else None,  # For cpu path, bias can always be fused
-+    if not is_cpu and bias is not None:","if bias is not None and x.device.type == 'cpu' and weight.device.type == 'cpu':
-    out = torch.conv2d(x, weight, bias=bias, stride=stride, padding=padding)
-else:
-    out = torch.conv2d(x, weight, stride=stride, padding=padding)","The root cause of the bug was that the bias was not being fused for the CPU convolution path in TorchDynamo. This was resulting in suboptimal performance when the inputs' device was CPU. To address this issue, the PR added a device check to fuse the bias for the CPU path, thereby improving performance.","This code change is adding a condition to check if all the input tensors (x, weight, bias) are on CPU before using the bias in the computation. If all the input tensors are on CPU, the bias is directly used. If any of the tensors is not on CPU, the bias is set to None. The fixing pattern here is ""Conditional Fusing on Device Type."""
-0,Buggy,https://github.com/pytorch/pytorch/commit/2597d5d72272d196b4cb5442ffc8cde376d1f785,"+            if isinstance(x.get_layout(), FlexibleLayout):","-            if isinstance(
--                x.get_layout(), FlexibleLayout
--            ):
-               x = x.change_layout(FixedLayout(order))","The root cause of the bug is that for convolution operations, if the original input's layout is flexiblelayout, there will always be a memory copy when checking if the input layout matches the target stride order. This is because the function `is_stride_order_storage_and_layout` only checks the initial stride order and does not handle cases where the layout can be changed. Therefore, in cases where the user provides a stride order, the flexiblelayout should always be converted to FixedLayout using the given stride order to avoid unnecessary memory copies. 
-
-This bug resulted in redundant memory copies in the generated code, which were eliminated after the fix in the mentioned PR by always converting flexiblelayout to FixedLayout when given a stride order.","Pattern: 
-- Removing the is_stride_order_storage_and_layout() function check from the if condition and keeping only the check for isinstance(x.get_layout(), FlexibleLayout)."
-0,Buggy,https://github.com/pytorch/pytorch/commit/2c9dd886afc656a8bfe5d8bbcb601ee5877cee21,"+  // handle the case of scalar tensor as a no-op
-+  if (self_dim == 0)
-+    return self.alias();
-+",Clean
-0,Buggy,https://github.com/pytorch/pytorch/commit/2dafa70d61a1a5af849ab79c7aed4c84686337a0,"+    def __post_init__(self):
-+        ph_nodes = get_placeholders(self.graph)
-+        assert len(ph_nodes) == len(self.inps)
-+
-+    assert isinstance(inps, (tuple, list))
-+","class Minifier:
-    def __init__(self, graph, inps):
-        self.graph = graph
-        self.inps = inps
-
-    def get_placeholders(graph):
-        # implementation of get_placeholders function
-        pass
-       
-    def __post_init__(self):
-        ph_nodes = self.get_placeholders(self.graph)
-        assert len(ph_nodes) == len(self.inps)
-        assert isinstance(self.inps, (tuple, list))",The root cause of the bug was a lack of sufficient error checking in the minifier code. The commit added more error checking to address this issue and improve the overall stability and robustness of the minifier functionality.,"The fixing pattern in the code change is to add an `__post_init__` method in a class which utilizes class attributes. This method is called automatically after the initialization of the class attributes, where variable `ph_nodes` is assigned the result of a function call to `get_placeholders(self.graph)`, and then it asserts that the length of `ph_nodes` is equal to the length of `self.inps`. Additionally, there is a validity check using the `isinstance()` function to ensure that `inps` is either a tuple or a list."
-0,Buggy,https://github.com/pytorch/pytorch/commit/37dea0454dd310cfe443859f717862657df6b753,"+    if len(node.args) > 0 and isinstance(node.args[0], Node):","if len(node.args) > 0 and isinstance(node.args[0], Node):",The root cause of the bug was that there was an issue with checking the number of arguments when checking the observer in the same graph. This check was added as part of the mentioned commit to ensure that the correct number of arguments are passed to the observer in the graph.,"This code change is fixing an issue where the code was checking if the first element of `node.args` is an instance of `Node` without first checking if `node.args` is empty. By adding the condition `len(node.args) > 0` before checking for `isinstance(node.args[0], Node)`, the code change ensures that the check is only performed if there are elements in `node.args`, preventing an ""index out of range"" error when accessing the first element."
-0,Buggy,https://github.com/pytorch/pytorch/commit/3ef4d697df5bfdbd27dfc7a79c0679da2b87e3af,"+            self.device_backend_map = {""cpu"": Backend.GLOO}
-+            if is_nccl_available():
-+                self.device_backend_map[""cuda""] = Backend.NCCL","self.device_backend_map = {
-    ""cpu"": Backend.GLOO,
-}
-if is_nccl_available():
-    self.device_backend_map[""cuda""] = Backend.NCCL
-}","The root cause of the bug is that the default backend was trying to initialize the nccl backend without checking for its availability first. This could lead to errors or failures when attempting to use nccl without actually having it installed or available on the system. The fix made in the mentioned pull request ensures that the nccl backend is only initialized if NCCL is available, preventing any potential issues related to its absence.","The fixing pattern in the code change is:
-
-- The original code had the device_backend_map dictionary with hard-coded values for the ""cpu"" and ""cuda"" keys.
-- In the fixed code, the hard-coded values for ""cpu"" and ""cuda"" are removed.
-- Instead, a condition `if is_nccl_available():` is added to check if NCCL is available.
-- If NCCL is available, then the ""cuda"" key is set to Backend.NCCL in the device_backend_map dictionary.
-- This makes the code more dynamic, allowing the selection of the backend based on the availability of NCCL."
-0,Buggy,https://github.com/pytorch/pytorch/commit/40d6f2a02027023216607adb892d3b9c7493904c,"+#include <ATen/TensorSubclassLikeUtils.h>
-+  bool any_tensors_are_subclass =
-+      at::areAnyTensorSubclassLike({params.query, params.key, params.value});
-+  const bool any_inputs_require_grad = params.query.requires_grad() ||
-+      params.key.requires_grad() || params.value.requires_grad();
-+  const bool gradmode_enabled = at::GradMode::is_enabled();
-+  if ((any_inputs_require_grad && gradmode_enabled) || any_tensors_are_subclass) {","if ((at::any_tensor_requires_grad({params.query, params.key, params.value}) || at::areAnyTensorSubclassLike({params.query, params.key, params.value})) && at::GradMode::is_enabled()) { 
-        // existing code here 
-}","The bug was caused by the grad check test not properly handling subclassed tensors and grad mode. The update to sdp_utils did not account for these cases, leading to failures in the grad check test.","This code change adds a new check for whether any of the input tensors are subclass-like tensors by using the `at::areAnyTensorSubclassLike` function from `ATen/TensorSubclassLikeUtils.h`. This new check is used along with the existing check for whether any input tensors require gradients and whether gradient mode is enabled in order to conditionally execute a block of code. 
-
-The fixing pattern in this code change is ""Adding a new conditional check based on additional conditions or input criteria""."
-0,Buggy,https://github.com/pytorch/pytorch/commit/41ad221751e57c2d2ccc82b431f56d6ed62e1741,"+  TORCH_INTERNAL_ASSERT_DEBUG_ONLY(q_k_v.is_contiguous());
-+  const auto qkv_contig = qkv.expect_contiguous();
-+  const auto qkv_bias_contig = qkv_bias.expect_contiguous();
-+ AT_DISPATCH_FLOATING_TYPES_AND2(
-+        scalar_t* qkv_data = qkv_contig->data_ptr<scalar_t>();
-+        scalar_t* qkv_bias_data = qkv_bias_contig->data_ptr<scalar_t>();
-+  TORCH_INTERNAL_ASSERT_DEBUG_ONLY(q_k_v_s.size() == 3);","AT_DISPATCH_FLOATING_TYPES_AND2(
-            qkv_data = qkv.expect_contiguous().data_ptr<scalar_t>();
-            qkv_bias_data = qkv_bias.expect_contiguous().data_ptr<scalar_t>();
-        );
-        TORCH_INTERNAL_ASSERT_DEBUG_ONLY(q_k_v_s.size() == 3);","The root cause of the bug was the assumption that input tensors were contiguous in the code path related to the transformation of bias for multi-head attention (MHA). This assumption led to errors in the code, so a fix was implemented to check for tensor contiguity before proceeding with the transformation.","The fixing pattern in the code change involves replacing direct access to the data pointers of the `qkv` and `qkv_bias` tensors with using `expect_contiguous()` method to ensure that the tensors are contiguous and then accessing their data pointers. Additionally, there is an inclusion of a debug assertion `TORCH_INTERNAL_ASSERT_DEBUG_ONLY(q_k_v_s.size() == 3);` to ensure that a specific condition is met."
-0,Buggy,https://github.com/pytorch/pytorch/commit/45296f87ec865a7a500a6fd98353035c040d0cb7,+    if not torch.cuda.is_available() or torch.version.hip is not None:,"if not torch.cuda.is_available() or torch.version.cuda is None:
-    print(""CUDA is not available"")
-else:
-    cuda_version = torch.version.cuda
-    print(""CUDA version:"", cuda_version)","The root cause of the bug was that the `check_cuda` function did not exit properly when `torch.version.cuda` was `None`, leading to an exception when trying to parse the CUDA version. The fix addressed this issue by adding a check to exit `check_cuda` if `torch.version.cuda` is `None`.","This code change added a new condition to check whether the PyTorch version includes the Hip backend. The fixing pattern used here is ""Adding a new condition""."
-0,Buggy,https://github.com/pytorch/pytorch/commit/45d5b3248b430aca70111316accd165954464589,"+         << ""momentum="";
-+
-+  if (this->options.momentum().has_value()) {
-+      stream << this->options.momentum().value();
-+  } else {
-+      stream << ""None"";
+",No,NO
+0,https://github.com/tensorflow/tensorflow/commit/c3b618f959f8afcec8c42a6ab9639c047e61c518,third_party/xla/xla/stream_executor/rocm/rocm_blas.cc,"-  TF_ASSIGN_OR_RETURN(
+-      auto timer,
+-      GpuTimer::CreateIfNeeded(
+-          stream, profile_result && profile_result->warmup_run_executed(),
+-          profile_result != nullptr));
+","+  std::optional<GpuTimer> timer = std::nullopt;
++  if (profile_result != nullptr) {
++    TF_ASSIGN_OR_RETURN(
++        timer, GpuTimer::Create(stream, profile_result->warmup_run_executed()));
 +  }
+",No,NO
+0,https://github.com/tensorflow/tensorflow/commit/c9c83bb391380374bf476b30448693e139e8752c,third_party/xla/xla/service/spmd/shardy/round_trip_common/shard_map_import.cc,"-      if (!op.getCallee().starts_with(""shmap_body"")) {
+","+      if (!op.getCallee().contains(""shmap_body"")) {
+","-      if (!op.getCallee().contains(""shmap_body"")) {",NO,"The root cause of the bug is that the code is only checking if ""shmap_body"" is a prefix of the function name, instead of verifying if it is contained within the function name. This results in false positives where a prefix is added to the name before ""shmap_body"", leading to incorrect detection of the function names that should be processed.",The fixing pattern in the code change is from using the `starts_with` function to using the `contains` function.
+0,https://github.com/tensorflow/tensorflow/commit/c9c83bb391380374bf476b30448693e139e8752c,third_party/xla/xla/service/spmd/shardy/shardy_call_inliner.cc,"-#include <string>
+-#include <string_view>
+-
+-  auto prefix_check = [](std::string_view name) {
+-    const std::string prefix = ""shmap_body"";
+-    return name.substr(0, prefix.size()) == prefix;
+-  };
+-           prefix_check(instruction->to_apply()->name()));
+","+#include ""absl/strings/match.h""
++           absl::StrContains(instruction->to_apply()->name(), ""shmap_body""));
+","#include <string>
+#include <string_view>
+#include ""absl/strings/match.h""
+
+  absl::StrContains(instruction->to_apply()->name(), ""shmap_body"")",NO,"The root cause of the bug is that the code was only checking if ""shmap_body"" was a prefix of the function name, rather than checking if it was contained within the function name. This caused issues in cases where a prefix was added to the name before ""shmap_body"".","The fixing pattern in the code change is replacing the custom prefix checking lambda function with a call to the `absl::StrContains` function from the ""absl/strings/match.h"" header. This change makes the code more concise and leverages existing functionality from the absl library for string matching operations."
+0,https://github.com/tensorflow/tensorflow/commit/3f9da0a5aa614b8832f4e8ec657ff2a306274f0a,third_party/xla/xla/service/collective_ops_utils.cc,,"+#include ""absl/status/statusor.h""
+","Patch:
+         /* Check if all subgroups are exclusively cross module */
+         bool all_subgroups_exclusively_cross_module(const std::vector<std::vector<int>>& replica_ids) {
+            for (const auto& subgroup : replica_ids) {
+               if (std::any_of(subgroup.begin(), subgroup.end(), [&](int id) { return id != subgroup[0]; })) {
+                  return false;
+               }
+            }
+            return true;
+         }",NO,The root cause of the bug is that the added function may not properly handle cases where not all participants within a subgroup have the same replica ID. This could lead to incorrect results when checking if all subgroups in a collective Op are exclusively cross module.,"This is an ""Add Dependencies"" fix pattern."
+0,https://github.com/tensorflow/tensorflow/commit/3f9da0a5aa614b8832f4e8ec657ff2a306274f0a,third_party/xla/xla/service/collective_ops_utils.h,,"+// Returns true if all subgroups in replica_groups are exclusively cross-module.
++absl::StatusOr<bool> IsExclusivelyCrossModule(
++    absl::Span<const ReplicaGroup> replica_groups, bool use_global_ids,
++    bool has_channel_id, const DeviceAssignment& device_assignment);
 +
-+   stream << "", ""","<< ""momentum="";
-if(this->options.has_momentum()) {
-    os << this->options.momentum().value();
-} else {
-    os << ""None"";
-}
-os << "", "";","The root cause of the bug was that the `pretty_print()` function in C++ BatchNorm did not handle the case when momentum was not defined. This caused errors when trying to print the BatchNorm with undefined momentum. The fix involved inserting a check for the momentum and printing ""None"" in case it is not defined, allowing the `pretty_print()` function to handle this case correctly.","The fixing pattern in the code change is adding a conditional check to handle the case when the momentum value is not present. This change ensures that the code safely accesses the momentum value and provides a default value (""None"") in case the momentum value is not set."
-0,Buggy,https://github.com/pytorch/pytorch/commit/468a73f0e3527c52495c864c7d48dc26684f6c0b,"+try:
-+    import numpy as np
-+except ModuleNotFoundError:
-+    np = None
-+
-+    Will return True for int, SymInt, Numpy integers and Tensors with integer elements.
-+    if np is not None and isinstance(x, np.integer):
-+        return True","-    Will return True for int, SymInt, and Tensors with integer elements.
-+    Will return True for int, SymInt, Numpy integers, and Tensors with integer elements.","The root cause of the bug was that the `torch.nn.functional.interpolate` function was updated to check if the `size` parameter only contained integers, but it did not account for numpy integers. This caused existing software to break when using numpy integers in the `size` parameter after upgrading to PyTorch 2.1. The fix added in the PR #110778 updates the check to include numpy integers as well, addressing the TypeError that occurred during runtime.","The fixing pattern in the code change is `adding an additional check for Numpy integers`. The code change now checks if the `numpy` module is available and if the input `x` is an instance of `np.integer`, returning True for Numpy integers along with the existing types int, SymInt, and Tensors with integer elements."
-0,Buggy,https://github.com/pytorch/pytorch/commit/4839f73f329b38819e6f69a8662d61dc36558e52,"+                or (
-+                    not torch._C._has_storage(self)
-+                    and self.device.type == ""privateuseone""
-+                )
-+            not torch._C._has_storage(self) and self.device.type == ""privateuseone""","or (not torch._C._has_storage(self) and self.device.type == ""privateuseone"")
-not torch._C._has_storage(self) and self.device.type == ""privateuseone""","The root cause of the bug was an incorrect check for tensor storage in the code. The check `self.storage is not None` was mistakenly used instead of the correct check `not torch._C._has_storage(self)`. This led to incorrect behavior and potential issues in the code. The bug was identified and fixed in pull request #86845, which was approved after running through the DirectML test suite.","This code change involves adding a condition `not torch._C._has_storage(self)` before the original condition `self.storage is None` in the given line of code. Additionally, the parentheses around the conditions are adjusted to maintain proper logical precedence."
-0,Buggy,https://github.com/pytorch/pytorch/commit/48a49b2683ffa21eb1b472e503c129c043c18f87,"+  TORCH_CHECK(static_cast<int64_t>(pad.size()) <= input_dim * 2,
-+              ""Padding length should be less than or equal to two times the input dimension but got padding length "", pad.size(), "" and input of dimension "", input_dim);",Clean
-0,Buggy,https://github.com/pytorch/pytorch/commit/490f2d75700a806bdc6110e881e78493cde163e3,"+    if (qtensor.device().type() != c10::DeviceType::CUDA &&
-+        qtensor.device().type() != c10::DeviceType::PrivateUse1) {
-+    }  // for cuda and privateuse1, this check will occur in the actual device function
-+    if(qtensor.device().type() != c10::DeviceType::CUDA &&
-+       qtensor.device().type() != c10::DeviceType::PrivateUse1){
-+    }  // for cuda and privateuse1, this check will occur in the actual device function","if(qtensor.device().type() != c10::DeviceType::CUDA && qtensor.device().type() != c10::DeviceType::PrivateUse1){
-}  // for cuda and PrivateUse1, this check will occur in the actual device function","The root cause of the bug was in the `quantize_per_channel` function, where the `checkZeroPoints` for the `privateuse1` backend was failing. This occurred because the `privateuse1` backend was causing a segmentation error when trying to cast data to int64_t in the `checkZeroPoints` function. To address this issue, the decision was made to skip the `checkZeroPoints` for the `privateuse1` backend and handle this check in the actual device function instead.",The fixing pattern in the code change is adding an additional condition to check for a new device type `c10::DeviceType::PrivateUse1` along with the existing condition to check for `c10::DeviceType::CUDA`. This change allows for the check to occur in the actual device function for both CUDA and the new device type `PrivateUse1`.
-0,Buggy,https://github.com/pytorch/pytorch/commit/4ab1588d9919bc1a62219a5c2393e0784ddaae70,"+  if(NOT PYTHONLIBS_VERSION_STRING)
-+    message(FATAL_ERROR
-+      ""Python development libraries could not be found."")
-+  endif()
-+","if(NOT PYTHONLIBS_VERSION_STRING)
-    message(FATAL_ERROR ""Python development libraries not found. Please install Python development libraries."")
-endif","The root cause of the bug is that the error message generated by CMake when the python development library is missing while building PyTorch from source is misleading. It leads the user to believe that there is a syntax error or a CMake version problem, when in reality the issue is with the missing `PYTHONLIBS_VERSION_STRING`. This PR enhances the error message by adding a check to ensure that `PYTHONLIBS_VERSION_STRING` exists before using it, providing more accurate information to the user about the actual cause of the error.",The fixing pattern in this code change is to add a check for the presence of the `PYTHONLIBS_VERSION_STRING` variable and display a fatal error message if it is not found. This ensures that the Python development libraries are available before proceeding with the rest of the configuration or build process.
-0,Buggy,https://github.com/pytorch/pytorch/commit/4d07428edee863e7f5920f0672957a9711a9f0b5,"+  if (num_inputs == 0 || num_inputs > stack.size()) {
-+    AT_ERROR(""Invalid number of inputs for format string: "", num_inputs);
-+  }
-+","inputs = POP();
-if (inputs.size() < 2) {
-    throw Error(""FORMAT opcode requires at least 2 inputs on the stack"");
-}
-int format_str_index = POP().toInt();
-String format_str = constant_table.at(format_str_index).toString();
-String result = String.format(format_str, inputs.toArray());
-PUSH(result);",The root cause of the bug was an out of bounds read issue in the mobile TorchScript interpreter's FORMAT opcode handler. This issue could lead to memory corruption because the number of inputs passed to the format method when handling the FORMAT opcode was not properly checked to ensure it was valid and within the bounds of the stack.,Addition
-0,Buggy,https://github.com/pytorch/pytorch/commit/4ee179c9528c8c6aae17a01f2b0d7e8235219219,"+        if np is not None and isinstance(value, np.number):","if np is not None and isinstance(value, np.number):","The root cause of the bug was that the `ConstantVariable` initialization method did not properly handle cases where NumPy was missing. This caused issues when checking if a value is an instance of a NumPy number. By adding a check for `np is not None` before using `isinstance(value, np.number)`, the bug was fixed.",The fixing pattern in the code change is to add a check to ensure that the `np` module is not `None` before using it to check if the value is an instance of `np.number`. This change prevents a potential `AttributeError` if `np` is `None`.
-0,Buggy,https://github.com/pytorch/pytorch/commit/52e76a305677dfaf26cd5d59bd1aa239375f833c,"+                if src.nelement() == 0 :
-+                    warnings.warn(""Gathering a tensor with zero elements on rank "" + str(rank))
-+                    return","if slice_key_placements is None:
-     raise ValueError(""slice_key_placements not provided"")
-
-# Gather the shards into the local tensors
-gathered_tensors = []
-for slice_key, placement in slice_key_placements.items():
-     shard = remote_tensors[slice_key]
-     if shard.num_elements() == 0:
-         warnings.warn(""Attempting to gather a tensor with zero elements"")
-         continue
-     gathered_tensors.append(shard.copy_to(placement)) ","The root cause of the bug was identified as not properly handling the case when a sharded tensor has no placement on a specific rank. This resulted in the metadata not including that rank's placement, leading to a KeyError when trying to gather the shard. The issue was fixed by adding a check for an empty tensor in order to correctly handle this scenario.",Add warning message when gathering a tensor with zero elements.
-0,Buggy,https://github.com/pytorch/pytorch/commit/55c19a3c6d38a49fe34e008c4c566445c43810f0,"+
-+                # In the case of using AMP (Automatic Mixed Precision), certain models have
-+                # failed the benchmark's correctness check. However, the end-to-end model's
-+                # accuracy when comparing AMP with FP32 is within a difference of less than 0.1%.
-+                # Thus, it's possible that the correctness check failures for these models are
-+                # false alarms. We use multiplier of 3 instead of 2 to avoid these false alarms.
-+                multiplier = 3.0 if res.dtype == torch.bfloat16 else 2.0","                # Set the multiplier to 3.0 when the data type is torch.bfloat16 to avoid false alarms in correctness checks
-                if res.dtype == torch.bfloat16:
-                    multiplier = 3.0
-                else:
-                    multiplier = 2.0  ","The root cause of the bug was that some models were failing the benchmark's correctness check due to false alarms. The benchmark results showed that the end-to-end model's accuracy when comparing Automatic Mixed Precision (AMP) with FP32 was within a difference of less than 0.1%. To address the false alarms, the multiplier for the inductor was increased to 3 instead of 2 in order to avoid these incorrect failure notifications.","This code change involves adding a comment explaining the rationale behind changing the value of the `multiplier` variable from 2.0 to 3.0 under certain conditions. Specifically, when the data type of `res` is `torch.bfloat16`, the `multiplier` is set to 3.0 instead of 2.0 to avoid false alarms in correctness checks for certain models when using AMP (Automatic Mixed Precision).
-
-The fixing pattern here is to adjust the constant value assigned to a variable based on specific conditions to address issues or improve behavior in certain scenarios."
-0,Buggy,https://github.com/pytorch/pytorch/commit/577e90ae9bf257040acb68da3626d9a64d07bf7a,"+        ""Following ops cannot be found: ["",
-+        c10::Join("", "", unsupported_op_names),
-+        ""]. Please check if the operator library is included in the build. If built with selected ops, check if these ops are in the list. If you are a Meta employee, please see fburl.com/missing_ops for a fix. Or post it in https://discuss.pytorch.org/c/mobile/"");","""Following ops cannot be found: [unsupported_op_names]. Please check if the operator library is included in the build. If built with selected ops, check if these ops are in the list. If you are a Meta employee, please see fburl.com/missing_ops for a fix. Or post it in https://discuss.pytorch.org/.""",The root cause of the bug is an improperly formatted error message for missing ops. The error message did not provide clear and useful information to help users troubleshoot the issue. The commit aimed to improve the error message to provide more specific guidance on what ops are missing and how to resolve the issue.,The fixing pattern in the code change is adding square brackets around the list of unsupported operation names and then appending a message to provide more context and guidance to the user.
-0,Buggy,https://github.com/pytorch/pytorch/commit/5b7c72101ca8e9d4edba1d16b6121ad900ca3936,,Clean
-0,Buggy,https://github.com/pytorch/pytorch/commit/61b9d8fccd3361f21e1f3548c2a9538b62cc7525,"+    size_t n = src.size();
-+    if (C10_LIKELY(next_ && (next_ + n <= end_))) {",if (next_ && C10_LIKELY(next_ + n <= end_)) {,"The root cause of the bug is that the `AppendOnlyList::copy` function did not handle null pointers properly when `n == 0`, causing undefined behavior when a `memcpy(0, 0, 0)` operation was performed. This was addressed by adding a null check in the `memcpy` path to avoid the undefined behavior.",Adding an additional condition check to ensure that `next_` is not a null pointer before performing the comparison `next_ + n <= end_`.
-0,Buggy,https://github.com/pytorch/pytorch/commit/62732bdcdb8b6112e01366d4ad1c2a50e61da1ed,"+        and is_node_meta_valid(input)
-+        and is_node_meta_valid(weight)","if is_node_meta_valid(input) and is_node_meta_valid(weight):
-     fusion = input + weight
-     print(fusion)","The root cause of the bug is that the code was performing fusion without checking whether the nodes involved in the fusion are valid. This led to issues with invalid nodes being processed, causing bugs in the functionality.",The fixing pattern in the code change is to add input validation by calling the function is_node_meta_valid for both the 'input' and 'weight' variables before performing the intended operation.
-0,Buggy,https://github.com/pytorch/pytorch/commit/63cbdc92a750a667ffdcfbdac563d02db6fd9559,"+  if (py::isinstance(obj, tp_symn)) {","if (isinstance(obj, SymIntNode)) {","The root cause of the bug was that the type check for SymIntNode objects in the `is_symint_node` function was overly specific with an exact check, which could have caused issues with potential subtypes of SymIntNode. This was resolved by switching the type check to use `isinstance` for a more general and inclusive check.",The fixing pattern in the code change is replacing a method call (`get_type()`) with Python `isinstance()` function to check the type of an object.
-0,Buggy,https://github.com/pytorch/pytorch/commit/63e47c68a692c70bc64c49d687f85f7f5cd02ce3,,"-    // Removing unnecessary checks for offsets in a sequence tensor
--    // Removed TORCH_CHECK for validating offsets
-```cpp
-```","The root cause of the bug was that there were unnecessary checks in the C++ implementation of embedding bags, which caused an H2D synchronization to occur on every embedding bag forward operation. These checks were removed in the commit to align the C++ implementation with the equivalent Python code for embedding bags.",Removing calls to `TORCH_CHECK` for validating offsets in a sequence tensor.
-0,Buggy,https://github.com/pytorch/pytorch/commit/6592259ea52f45e1fc9a633ccb5b154ba5099334,"+      if (device.is_cuda() || device.is_xpu() || device.is_meta() ||
-+          device.is_hpu()) {
-+            ""supported devices include CPU, CUDA and HPU, however got "",","if (device.is_cuda() || device.is_xpu() || device.is_meta() || device.is_hpu()) {
-    ""supported devices include CPU, CUDA, HPU, and meta, however got "",
-}","The root cause of the bug was that the torch.jit.load function did not have support for loading modules saved from HPU devices. This was because the function would first load the modules onto the CPU or CUDA device before moving them to their original devices, but HPU was not included in the supported devices for this process. The bug was fixed by introducing an additional check for HPU devices to enable torch.jit.load to load modules saved from HPU properly.",The fixing pattern in the code change is adding support for a new device type (HPU) by updating the error message to include it in the list of supported devices.
-0,Buggy,https://github.com/pytorch/pytorch/commit/666ff0ae220e1a5c406b0bc5cd43283e1b18b38e,"+    # check if port is uint16_t
-+    if not 0 <= port < 2**16:
-+        raise ValueError(f""port must have value from 0 to 65535 but was {port}."")","if not (0 <= port <= 65535):
-    raise ValueError(""Port number must be within the range of 0 to 65535"")
-store = c10d.TCPStore(rank, world_size, ip, port, wait_time)","The root cause of the bug is that the `_create_c10d_store` function was not correctly handling the port value when calling the TCPStore constructor. The port number in Python is an integer, but it needs to be of type `uint16_t` when used as an argument for the TCPStore constructor. This discrepancy led to potential issues with port number handling in the code.",This code change is fixing a boundary issue by ensuring that the `port` variable is within the range of `uint16_t` (0 to 65535). The if statement checks if the port is not within the valid range and raises a `ValueError` if it is not.
-0,Buggy,https://github.com/pytorch/pytorch/commit/66b04e3cb707d30c4698b269c83cb6221848f17a,"+        profiling_name == nullptr ? """" : profiling_name,","profiling_name ? *profiling_name : """"","The root cause of the bug is that sometimes the profiling name can be a nullptr, leading to an exception when trying to convert it to a std::string. The fix in the mentioned commit adds a check to prevent this nullptr from causing an issue.","This code change introduces a conditional (ternary) operator to handle the case where `profiling_name` is nullptr. If `profiling_name` is nullptr, an empty string is used instead to prevent any potential issues related to nullptr dereferencing."
-0,Buggy,https://github.com/pytorch/pytorch/commit/678c08bb55eef0c2e707a17d0cd6e50f5b9bd427,"+    # Gate PG wrapper check on Gloo availability.
-+    if _GLOO_AVAILABLE:
-+        # It is not expected for PG to be wrapped many times, but support it just
-+        # in case
-+        while isinstance(pg, _ProcessGroupWrapper):
-+            pg = pg.wrapped_pg","if _GLOO_AVAILABLE:
-    while isinstance(pg, _ProcessGroupWrapper):
-        pg = pg.wrapped_pg","The bug was caused by the `ProcessGroupWrapper` check not being gated on Gloo availability, which caused it to fail when Gloo was not available.","The fixing pattern in the code change is to add a check for the availability of the _GLOO_AVAILABLE flag before entering the while loop that unwraps the ProcessGroupWrapper. This change ensures that the while loop is only executed if Gloo support is available, which is the intended behavior."
-0,Buggy,https://github.com/pytorch/pytorch/commit/6b4c686b9a33a1503a4a4133f9067dd31e0822f7,"+            self.writeline(f""if (kernels.{name} == nullptr) {{"")
-+                f""""""    kernels.{name} = loadKernel(""{cubin_path}"", ""{mangled_name}"", {shared_mem}, this->cubin_dir_);""""""
-+            self.writeline(""}"")
-+            self.writeline(f""if ({name} == nullptr) {{"")
-+                f""""""    {name} = loadKernel(""{cubin_path}"", ""{mangled_name}"", {shared_mem});""""""
-+            self.writeline(""}"")","                kernels.{name} = loadKernel(""{cubin_path}"", ""{mangled_name}"", {shared_mem}, this->cubin_dir_);
-                if (kernels.{name} == nullptr) {
-                    return false;
-                }
-                
-                {name} = loadKernel(""{cubin_path}"", ""{mangled_name}"", {shared_mem});
-                if ({name} == nullptr) {
-                    return false;
-                }",The root cause of the bug is that removing the if-nullptr check for kernel pointers in the forward function caused unnecessary re-execution of the loadKernel operation when rerunning the forward function. This led to a performance regression. The correct fix would involve initializing the kernel pointers only once or potentially code-generating loadKernel in the initializer.,Add indentation to the lines setting the kernels.{name} and {name} variables. Add if statements to check if the variables are nullptr after setting them.
-0,Buggy,https://github.com/pytorch/pytorch/commit/6bf0e3b697ce688bc8325440dea3b51fea571c3d,"+from torch._dynamo.exc import BackendCompilerFailed
-+                if (
-+                    self.args.ci
-+                    and isinstance(e, BackendCompilerFailed)
-+                    and (
-+                        ""Internal Triton PTX codegen error"" in str(e)
-+                        or ""cubin"" in str(e)","                    if self.args.ci and (
-                        isinstance(e, BackendCompilerFailed)
-                        and ""Internal Triton PTX codegen error"" in str(e)
-                    or ""cubin"" in str(e)
-                        ):","The root cause of the bug is that the check for a specific exception type, `BackendCompilerFailed`, was not implemented in the code, leading to certain random Triton failures not being properly handled on continuous integration (CI). By introducing the check for `BackendCompilerFailed` exception type, the code can accurately handle these specific failures and prevent them from causing issues on the CI.","The fixing pattern in the code change is to update the conditional check in the if statement to handle instances of the `BackendCompilerFailed` exception instead of checking for specific exception types like `RuntimeError` and `KeyError`. Additionally, the conditions within the if statement have been rearranged to properly handle the checks for specific error messages (""Internal Triton PTX codegen error"" and ""cubin"") in the exception message."
-0,Buggy,https://github.com/pytorch/pytorch/commit/6cc0f1c20c2f87a6c7b0e4abd5419e5007920999,"+  TORCH_CHECK(data != nullptr, ""Pointer to bytes is null."");","```cpp
-    const char* get_model_bytecode_version(const std::vector<char>& data) {
-        // Check if the data pointer is not null
-        TORCH_CHECK(!data.empty(), ""Pointer to bytes is null."");
-        return reinterpret_cast<const char*>(data.data());
-    }
-
-    void test_jit() {
-        std::vector<char> model_data;
-        const char* bytecode = get_model_bytecode_version(model_data);
-        // Use bytecode here
-    }
-```","The root cause of the bug was a missing check for nullptr in the `get_model_bytecode_version` function, which led to a segfault in the `test_jit` function. The fix added in the commit ensures that the pointer is not null before accessing it.","This code change is adding a null pointer check using the `TORCH_CHECK` macro to verify if the `data` pointer is not null. The error message ""Pointer to bytes is null."" will be displayed if the pointer is found to be null."
-0,Buggy,https://github.com/pytorch/pytorch/commit/6f5945e4bb1258d39a2878a08a910fcc8f659d5e,"+                if device_props.major < 7:
-+                        f""Found {device_props.name} which is too old to be supported by the triton GPU compiler, which is used as the backend. Triton only supports devices of CUDA Capability >= 7.0, but your device is of CUDA capability {device_props.major}.{device_props.minor}""  # noqa: B950","-                if device_props.major < 7:
--                        f""Found {device_props.name} which is too old to be supported by the triton GPU compiler, which is used as the backend. Triton only supports devices of CUDA Capability >= 7.0, but your device is of CUDA capability {device_props.major}.{device_props.minor}""  # noqa: B950","The root cause of the bug was an incorrect error message related to the support of Pascal devices in the triton module. The error checker was incorrectly checking for devices < 7.0 instead of the correct condition. Additionally, the `has_triton` definition in utils.py was checking for >= 7.0 instead of < 7.0. This discrepancy led to a misleading error message and incorrect behavior in handling Pascal devices.","The fixing pattern in the code change is updating the minimum supported CUDA Capability version mentioned in the error message. 
-The message was updated from ""Triton only supports devices of CUDA Capability >= 6.0"" to ""Triton only supports devices of CUDA Capability >= 7.0""."
+",No,NO
+0,https://github.com/tensorflow/tensorflow/commit/5b43e7d9f8773988ce71efb958df833f03b1d0f5,third_party/xla/xla/service/algebraic_simplifier.cc,"-        return *value >= 0.0;
+","+        // return false for -0.0, -Inf, NaNs and negative values
++        return !std::signbit(*value) && !std::isnan(*value);
+",        return !std::signbit(*value) && !std::isnan(*value) && *value >= 0.0;,YES,"The root cause of the bug is that the `IsNonNegative` function in `AlgebraicSimplifierVisitor` returns true for `Constant(-0.0)`. This is a problem because certain optimization patterns rely on distinguishing between negative and non-negative values. In C++, `0.0` is considered equal to `-0.0`, so a simple check for non-negativity would return true for `-0.0` as well. To address this issue, the implementation should use `std::signbit` to properly distinguish between `-0.0` and `0.0`.","The fixing pattern in the code change is to modify the condition to return `false` for specific cases including when the value is `-0.0`, `-Inf`, `NaN`, and negative values. This is achieved by using `std::signbit(*value)` to check if the value is negative and `std::isnan(*value)` to check if it is NaN, and returning `false` in those cases."

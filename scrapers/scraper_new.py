@@ -65,7 +65,7 @@ def get_commit_with_changes(repo_path, commit_hash, libname, idx, row):
             "commit_link": f"https://github.com/{libname}/{libname}/commit/{commit_hash}", 
             "date": commit.committed_datetime.isoformat(),
             "message": commit.message.strip(),
-            # "label": response,
+            "label": row['Label'],
             "changes": []
         }
 
