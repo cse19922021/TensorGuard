@@ -194,7 +194,7 @@ def main():
                     output_data.insert(1, item['Label'])
                     write_to_csv(output_data, output_mode)
                 else:
-                    print('This instance has been already processed!')
+                    print('This instancee has been already processed!')
 
                             
 if __name__ == '__main__':
