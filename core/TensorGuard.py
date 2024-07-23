@@ -179,7 +179,7 @@ def tensorGuard(item, exec_mode,_shot_list, use_single_agent):
     return output_data
 
 def main():
-    data_path = f"tensorflow_data.json"
+    data_path = f"PyTorch_test_data.json.json"
     rule_path = f"data/rule_set.json"
     exec_type = ['zero']
     num_iter = 1
@@ -201,7 +201,6 @@ def main():
                 if item['commit_link'] not in hist:
                     write_list_to_txt(item['commit_link'], f'logs/{exec_mode}_shot/{exec_mode}_processed_commits_{i}.txt')
                     for change in item['changes']:
-                        for patch_ in change['patches']:
                             deleted_lines, added_lines = separate_added_deleted(patch_['content'])
                             if exec_mode == 'few':
                                 _shot = [rule_data[item['Root Cause']]['example1'], rule_data[item['Root Cause']]['example2']]

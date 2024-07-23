@@ -20,7 +20,15 @@ def load_basic_doc(src):
     with open(f'data/api_db/basic_rag_{src}.jsonl') as f:
         docs = [json.loads(x) for x in f.readlines()]
     return docs
-    
+
+def prepare_batch_data(data):
+    batch_docs = []
+    for item in data:
+        for change in item['changes']:
+            batch_docs.append(change['whole_hunk'])
+
+    return batch_docs
+
 def make_basic_rag_db(lib, docs):
     embed_fn = MyEmbeddingFunction()
     client = chromadb.PersistentClient(path='./docs_db')
@@ -29,22 +37,20 @@ def make_basic_rag_db(lib, docs):
     )
     
     batch_size = 50
-
-    for i in tqdm(range(0, len(docs), batch_size)):
-
-        batch = docs[i : i + batch_size]
-
-
-        batch_docs = [str(doc["document"]) if str(doc["document"]) != "" else "No document" for doc in batch]
+    batch_docs = prepare_batch_data(docs)
+    for i in tqdm(range(0, len(batch_docs), batch_size)):
+        
+        batch = batch_docs[i : i + batch_size]
         batch_ids = [str(j+i) for j in range(len(batch))]
-        batch_metadata = [dict(title=doc["title"]) for doc in batch]
-
-        batch_embeddings = embedding_model.encode(batch_docs)
+        # batch_ids = [str(item['Id']) for item in batch]
+        # batch_metadata = [dict(label=doc["label"]) for doc in batch]
+        
+        batch_embeddings = embedding_model.encode(batch)
         
         collection.upsert(
             ids=batch_ids,
-            metadatas=batch_metadata,
-            documents=batch_docs,
+            # metadatas=batch_metadata,
+            documents=batch,
             embeddings=batch_embeddings.tolist(),
         )
         
@@ -57,15 +63,16 @@ def test_inference(lib):
     )
 
     retriever_results = collection.query(
-        query_texts=["Generate unit test case for testing tf.shape() API"],
-        n_results=3,
+        query_texts=["fix out of bound bug"],
+        n_results=1,
     )
     
     print(retriever_results["documents"])
     
 def main():
-    lib = 'tensorflow'
-    docs = load_json('TensorFlow_train_data.json')
+    lib = 'pytorch'
+    docs = load_json('PyTorch_train_data.json')
+    
     make_basic_rag_db(lib, docs)
     test_inference(lib)
     
