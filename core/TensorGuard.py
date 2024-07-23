@@ -4,11 +4,17 @@ import os, re, json, tiktoken, backoff, csv
 from openai import OpenAI
 from dotenv import load_dotenv
 import time, random
+import tiktoken
 
 load_dotenv()
 client = OpenAI(
     api_key=os.environ.get(".env")
 )
+
+def get_token_count(string):
+    encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+    num_tokens = len(encoding.encode(string))
+    return num_tokens
 
 def separate_added_deleted(github_diff):
     diff_lines = github_diff.split('\n')
@@ -70,7 +76,7 @@ def bug_detection_agent(commit_message, deleted_lines, added_lines, exec_mode, _
         Given a commit message and code change, detect if it is bug or not. Please generate YES or NO.
         
         Commit message: {commit_message}
-        Code change:{deleted_lines}{added_lines}
+        Code change:{deleted_lines} 
         <output>
         """
     else:
@@ -82,12 +88,13 @@ def bug_detection_agent(commit_message, deleted_lines, added_lines, exec_mode, _
         Example Two:{_shot[1]['Deleted lines']}{_shot[1]['Added lines']}
         
         Commit message: {commit_message}
-        Code change:{deleted_lines}{added_lines}
+        Code change:{deleted_lines}
 
         <output>
         """
-        
-    response = completions_with_backoff(prompt_)
+    t_count = get_token_count(prompt_)
+    if t_count <= 16000:
+        response = completions_with_backoff(prompt_)
     return response.choices[0].message.content
 
 def root_cause_analysis_agent(commit_message):
@@ -100,7 +107,8 @@ def root_cause_analysis_agent(commit_message):
 
 def pattern_extraction_agent(code_removed, code_added):
     prompt_ = f"""
-    Please identify the fixing pattern in the following code change.
+    Briefly summarize the core change in the following code diff and describe the general pattern
+    it represents, without going into specific implementation details.
     Question:{code_removed}{code_added}
     <output>: 
     """
