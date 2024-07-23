@@ -10,6 +10,7 @@ import os, re, json, tiktoken, backoff, csv
 from openai import OpenAI
 from dotenv import load_dotenv
 import time, random
+from sklearn.model_selection import train_test_split
 
 load_dotenv()
 client = OpenAI(
@@ -29,8 +30,8 @@ def separate_added_deleted(github_diff):
             deleted_lines += line[0:] + '\n'
     return deleted_lines, added_lines
 
-def write_to_csv(data, libname):
-    with open(f"{libname}_data_statistics.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
+def write_to_csv(data, libname, mode):
+    with open(f"{libname}_{mode}_statistics.csv", 'a', encoding="utf-8", newline='\n') as file_writer:
         write = csv.writer(file_writer)
         write.writerow(data)
         
@@ -137,18 +138,24 @@ def get_commit_with_changes(repo_path, commit_hash, libname, idx, row):
 
     return commit_info, output_list
 
-libname = 'TensorFlow'
-repo_path = f"ml_repos/tensorflow/tensorflow"
+libname = 'PyTorch'
+repo_path = f"ml_repos/{libname.lower()}/{libname.lower()}"
 data = pd.read_csv(f'data/{libname}_verified.csv')
+train_df, test_df = train_test_split(data, test_size=0.3, random_state=42)
+data_dict = {
+    'train_data': train_df,
+    'test_data': test_df
+}
 
-for idx, row in data.iterrows():
-    commit_hash = row['Commit Link'].split('/')[-1]
-    print(f"Processed {commit_hash}::{idx}/{len(data)}")
-    commit_data, output_list = get_commit_with_changes(repo_path, commit_hash, libname, idx, row)
+for k, v in data_dict.items():
+    for idx, row in v.iterrows():
+        commit_hash = row['Commit Link'].split('/')[-1]
+        print(f"Processed {commit_hash}::{idx}/{len(v)}")
+        commit_data, output_list = get_commit_with_changes(repo_path, commit_hash, libname, idx, row)
 
-    if commit_data['changes']:
-        # write_to_csv(output_list , libname)
-        with open(f'{libname}_data.json', 'a') as f:
-            json.dump(commit_data, f, indent=4)
-            f.write(',')
-            f.write('\n')
+        if commit_data['changes']:
+            write_to_csv(output_list , libname, k)
+            with open(f'{libname}_{k}.json', 'a') as f:
+                json.dump(commit_data, f, indent=4)
+                f.write(',')
+                f.write('\n')
