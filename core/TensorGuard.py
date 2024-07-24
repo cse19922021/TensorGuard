@@ -159,7 +159,7 @@ def path_generation_agent(bug_explanation, _shot, code_snippet, exec_mode, level
         
         Bug explanation: {bug_explanation}
         fixing pattern to fix the bug: {ext_knowledge}
-        Code snippet: {code_snippet}
+        Buggy code snippet: {code_snippet}
         Your must generate a patch, with no additional explanation.
         <output>
         """
@@ -217,7 +217,7 @@ def tensorGuard(item, exec_mode, level_mode,_shot_list, use_single_agent):
     return output_data
 
 def main():
-    data_path = f"data/RAG_data/PyTorch_test_data.json"
+    data_path = f"data/pytorch_test_data_limited.json"
     rule_path = f"data/rule_set.json"
     exec_type = ['zero']
     num_iter = 1
