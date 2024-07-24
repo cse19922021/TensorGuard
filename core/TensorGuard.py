@@ -146,7 +146,7 @@ def pattern_extraction_agent(code_removed, code_added):
 
 def path_generation_agent(bug_explanation, _shot, code_snippet, exec_mode, level_mode):
     if code_snippet[0]:
-        ext_knowledge = test_inference('pytorch', code_snippet[0], level_mode)
+        ext_knowledge = test_inference('pytorch', code_snippet[1], level_mode)
     else:
         ext_knowledge = test_inference('pytorch', code_snippet[1], level_mode)
     if exec_mode == 'zero':
@@ -157,9 +157,8 @@ def path_generation_agent(bug_explanation, _shot, code_snippet, exec_mode, level
         snippet. Fixing indentation is not the goal of this task. If you think the given pattern can be applied,
         generate the patch.
         
-        
         Bug explanation: {bug_explanation}
-        Rules for fixing the bug: {ext_knowledge}
+        fixing pattern to fix the bug: {ext_knowledge}
         Code snippet: {code_snippet}
         Your must generate a patch, with no additional explanation.
         <output>
@@ -241,6 +240,12 @@ def main():
                 if item['commit_link'] not in hist:
                     write_list_to_txt(item['commit_link'], f'logs/{exec_mode}_shot/{exec_mode}_processed_commits_{i}.txt')
                     for change in item['changes']:
+                        if 'test' in change['path'] or 'tests' in change['path']:
+                            continue
+
+                        if 'test' in change['path'] or 'tests' in change['path']:
+                            continue
+                        
                         for k, patch in enumerate(change['patches']):
                             if level_mode == 'patch_level':
                                 deleted_lines, added_lines = separate_added_deleted(patch['hunk'])

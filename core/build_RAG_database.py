@@ -68,9 +68,9 @@ def test_inference(lib):
     print(retriever_results["documents"])
     
 def main():
-    lib = 'pytorch'
-    mode = 'patch_level'
-    docs = load_json('data/RAG_data/PyTorch_train_data.json')
+    lib = 'tensorflow'
+    mode = 'file_level'
+    docs = load_json('data/RAG_data/TensorFlow_train_data.json')
     
     make_basic_rag_db(lib, docs, mode=mode)
     # test_inference(lib)
