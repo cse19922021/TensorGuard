@@ -1,0 +1,514 @@
+0,https://github.com/PyTorch/PyTorch/commit/5b98d43488bed0836b4da5996a50bafd0dd2c11c,YES,test/test_custom_ops.py,patch_0,,No
+0,https://github.com/PyTorch/PyTorch/commit/5b98d43488bed0836b4da5996a50bafd0dd2c11c,YES,torch/csrc/jit/frontend/function_schema_parser.cpp,patch_0,"-  explicit SchemaParser(const std::string& str)
+-        type_parser(L, /*parse_complete_tensor_types*/ false) {}
+",No
+0,https://github.com/PyTorch/PyTorch/commit/5b98d43488bed0836b4da5996a50bafd0dd2c11c,YES,torch/csrc/jit/frontend/function_schema_parser.cpp,patch_1,"-    const std::string& schemaOrName) {
+-  return SchemaParser(schemaOrName).parseExactlyOneDeclaration();
+-FunctionSchema parseSchema(const std::string& schema) {
+-  auto parsed = parseSchemaOrName(schema);
+",No
+0,https://github.com/PyTorch/PyTorch/commit/5b98d43488bed0836b4da5996a50bafd0dd2c11c,YES,torch/csrc/jit/frontend/function_schema_parser.h,patch_0,"-    const std::string& schemaOrName);
+-TORCH_API c10::FunctionSchema parseSchema(const std::string& schema);
+","+// allow_typevars: If true, we assume that lowercase types that we don't
++// understand are type variables. This is only needed for TorchScript (and not
++// not needed for custom ops).
++    const std::string& schemaOrName,
++    bool allow_typevars = true);
++TORCH_API c10::FunctionSchema parseSchema(
++    const std::string& schema,
++    bool allow_typevars = true);
+","@@ -8,9 +8,17 @@
+ namespace torch {
+ namespace jit {
+ 
++// allow_typevars: If true, we assume that lowercase types that we don't
++// understand are type variables. This is only needed for TorchScript (and not
++// not needed for custom ops).
++// If false, we disallow typevars, except in certain cases for BC reason (i.e.
++// your op is in the aten or prim namespace).
+ TORCH_API std::variant<c10::OperatorName, c10::FunctionSchema> parseSchemaOrName(
+-    const std::string& schemaOrName);
+-TORCH_API c10::FunctionSchema parseSchema(const std::string& schema);
++    const std::string& schemaOrName,
++    bool allow_typevars = true);
++TORCH_API c10::FunctionSchema parseSchema(
++    const std::string& schema,
++    bool allow_typevars = true);
+ TORCH_API c10::OperatorName parseName(const std::string& name);
+ 
+ } // namespace jit"
+0,https://github.com/PyTorch/PyTorch/commit/5b98d43488bed0836b4da5996a50bafd0dd2c11c,YES,torch/csrc/jit/frontend/schema_type_parser.cpp,patch_0,"-    if (!text.empty() && islower(text[0])) {
+-    throw ErrorReport(tok.range) << ""unknown type specifier"";
+","+    if (allow_typevars_ && !text.empty() && islower(text[0])) {
++    if (text == ""double"") {
++      throw ErrorReport(tok.range)
++          << ""Use `float` instead of `double` in an operator's schema string. ""
++             ""`float` in schema corresponds to the double type in C++"";
++    }
++    if (text == ""int64_t"") {
++      throw ErrorReport(tok.range)
++          << ""Use `SymInt` or `int` instead of `int64_t` in an operator's schema string. ""
++             ""`SymInt` corresponds to c10::SymInt in C++ while `int` in schema corresponds ""
++             ""to the int64_t type in C++."";
++    }
++    throw ErrorReport(tok.range)
++        << ""unknown type specifier. Common valid schema types include ""
++           ""Tensor, SymInt, int, float, bool, Scalar; ""
++           ""for a full list, please see ""
++           ""https://github.com/pytorch/pytorch/blob/main/aten/src/ATen/native/README.md#func "";
+","@@ -82,12 +82,27 @@ TypePtr SchemaTypeParser::parseBaseType() {
+ 
+   auto it = type_map.find(text);
+   if (it == type_map.end()) {
+-    if (!text.empty() && islower(text[0])) {
++    if (allow_typevars_ && !text.empty() && islower(text[0])) {
+       // lower case identifiers that are not otherwise valid types
+       // are treated as type variables
+       return c10::TypeFactory::createNamed<VarType>(text);
+     }
+-    throw ErrorReport(tok.range) << ""unknown type specifier"";
++    if (text == ""double"") {
++      throw ErrorReport(tok.range)
++          << ""Use `float` instead of `double` in an operator's schema string. ""
++             ""`float` in schema corresponds to the double type in C++"";
++    }
++    if (text == ""int64_t"") {
++      throw ErrorReport(tok.range)
++          << ""Use `SymInt` or `int` instead of `int64_t` in an operator's schema string. ""
++             ""`SymInt` corresponds to c10::SymInt in C++ while `int` in schema corresponds ""
++             ""to the int64_t type in C++."";
++    }
++    throw ErrorReport(tok.range)
++        << ""unknown type specifier. Common valid schema types include ""
++           ""Tensor, SymInt, int, float, bool, Scalar; ""
++           ""for a full list, please see ""
++           ""https://github.com/pytorch/pytorch/blob/main/aten/src/ATen/native/README.md#func "";
+   }
+   return it->second;
+ }"
+0,https://github.com/PyTorch/PyTorch/commit/5b98d43488bed0836b4da5996a50bafd0dd2c11c,YES,torch/csrc/jit/frontend/schema_type_parser.h,patch_0,"-  SchemaTypeParser(Lexer& L, bool parse_complete_tensor_types)
+-      : complete_tensor_types(parse_complete_tensor_types), L(L) {}
+",No
+0,https://github.com/PyTorch/PyTorch/commit/5b98d43488bed0836b4da5996a50bafd0dd2c11c,YES,torch/csrc/jit/frontend/schema_type_parser.h,patch_1,,"+  bool allow_typevars_;
+","@@ -8,9 +8,17 @@
+ namespace torch {
+ namespace jit {
+ 
++// allow_typevars: If true, we assume that lowercase types that we don't
++// understand are type variables. This is only needed for TorchScript (and not
++// not needed for custom ops).
++// If false, we disallow typevars, except in certain cases for BC reason (i.e.
++// your op is in the aten or prim namespace).
+ TORCH_API std::variant<c10::OperatorName, c10::FunctionSchema> parseSchemaOrName(
+-    const std::string& schemaOrName);
+-TORCH_API c10::FunctionSchema parseSchema(const std::string& schema);
++    const std::string& schemaOrName,
++    bool allow_typevars = true);
++TORCH_API c10::FunctionSchema parseSchema(
++    const std::string& schema,
++    bool allow_typevars = true);
+ TORCH_API c10::OperatorName parseName(const std::string& name);
+ 
+ } // namespace jit"
+0,https://github.com/PyTorch/PyTorch/commit/5b98d43488bed0836b4da5996a50bafd0dd2c11c,YES,torch/csrc/jit/ir/irparser.cpp,patch_0,"-        type_parser(L, /*parse_complete_tensor_types*/ true),
+",No
+0,https://github.com/PyTorch/PyTorch/commit/5b98d43488bed0836b4da5996a50bafd0dd2c11c,YES,torch/csrc/jit/python/init.cpp,patch_0,"-  m.def(""parse_schema"", parseSchema);
+",No
+0,https://github.com/PyTorch/PyTorch/commit/5b98d43488bed0836b4da5996a50bafd0dd2c11c,YES,torch/csrc/jit/runtime/static/passes.cpp,patch_0,"-      ""aten::slice.t(t[] l, int? start=None, int? end=None, int step=1) -> t[]"");
+","+      ""aten::slice.t(t[] l, int? start=None, int? end=None, int step=1) -> t[]"",
++      /*allow_typevars*/ true);
+","-      ""aten::slice.t(t[] l, int? start=None, int? end=None, int step=1) -> t[]"");
++      ""aten::slice.t(t[] l, int? start=None, int? end=None, int step=1) -> t[]"",
++      /*allow_typevars*/ true);"
+0,https://github.com/PyTorch/PyTorch/commit/5b98d43488bed0836b4da5996a50bafd0dd2c11c,YES,torch/library.h,patch_0,"-inline c10::FunctionSchema schema(const char* str, c10::AliasAnalysisKind k) {
+-  c10::FunctionSchema s = torch::jit::parseSchema(str);
+","+inline c10::FunctionSchema schema(const char* str, c10::AliasAnalysisKind k, bool allow_typevars=false) {
++  c10::FunctionSchema s = torch::jit::parseSchema(str, /*allow_typevars*/allow_typevars);
+","@@ -415,8 +415,8 @@ inline c10::FunctionSchema schema(const char* str, c10::AliasAnalysisKind k) {
+ /// Function schemas can be directly constructed from string literals.
+ ///
+ /// \ingroup torch-schema-overloads
+-inline c10::FunctionSchema schema(const char* s) {
+-  return schema(s, c10::AliasAnalysisKind::FROM_SCHEMA);
++inline c10::FunctionSchema schema(const char* s, bool allow_typevars=false) {
++  return schema(s, c10::AliasAnalysisKind::FROM_SCHEMA, allow_typevars);
+ }
+ 
+ /// \private"
+0,https://github.com/PyTorch/PyTorch/commit/5b98d43488bed0836b4da5996a50bafd0dd2c11c,YES,torch/library.h,patch_1,"-inline c10::FunctionSchema schema(const char* s) {
+-  return schema(s, c10::AliasAnalysisKind::FROM_SCHEMA);
+",No
+0,https://github.com/PyTorch/PyTorch/commit/fbc7559ceb372d88b55c96ef6984accbaa0ec3ec,YES,test/custom_operator/test_infer_schema_annotation.py,patch_0,,"+# Owner(s): [""module: pt2-dispatcher""]
++from __future__ import annotations
++
++import typing
++from typing import List, Optional, Sequence, Union  # noqa: F401
++
++import torch
++import torch._custom_op.impl
++from torch import Tensor, types
++from torch.testing._internal.common_utils import run_tests, TestCase
++
++
++mutates_args = {}
++
++
++class TestInferSchemaWithAnnotation(TestCase):
++    def test_tensor(self):
++        def foo_op(x: torch.Tensor) -> torch.Tensor:
++            return x.clone()
++
++        result = torch._custom_op.impl.infer_schema(foo_op, mutates_args)
++        self.assertEqual(result, ""(Tensor x) -> Tensor"")
++
++        def foo_op_2(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
++            return x.clone() + y
++
++        result = torch._custom_op.impl.infer_schema(foo_op_2, mutates_args)
++        self.assertEqual(result, ""(Tensor x, Tensor y) -> Tensor"")
++
++    def test_native_types(self):
++        def foo_op(x: int) -> int:
++            return x
++
++        result = torch._custom_op.impl.infer_schema(foo_op, mutates_args)
++        self.assertEqual(result, ""(SymInt x) -> SymInt"")
++
++        def foo_op_2(x: bool) -> bool:
++            return x
++
++        result = torch._custom_op.impl.infer_schema(foo_op_2, mutates_args)
++        self.assertEqual(result, ""(bool x) -> bool"")
++
++        def foo_op_3(x: str) -> int:
++            return 1
++
++        result = torch._custom_op.impl.infer_schema(foo_op_3, mutates_args)
++        self.assertEqual(result, ""(str x) -> SymInt"")
++
++        def foo_op_4(x: float) -> float:
++            return x
++
++        result = torch._custom_op.impl.infer_schema(foo_op_4, mutates_args)
++        self.assertEqual(result, ""(float x) -> float"")
++
++    def test_torch_types(self):
++        def foo_op_1(x: torch.types.Number) -> torch.types.Number:
++            return x
++
++        result = torch._custom_op.impl.infer_schema(foo_op_1, mutates_args)
++        self.assertEqual(result, ""(Scalar x) -> Scalar"")
++
++        def foo_op_2(x: torch.dtype) -> int:
++            return 1
++
++        result = torch._custom_op.impl.infer_schema(foo_op_2, mutates_args)
++        self.assertEqual(result, ""(ScalarType x) -> SymInt"")
++
++        def foo_op_3(x: torch.device) -> int:
++            return 1
++
++        result = torch._custom_op.impl.infer_schema(foo_op_3, mutates_args)
++        self.assertEqual(result, ""(Device x) -> SymInt"")
++
++    def test_type_variants(self):
++        def foo_op_1(x: typing.Optional[int]) -> int:
++            return 1
++
++        result = torch._custom_op.impl.infer_schema(foo_op_1, mutates_args)
++        self.assertEqual(result, ""(SymInt? x) -> SymInt"")
++
++        def foo_op_2(x: typing.Sequence[int]) -> int:
++            return 1
++
++        result = torch._custom_op.impl.infer_schema(foo_op_2, mutates_args)
++        self.assertEqual(result, ""(SymInt[] x) -> SymInt"")
++
++        def foo_op_3(x: typing.List[int]) -> int:
++            return 1
++
++        result = torch._custom_op.impl.infer_schema(foo_op_3, mutates_args)
++        self.assertEqual(result, ""(SymInt[] x) -> SymInt"")
++
++        def foo_op_4(x: typing.Optional[typing.Sequence[int]]) -> int:
++            return 1
++
++        result = torch._custom_op.impl.infer_schema(foo_op_4, mutates_args)
++        self.assertEqual(result, ""(SymInt[]? x) -> SymInt"")
++
++        def foo_op_5(x: typing.Optional[typing.List[int]]) -> int:
++            return 1
++
++        result = torch._custom_op.impl.infer_schema(foo_op_5, mutates_args)
++        self.assertEqual(result, ""(SymInt[]? x) -> SymInt"")
++
++        def foo_op_6(x: typing.Union[int, float, bool]) -> types.Number:
++            return x
++
++        result = torch._custom_op.impl.infer_schema(foo_op_6, mutates_args)
++        self.assertEqual(result, ""(Scalar x) -> Scalar"")
++
++        def foo_op_7(x: typing.Union[int, bool, float]) -> types.Number:
++            return x
++
++        result = torch._custom_op.impl.infer_schema(foo_op_7, mutates_args)
++        self.assertEqual(result, ""(Scalar x) -> Scalar"")
++
++    def test_no_library_prefix(self):
++        def foo_op(x: Tensor) -> Tensor:
++            return x.clone()
++
++        result = torch._custom_op.impl.infer_schema(foo_op, mutates_args)
++        self.assertEqual(result, ""(Tensor x) -> Tensor"")
++
++        def foo_op_2(x: Tensor) -> torch.Tensor:
++            return x.clone()
++
++        result = torch._custom_op.impl.infer_schema(foo_op_2, mutates_args)
++        self.assertEqual(result, ""(Tensor x) -> Tensor"")
++
++        def foo_op_3(x: torch.Tensor) -> Tensor:
++            return x.clone()
++
++        result = torch._custom_op.impl.infer_schema(foo_op_3, mutates_args)
++        self.assertEqual(result, ""(Tensor x) -> Tensor"")
++
++        def foo_op_4(x: List[int]) -> types.Number:
++            return x[0]
++
++        result = torch._custom_op.impl.infer_schema(foo_op_4, mutates_args)
++        self.assertEqual(result, ""(SymInt[] x) -> Scalar"")
++
++        def foo_op_5(x: Optional[int]) -> int:
++            return 1
++
++        result = torch._custom_op.impl.infer_schema(foo_op_5, mutates_args)
++        self.assertEqual(result, ""(SymInt? x) -> SymInt"")
++
++        def foo_op_6(x: Sequence[int]) -> int:
++            return 1
++
++        result = torch._custom_op.impl.infer_schema(foo_op_6, mutates_args)
++        self.assertEqual(result, ""(SymInt[] x) -> SymInt"")
++
++        def foo_op_7(x: List[int]) -> int:
++            return 1
++
++        result = torch._custom_op.impl.infer_schema(foo_op_7, mutates_args)
++        self.assertEqual(result, ""(SymInt[] x) -> SymInt"")
++
++        def foo_op_8(x: Optional[Sequence[int]]) -> int:
++            return 1
++
++        result = torch._custom_op.impl.infer_schema(foo_op_8, mutates_args)
++        self.assertEqual(result, ""(SymInt[]? x) -> SymInt"")
++
++        def foo_op_9(x: Optional[List[int]]) -> int:
++            return 1
++
++        result = torch._custom_op.impl.infer_schema(foo_op_9, mutates_args)
++        self.assertEqual(result, ""(SymInt[]? x) -> SymInt"")
++
++        def foo_op_10(x: Union[int, float, bool]) -> types.Number:
++            return x
++
++        result = torch._custom_op.impl.infer_schema(foo_op_10, mutates_args)
++        self.assertEqual(result, ""(Scalar x) -> Scalar"")
++
++        def foo_op_11(x: Union[int, bool, float]) -> types.Number:
++            return x
++
++        result = torch._custom_op.impl.infer_schema(foo_op_11, mutates_args)
++        self.assertEqual(result, ""(Scalar x) -> Scalar"")
++
++    def test_unsupported_annotation(self):
++        with self.assertRaisesRegex(
++            ValueError,
++            r""Unsupported type annotation D. It is not a type."",
++        ):
++
++            def foo_op(x: D) -> Tensor:  # noqa: F821
++                return torch.Tensor(x)
++
++            torch._custom_op.impl.infer_schema(foo_op, mutates_args)
++
++        with self.assertRaisesRegex(
++            ValueError,
++            r""Unsupported type annotation E. It is not a type."",
++        ):
++
++            def foo_op_2(x: Tensor) -> E:  # noqa: F821
++                return x
++
++            torch._custom_op.impl.infer_schema(foo_op_2, mutates_args)
++
++
++if __name__ == ""__main__"":
++    run_tests()
+","@@ -194,7 +194,7 @@
+                 # Checking if the annotation is a string
+                 evaluated_type = None
+                 if isinstance(arg_annotation, str):
+-                    evaluated_type = arg_annotation
++                    evaluated_type = eval(arg_annotation)
+                 if evaluated_type is None:
+                     evaluated_type = arg_annotation
+ 
+@@ -223,7 +223,7 @@
+                 else:
+                     op_return_types.append(arg_annotation)
+ 
+-        if isinstance(return_type, str):
++        if isinstance(return_type, str):
+             op_return_types.append(eval(return_type))
+         else:
+             op_return_types.append(return_type)"
+0,https://github.com/PyTorch/PyTorch/commit/fbc7559ceb372d88b55c96ef6984accbaa0ec3ec,YES,torch/_library/infer_schema.py,patch_0,,"+from typing import List, Optional, Sequence, Union  # noqa: F401
++import torch  # noqa: F401
+","@@ -1,3 +1,5 @@
++import itertools
++
+ from typing import List, NamedTuple, Optional
+
+ import torch"
+0,https://github.com/PyTorch/PyTorch/commit/fbc7559ceb372d88b55c96ef6984accbaa0ec3ec,YES,torch/_library/infer_schema.py,patch_1,,"+    - string type annotations ""device, dtype, Tensor, types"" without library specification
++      are assumed to be torch.*. Similarly, string type annotations ""Optional, List, Sequence, Union""
++      without library specification are assumed to be typing.*.
+","@@ -20,8 +20,13 @@ struct TORCH_API SchemaTypeParser {
+   c10::optional<at::ScalarType> parseTensorDType(const std::string& dtype);
+   TypePtr parseRefinedTensor();
+ 
+-  SchemaTypeParser(Lexer& L, bool parse_complete_tensor_types)
+-      : complete_tensor_types(parse_complete_tensor_types), L(L) {}
++  SchemaTypeParser(
++      Lexer& L,
++      bool parse_complete_tensor_types,
++      bool allow_typevars)
++      : complete_tensor_types(parse_complete_tensor_types),
++        L(L),
++        allow_typevars_(allow_typevars) {}
+ 
+ private:
+   c10::optional<bool> tryToParseRequiresGrad();"
+0,https://github.com/PyTorch/PyTorch/commit/fbc7559ceb372d88b55c96ef6984accbaa0ec3ec,YES,torch/_library/infer_schema.py,patch_2,,"+    def convert_type_string(annotation_type: str):
++        try:
++            return eval(annotation_type)
++        except Exception as e:
++            error_fn(
++                f""Unsupported type annotation {annotation_type}. It is not a type.""
++            )
++
+","@@ -298,7 +298,10 @@ def out_wrapper(*out_names: str, exact_dtype: bool = False):
+             annotation=out_type,
+         )
+         # Mark that the function now returns a tuple
+-        assert sig.return_annotation in (sig.empty, out_type)
++        assert isinstance(sig.return_annotation, str) or sig.return_annotation in (
++            sig.empty,
++            out_type,
++        )
+         params = chain(sig.parameters.values(), (out_param,))
+         _fn.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
+             parameters=params, return_annotation=return_type  # type: ignore[arg-type]  "
+0,https://github.com/PyTorch/PyTorch/commit/fbc7559ceb372d88b55c96ef6984accbaa0ec3ec,YES,torch/_library/infer_schema.py,patch_3,"-        if param.annotation not in SUPPORTED_PARAM_TYPES.keys():
+-        schema_type = SUPPORTED_PARAM_TYPES[param.annotation]
+","+        # The annotation might be converted to a string by annotation,
++        # we convert it to the actual type.
++        annotation_type = param.annotation
++        if type(annotation_type) == str:
++            annotation_type = convert_type_string(annotation_type)
++
++        if annotation_type not in SUPPORTED_PARAM_TYPES.keys():
++        schema_type = SUPPORTED_PARAM_TYPES[annotation_type]
+","@@ -54,15 +54,21 @@ def _staged_schema():
+                 raise AssertionError(f""Type {t} is not supported in export schema."")
+ 
+         def dump_field(f):
+-            ret = {""type"": dump_type(f.type)}
++            t = dump_type(f.type)
++            ret = {""type"": t}
+ 
+-            value = None
++            value = dataclasses.MISSING
+             if f.default is not dataclasses.MISSING:
+                 value = f.default
+             elif f.default_factory is not dataclasses.MISSING:
+                 value = f.default_factory()
+ 
+-            if value is not None:
++            if t.startswith(""Optional["") and value is not None:
++                raise AssertionError(
++                    f""Optional field {ty.__name__}.{f.name} must have default value to be None.""
++                )
++
++            if value is not dataclasses.MISSING:
+                 default = str(value)
+                 ret[""default""] = default
+             return ret"
+0,https://github.com/PyTorch/PyTorch/commit/fbc7559ceb372d88b55c96ef6984accbaa0ec3ec,YES,torch/_library/infer_schema.py,patch_4,"-    ret = parse_return(sig.return_annotation, error_fn)
+","+    return_annotation = sig.return_annotation
++    if type(return_annotation) == str:
++        return_annotation = convert_type_string(return_annotation)
++    ret = parse_return(return_annotation, error_fn)
+","@@ -298,7 +298,10 @@ def out_wrapper(*out_names: str, exact_dtype: bool = False):
+             annotation=out_type,
+         )
+         # Mark that the function now returns a tuple
+-        assert sig.return_annotation in (sig.empty, out_type)
++        assert isinstance(sig.return_annotation, str) or sig.return_annotation in (
++            sig.empty,
++            out_type,
++        )
+         params = chain(sig.parameters.values(), (out_param,))
+         _fn.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
+             parameters=params, return_annotation=return_type  # type: ignore[arg-type]
+-    ret = parse_return(sig.return_annotation, error_fn)
++    return_annotation = sig.return_annotation
++    if type(return_annotation) == str:
++        return_annotation = convert_type_string(return_annotation)
++    ret = parse_return(return_annotation, error_fn)"
+0,https://github.com/PyTorch/PyTorch/commit/ac768333be2ad7cd3435c1ae257bdaf297595714,YES,test/dynamo/test_repros.py,patch_0,,"+    def test_add_sub_alpha_out(self):
++        inp = torch.randn(2, 3, 4)
++        other = 1
++        alpha = 2
++        for op in [torch.add, torch.sub]:
++            out = torch.zeros(2, 3, 4)
++            compile_out = torch.zeros(2, 3, 4)
++            op(inp, other, alpha=alpha, out=out)
++            compiled_fn = torch.compile(op, dynamic=True)
++            compiled_fn(inp, other, alpha=alpha, out=compile_out)
++            self.assertTrue(same(out, compile_out))
++
++    def test_addr_alpha_beta_out(self):
++        inp = torch.randn(2, 3)
++        vec1 = torch.randn(2)
++        vec2 = torch.randn(3)
++        alpha = 2
++        beta = 5
++
++        out = torch.zeros(2, 3)
++        compile_out = torch.zeros(2, 3)
++
++        torch.addr(inp, vec1, vec2, alpha=alpha, beta=beta, out=out)
++        compiled_fn = torch.compile(torch.addr, dynamic=True)
++        compiled_fn(inp, vec1, vec2, alpha=alpha, beta=beta, out=compile_out)
++        self.assertTrue(same(out, compile_out))
++
+","@@ -2148,12 +2147,15 @@ def forward(self, x_1, output_1):
+ 
+         t1 = torch.rand(256, device=""cuda"", requires_grad=grad)
+         t2 = torch.rand(256, device=""cuda"", requires_grad=grad)
++        output = torch.zeros_like(t1, requires_grad=grad)
+ 
+-        torch_add = call_triton(t1, t2)
++        torch_add = call_triton(t1, t2, output)
+         compiled_func = torch.compile(
+             call_triton, backend=backend, fullgraph=True, dynamic=dynamic
+         )
+-        self.assertEqual(compiled_func(t1, t2), torch_add)
++
++        output2 = torch.zeros_like(t1, requires_grad=grad)
++        self.assertEqual(compiled_func(t1, t2, output2), torch_add)
+ 
+     @requires_cuda()
+     @skipIfRocm"

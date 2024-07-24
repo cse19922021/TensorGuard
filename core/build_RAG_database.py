@@ -15,29 +15,28 @@ class MyEmbeddingFunction(EmbeddingFunction):
     def __call__(self, input: Documents) -> Embeddings:
         batch_embeddings = embedding_model.encode(input)
         return batch_embeddings.tolist()
-    
-def load_basic_doc(src):
-    with open(f'data/api_db/basic_rag_{src}.jsonl') as f:
-        docs = [json.loads(x) for x in f.readlines()]
-    return docs
 
-def prepare_batch_data(data):
+def prepare_batch_data(data, mode):
     batch_docs = []
     for item in data:
         for change in item['changes']:
-            batch_docs.append(change['whole_hunk'])
+            if mode == 'patch_level':
+                for patch in change['patches']:
+                    batch_docs.append(patch['hunk'])
+            else:
+                batch_docs.append(change['whole_hunk'])
 
     return batch_docs
 
-def make_basic_rag_db(lib, docs):
+def make_basic_rag_db(lib, docs, mode='patch_level'):
     embed_fn = MyEmbeddingFunction()
     client = chromadb.PersistentClient(path='./docs_db')
     collection = client.get_or_create_collection(
-        name=f'basic_rag_{lib}',
+        name=f"basic_rag_{mode}_{lib}",
     )
     
     batch_size = 50
-    batch_docs = prepare_batch_data(docs)
+    batch_docs = prepare_batch_data(docs, mode)
     for i in tqdm(range(0, len(batch_docs), batch_size)):
         
         batch = batch_docs[i : i + batch_size]
@@ -66,14 +65,14 @@ def test_inference(lib):
         query_texts=["fix out of bound bug"],
         n_results=1,
     )
-    
     print(retriever_results["documents"])
     
 def main():
-    lib = 'tensorflow'
-    docs = load_json('TensorFlow_train_data.json')
+    lib = 'pytorch'
+    mode = 'patch_level'
+    docs = load_json('data/RAG_data/PyTorch_train_data.json')
     
-    make_basic_rag_db(lib, docs)
+    make_basic_rag_db(lib, docs, mode=mode)
     # test_inference(lib)
     
 if __name__ == '__main__':

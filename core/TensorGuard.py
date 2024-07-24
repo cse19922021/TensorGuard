@@ -20,11 +20,11 @@ class MyEmbeddingFunction(EmbeddingFunction):
         batch_embeddings = embedding_model.encode(input)
         return batch_embeddings.tolist()
     
-def test_inference(lib, query):
+def test_inference(lib, query, mode):
     embed_fn = MyEmbeddingFunction()
     client = chromadb.PersistentClient(path='./docs_db')
     collection = client.get_or_create_collection(
-        name=f'basic_rag_{lib}',
+        name=f'basic_rag_{mode}_{lib}',
         embedding_function=embed_fn
     )
 
@@ -32,7 +32,7 @@ def test_inference(lib, query):
         query_texts=[query],
         n_results=1,
     )
-    return retriever_results['documents']
+    return retriever_results['documents'][0]
 
 def get_token_count(string):
     encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
@@ -92,8 +92,8 @@ def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
     )
     return response
 
-def bug_detection_agent(item, exec_mode, _shot):
-    if exec_mode == 'zero':
+def bug_detection_agent(item, exec_mode, level_mode, _shot):
+    if exec_mode == 'zero' and level_mode == 'patch_level':
         prompt_ = f"""
         You are an AI trained to detect bugs in deep learning library backend code-base based on commit messages and code changes. 
         Given a commit message and deleted lines in the code change, detect if it is bug or not. Please generate YES or NO.
@@ -101,7 +101,7 @@ def bug_detection_agent(item, exec_mode, _shot):
         If no deleted lines are present, only rely on the commit message to determine if it indicates a bug or not.
 
         Commit message: {item['Bug report']}
-        Deleted lines:{item['Whole deleted']} 
+        Deleted lines:{item['Deleted lines']} 
         <output>
         """
     else:
@@ -144,11 +144,11 @@ def pattern_extraction_agent(code_removed, code_added):
     response = completions_with_backoff(prompt_)
     return response.choices[0].message.content
 
-def path_generation_agent(bug_explanation, _shot, code_snippet, exec_mode):
-    if code_snippet:
-        ext_knowledge = test_inference('pytorch', code_snippet)
+def path_generation_agent(bug_explanation, _shot, code_snippet, exec_mode, level_mode):
+    if code_snippet[0]:
+        ext_knowledge = test_inference('pytorch', code_snippet[0], level_mode)
     else:
-        ext_knowledge = test_inference('pytorch', bug_explanation)
+        ext_knowledge = test_inference('pytorch', code_snippet[1], level_mode)
     if exec_mode == 'zero':
         prompt_ = f"""
         You are given bug explanation and fixing pattern for fixing a buggy code snippet. Please think 
@@ -176,7 +176,7 @@ def path_generation_agent(bug_explanation, _shot, code_snippet, exec_mode):
         Example Two:{_shot[1]['Deleted lines']}{_shot[1]['Added lines']}
         
         Bug explanation: {bug_explanation}
-        Rules for fixing the bug: {ext_knowledge}
+        fixing pattern to fix the bug: {ext_knowledge}
         Code snippet: {code_snippet}
         Your must generate a patch, with no additional explanation.
         <output>
@@ -199,25 +199,30 @@ def single_agent(commit_msg, deleted_code):
     response = completions_with_backoff(prompt_)
     return response.choices[0].message.content
 
-def tensorGuard(item, exec_mode,_shot_list, use_single_agent):
+def tensorGuard(item, exec_mode, level_mode,_shot_list, use_single_agent):
     if use_single_agent:
         patch_ = single_agent(item['Bug report'], item['Deleted lines'])
     else:
-        bug_label = bug_detection_agent(item, exec_mode, _shot_list)
+        bug_label = bug_detection_agent(item, exec_mode, level_mode, _shot_list)
         if bug_label and is_buggy(bug_label):
             bug_understanding = root_cause_analysis_agent(item['Bug report'])
             # fix_pattern = pattern_extraction_agent(item['Deleted lines'], item['Added lines'])
-            patch_ = path_generation_agent(bug_understanding, _shot_list, item['Deleted lines'], exec_mode)       
-            output_data = [item['Whole added'], patch_]
+            if level_mode == 'patch_level':
+                patch_ = path_generation_agent(bug_understanding, _shot_list, [item['Deleted lines'], item['Added lines']], exec_mode, level_mode)
+                output_data = [item['Deleted lines'], item['Added lines'], patch_]
+            else:
+                patch_ = path_generation_agent(bug_understanding, _shot_list, [item['Whole deleted'], ''], exec_mode, level_mode)
+                output_data = [item['Deleted lines'], item['Added lines'], patch_]
         else:
-            output_data = [item['Whole added'], 'No']
+            output_data = [item['Deleted lines'], 'No']
     return output_data
 
 def main():
-    data_path = f"PyTorch_test_data.json"
+    data_path = f"data/RAG_data/PyTorch_test_data.json"
     rule_path = f"data/rule_set.json"
     exec_type = ['zero']
     num_iter = 1
+    level_mode = 'patch_level'
 
     rule_data = load_json(rule_path)
     data = load_json(data_path)
@@ -236,8 +241,11 @@ def main():
                 if item['commit_link'] not in hist:
                     write_list_to_txt(item['commit_link'], f'logs/{exec_mode}_shot/{exec_mode}_processed_commits_{i}.txt')
                     for change in item['changes']:
-                        for patch in change:
-                            deleted_lines, added_lines = separate_added_deleted(change['whole_hunk'])
+                        for k, patch in enumerate(change['patches']):
+                            if level_mode == 'patch_level':
+                                deleted_lines, added_lines = separate_added_deleted(patch['hunk'])
+                            else:
+                                deleted_lines, added_lines = separate_added_deleted(change['whole_hunk'])
                             if exec_mode == 'few':
                                 _shot = [rule_data[item['Root Cause']]['example1'], rule_data[item['Root Cause']]['example2']]
                                 if item['commit_link'] == _shot[0]['commit_link'] or item['commit_link'] == _shot[1]['commit_link']:
@@ -247,20 +255,23 @@ def main():
                                 _shot = []
                             print(f"Running {exec_mode} shot: Iteration {i}: Commit:{j}/{len(data)}")
                             time.sleep(2)
+                            
                             new_item = {
-                                'commit_link': item['commit_link'],
-                                'Bug report': item['message'],
-                                'Added lines': added_lines,
-                                'Deleted lines': deleted_lines,
-                                'Whole hunk': change['whole_hunk'],
-                                'Whole deleted': change['whole_deleted'],
-                                'Whole added': change['whole_added']
-                            }
-                            output_data = tensorGuard(new_item, exec_mode, _shot, use_single_agent=False)
+                                    'commit_link': item['commit_link'],
+                                    'Bug report': item['message'],
+                                    'Added lines': added_lines,
+                                    'Deleted lines': deleted_lines,
+                                    'Whole hunk': change['whole_hunk'],
+                                    'Whole deleted': change['whole_deleted'],
+                                    'Whole added': change['whole_added']
+                                }
+                                
+                            output_data = tensorGuard(new_item, exec_mode, level_mode, _shot, use_single_agent=False)
                             output_data.insert(0, i)
                             output_data.insert(1, item['commit_link'])
-                            output_data.insert(2, change['path'])
-                            output_data.insert(3, item['label'])
+                            output_data.insert(2, item['label'])
+                            output_data.insert(3, change['path'])
+                            output_data.insert(4, f"patch_{k}")
                             write_to_csv(output_data, output_mode)
                 else:
                     print('This instancee has been already processed!')
