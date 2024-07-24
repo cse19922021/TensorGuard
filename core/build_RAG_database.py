@@ -70,11 +70,11 @@ def test_inference(lib):
     print(retriever_results["documents"])
     
 def main():
-    lib = 'pytorch'
-    docs = load_json('PyTorch_train_data.json')
+    lib = 'tensorflow'
+    docs = load_json('TensorFlow_train_data.json')
     
     make_basic_rag_db(lib, docs)
-    test_inference(lib)
+    # test_inference(lib)
     
 if __name__ == '__main__':
     main()

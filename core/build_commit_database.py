@@ -103,6 +103,7 @@ def get_commit_with_changes(repo_path, commit_hash, libname, idx, row):
                     
                 patches = []
                 whole_deleted = ""
+                whole_added = ""
                 whole_deleted_added = ""  
                 for hunk in patched_file:
                     num_hunks = num_hunks + 1
@@ -119,6 +120,7 @@ def get_commit_with_changes(repo_path, commit_hash, libname, idx, row):
                             }
                     whole_deleted = whole_deleted + deleted_lines
                     whole_deleted_added = whole_deleted_added + str(hunk)
+                    whole_added = whole_added + added_lines
                     patches.append(patch)
                             
 
@@ -129,6 +131,7 @@ def get_commit_with_changes(repo_path, commit_hash, libname, idx, row):
                         "path": file_path,
                         "patches": patches,
                         "whole_deleted": whole_deleted,
+                        "whole_added": whole_added,
                         "whole_hunk":  whole_deleted_added}
                     commit_info["changes"].append(file_change)
 
@@ -138,7 +141,7 @@ def get_commit_with_changes(repo_path, commit_hash, libname, idx, row):
 
     return commit_info, output_list
 
-libname = 'PyTorch'
+libname = 'TensorFlow'
 repo_path = f"ml_repos/{libname.lower()}/{libname.lower()}"
 data = pd.read_csv(f'data/{libname}_verified.csv')
 train_df, test_df = train_test_split(data, test_size=0.3, random_state=42)
