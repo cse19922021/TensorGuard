@@ -5,7 +5,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import time, random
 import tiktoken
-import chromadb
+import chromadb, sys
 from sentence_transformers import SentenceTransformer
 from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -93,25 +93,25 @@ def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
     return response
 
 def bug_detection_agent(item, exec_mode, level_mode, _shot):
-    if exec_mode == 'zero' and level_mode == 'patch_level':
+    if exec_mode == 'zero':
         prompt_ = f"""
         You are an AI trained to detect bugs in deep learning library backend code-base based on commit messages and code changes. 
-        Given a commit message and code change, detect if it is bug or not. Please generate YES or NO.
+        Given a commit message and code change, detect if it has a checker bug or not. Please generate YES or NO.
 
         Commit message: {item['Bug report']}
-        code change:{item['Deleted lines']} 
+        Code change:{item['Deleted lines']}{item['Added lines']} 
         <output>
         """
     else:
         prompt_ = f"""
         You are an AI trained to detect bugs in deep learning library backend code-base based on commit messages and code changes. 
-        Given a commit message and code change, detect if it is bug or not. Please generate YES or NO.
+        Given a commit message and code change, detect if it has a checker bug or not. Please generate YES or NO.
 
         Example One:{_shot[0]['Deleted lines']}{_shot[0]['Added lines']}
         Example Two:{_shot[1]['Deleted lines']}{_shot[1]['Added lines']}
         
         Commit message: {item['Bug report']}
-        code change:{item['Deleted lines']} 
+        Code change:{item['Deleted lines']}{item['Added lines']} 
 
         <output>
         """
@@ -144,7 +144,7 @@ def path_generation_agent(bug_explanation, _shot, code_snippet, exec_mode, level
         ext_knowledge = test_inference(lib_name, code_snippet[1], level_mode)
     if exec_mode == 'zero':
         prompt_ = f"""
-        You are given bug explanation and a similar patch for fixing a buggy code snippet. Please think 
+        You are given a bug explanation and a similar patch for fixing a buggy code snippet. Please think 
         step by step and generate a patch to fix the bug in the code snippet. 
         Please neglect any issues related to the indentation in the code
         snippet. Fixing indentation is not the goal of this task. If you think the given pattern can be applied,
@@ -153,7 +153,7 @@ def path_generation_agent(bug_explanation, _shot, code_snippet, exec_mode, level
         Bug explanation: {bug_explanation}
         Similar patch: {ext_knowledge}
         Code snippet: {code_snippet[0]}
-        Your must generate a patch, with no additional explanation.
+        You must generate a patch, with no additional explanation.
         <output>
         """
     else:
@@ -209,13 +209,20 @@ def tensorGuard(item, exec_mode, level_mode,_shot_list, lib_name, use_single_age
             output_data = [item['Deleted lines'], 'No']
     return output_data
 
-def main():
-    lib_name = 'pytorch'
+def main(args):
+    lib_name = args[0]
     data_path = f"{lib_name}_test_data.json"
     rule_path = f"data/rule_set.json"
-    exec_type = ['zero','few']
-    num_iter = 5
-    level_mode = 'patch_level'
+    
+    if args[3] == 'zero':
+        exec_type = ['zero']
+    elif args[3] == 'few':
+        exec_type = ['few']
+    else:
+        exec_type = ['zero', 'few']
+        
+    num_iter = args[1]
+    level_mode = args[2]
 
     rule_data = load_json(rule_path)
     data = load_json(data_path)
@@ -278,4 +285,9 @@ def main():
 
                             
 if __name__ == '__main__':
-    main()
+    libname = sys.argv[1]
+    num_iter = sys.argv[2]
+    granularity = sys.argv[3]
+    exec_mod = sys.argv[4]
+    args = [libname, int(num_iter), granularity, exec_mod]
+    main(args)
