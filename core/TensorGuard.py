@@ -96,7 +96,7 @@ def bug_detection_agent(item, exec_mode, level_mode, _shot):
     if exec_mode == 'zero':
         prompt_ = f"""
         You are an AI trained to detect bugs in deep learning library backend code-base based on commit messages and code changes. 
-        Given a commit message and code change, detect if it has a checker bug or not. Please generate YES or NO.
+        Given a commit message and code change, detect if it is a bug or not. Please generate YES or NO.
 
         Commit message: {item['Bug report']}
         Code change:{item['Deleted lines']}{item['Added lines']} 
@@ -105,7 +105,7 @@ def bug_detection_agent(item, exec_mode, level_mode, _shot):
     else:
         prompt_ = f"""
         You are an AI trained to detect bugs in deep learning library backend code-base based on commit messages and code changes. 
-        Given a commit message and code change, detect if it has a checker bug or not. Please generate YES or NO.
+        Given a commit message and code change, detect if it is a bug or not. Please generate YES or NO.
 
         Example One:{_shot[0]['Deleted lines']}{_shot[0]['Added lines']}
         Example Two:{_shot[1]['Deleted lines']}{_shot[1]['Added lines']}
