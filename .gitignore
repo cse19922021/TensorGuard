@@ -10,6 +10,7 @@ __pycache__/
 *.csv
 *.json
 *.txt
+output/
 
 # Distribution / packaging
 .Python

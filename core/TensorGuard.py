@@ -96,35 +96,28 @@ def bug_detection_agent(item, exec_mode, level_mode, _shot):
     if exec_mode == 'zero' and level_mode == 'patch_level':
         prompt_ = f"""
         You are an AI trained to detect bugs in deep learning library backend code-base based on commit messages and code changes. 
-        Given a commit message and deleted lines in the code change, detect if it is bug or not. Please generate YES or NO.
-        
-        If no deleted lines are present, only rely on the commit message to determine if it indicates a bug or not.
+        Given a commit message and code change, detect if it is bug or not. Please generate YES or NO.
 
         Commit message: {item['Bug report']}
-        Deleted lines:{item['Deleted lines']} 
+        code change:{item['Deleted lines']} 
         <output>
         """
     else:
         prompt_ = f"""
         You are an AI trained to detect bugs in deep learning library backend code-base based on commit messages and code changes. 
-        Given a commit message and deleted lines in the code change, detect if it is bug or not. Please generate YES or NO.
-        
-        If no deleted lines are present, only rely on the commit message to determine if it indicates a bug or not.
+        Given a commit message and code change, detect if it is bug or not. Please generate YES or NO.
 
         Example One:{_shot[0]['Deleted lines']}{_shot[0]['Added lines']}
         Example Two:{_shot[1]['Deleted lines']}{_shot[1]['Added lines']}
         
         Commit message: {item['Bug report']}
-        Code change:{item['Whole deleted']} 
+        code change:{item['Deleted lines']} 
 
         <output>
         """
-    t_count = get_token_count(prompt_)
-    if t_count <= 16000:
-        response = completions_with_backoff(prompt_)
-        return response.choices[0].message.content
-    else:
-        return False
+    response = completions_with_backoff(prompt_)
+    return response.choices[0].message.content
+
 
 def root_cause_analysis_agent(commit_message):
     prompt_ = f"""
@@ -144,38 +137,38 @@ def pattern_extraction_agent(code_removed, code_added):
     response = completions_with_backoff(prompt_)
     return response.choices[0].message.content
 
-def path_generation_agent(bug_explanation, _shot, code_snippet, exec_mode, level_mode):
+def path_generation_agent(bug_explanation, _shot, code_snippet, exec_mode, level_mode, lib_name):
     if code_snippet[0]:
-        ext_knowledge = test_inference('pytorch', code_snippet[1], level_mode)
+        ext_knowledge = test_inference(lib_name, code_snippet[1], level_mode)
     else:
-        ext_knowledge = test_inference('pytorch', code_snippet[1], level_mode)
+        ext_knowledge = test_inference(lib_name, code_snippet[1], level_mode)
     if exec_mode == 'zero':
         prompt_ = f"""
-        You are given bug explanation and fixing pattern for fixing a buggy code snippet. Please think 
+        You are given bug explanation and a similar patch for fixing a buggy code snippet. Please think 
         step by step and generate a patch to fix the bug in the code snippet. 
         Please neglect any issues related to the indentation in the code
         snippet. Fixing indentation is not the goal of this task. If you think the given pattern can be applied,
         generate the patch.
-        
+
         Bug explanation: {bug_explanation}
-        fixing pattern to fix the bug: {ext_knowledge}
-        Buggy code snippet: {code_snippet}
+        Similar patch: {ext_knowledge}
+        Code snippet: {code_snippet[0]}
         Your must generate a patch, with no additional explanation.
         <output>
         """
     else:
         prompt_ = f"""
-        You are given bug explanation and fixing pattern for fixing a buggy code snippet. Please think 
+        You are given bug explanation and a similar patch for fixing a buggy code snippet. Please think 
         step by step and generate a patch to fix the bug in the code snippet. 
         Please neglect any issues related to the indentation in the code
-        snippet. Fixing indentation is not the goal of this task. If you think the given pattern can be applied, 
+        snippet. Fixing indentation is not the goal of this task. If you think the given pattern can be applied,
         generate the patch.
         
         Example One:{_shot[0]['Deleted lines']}{_shot[0]['Added lines']}
         Example Two:{_shot[1]['Deleted lines']}{_shot[1]['Added lines']}
         
         Bug explanation: {bug_explanation}
-        fixing pattern to fix the bug: {ext_knowledge}
+        Similar patch: {ext_knowledge}
         Code snippet: {code_snippet}
         Your must generate a patch, with no additional explanation.
         <output>
@@ -198,29 +191,30 @@ def single_agent(commit_msg, deleted_code):
     response = completions_with_backoff(prompt_)
     return response.choices[0].message.content
 
-def tensorGuard(item, exec_mode, level_mode,_shot_list, use_single_agent):
+def tensorGuard(item, exec_mode, level_mode,_shot_list, lib_name, use_single_agent):
     if use_single_agent:
         patch_ = single_agent(item['Bug report'], item['Deleted lines'])
     else:
         bug_label = bug_detection_agent(item, exec_mode, level_mode, _shot_list)
-        if bug_label and is_buggy(bug_label):
+        if is_buggy(bug_label):
             bug_understanding = root_cause_analysis_agent(item['Bug report'])
             # fix_pattern = pattern_extraction_agent(item['Deleted lines'], item['Added lines'])
             if level_mode == 'patch_level':
-                patch_ = path_generation_agent(bug_understanding, _shot_list, [item['Deleted lines'], item['Added lines']], exec_mode, level_mode)
-                output_data = [item['Deleted lines'], item['Added lines'], patch_]
+                patch_ = path_generation_agent(bug_understanding, _shot_list, [item['Deleted lines'], item['Added lines']], exec_mode, level_mode, lib_name)
+                output_data = [item['Deleted lines'], f"{item['Added lines']}", patch_]
             else:
-                patch_ = path_generation_agent(bug_understanding, _shot_list, [item['Whole deleted'], ''], exec_mode, level_mode)
+                patch_ = path_generation_agent(bug_understanding, _shot_list, [item['Whole deleted'], ''], exec_mode, level_mode, lib_name)
                 output_data = [item['Deleted lines'], item['Added lines'], patch_]
         else:
             output_data = [item['Deleted lines'], 'No']
     return output_data
 
 def main():
-    data_path = f"data/pytorch_test_data_limited.json"
+    lib_name = 'pytorch'
+    data_path = f"{lib_name}_test_data.json"
     rule_path = f"data/rule_set.json"
-    exec_type = ['zero']
-    num_iter = 1
+    exec_type = ['zero','few']
+    num_iter = 5
     level_mode = 'patch_level'
 
     rule_data = load_json(rule_path)
@@ -229,8 +223,8 @@ def main():
     # data = random.sample(data, 3)
     for exec_mode in exec_type:        
         output_mode = f"{exec_mode}_shot"
-        if exec_mode == 'few':
-            data = filter_dataset(data)
+        # if exec_mode == 'few':
+        #     data = filter_dataset(data)
         for i in range(num_iter):
             hisotry_file = f'logs/{exec_mode}_shot/{exec_mode}_processed_commits_{i}.txt'
             if not os.path.exists(hisotry_file):
@@ -240,19 +234,20 @@ def main():
                 if item['commit_link'] not in hist:
                     write_list_to_txt(item['commit_link'], f'logs/{exec_mode}_shot/{exec_mode}_processed_commits_{i}.txt')
                     for change in item['changes']:
+                        if not change:
+                            continue
                         if 'test' in change['path'] or 'tests' in change['path']:
                             continue
-
-                        if 'test' in change['path'] or 'tests' in change['path']:
-                            continue
-                        
                         for k, patch in enumerate(change['patches']):
+                            if not patch:
+                                continue
                             if level_mode == 'patch_level':
                                 deleted_lines, added_lines = separate_added_deleted(patch['hunk'])
                             else:
                                 deleted_lines, added_lines = separate_added_deleted(change['whole_hunk'])
                             if exec_mode == 'few':
-                                _shot = [rule_data[item['Root Cause']]['example1'], rule_data[item['Root Cause']]['example2']]
+                                rand_num = random.randint(1, 13)
+                                _shot = [rule_data[f"entry{rand_num}"]['example1'], rule_data[f"entry{rand_num}"]['example2']]
                                 if item['commit_link'] == _shot[0]['commit_link'] or item['commit_link'] == _shot[1]['commit_link']:
                                     print('This instance is among one of the shots, so I am skipping this one!')
                                     continue
@@ -266,12 +261,12 @@ def main():
                                     'Bug report': item['message'],
                                     'Added lines': added_lines,
                                     'Deleted lines': deleted_lines,
-                                    'Whole hunk': change['whole_hunk'],
-                                    'Whole deleted': change['whole_deleted'],
-                                    'Whole added': change['whole_added']
+                                    # 'Whole hunk': change['whole_hunk'],
+                                    # 'Whole deleted': change['whole_deleted'],
+                                    # 'Whole added': change['whole_added']
                                 }
                                 
-                            output_data = tensorGuard(new_item, exec_mode, level_mode, _shot, use_single_agent=False)
+                            output_data = tensorGuard(new_item, exec_mode, level_mode, _shot, lib_name, use_single_agent=False)
                             output_data.insert(0, i)
                             output_data.insert(1, item['commit_link'])
                             output_data.insert(2, item['label'])

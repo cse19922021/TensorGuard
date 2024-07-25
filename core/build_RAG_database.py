@@ -11,20 +11,38 @@ def load_json(data_path):
         data = json.load(json_file)
     return data
 
+def separate_added_deleted(github_diff):
+    diff_lines = github_diff.split('\n')
+
+    added_lines = ""
+    deleted_lines = ""
+
+    for line in diff_lines:
+        if line.startswith('+'):
+            added_lines += line[0:] + '\n'
+        elif line.startswith('-'):
+            deleted_lines += line[0:] + '\n'
+    return deleted_lines, added_lines
+
 class MyEmbeddingFunction(EmbeddingFunction):
     def __call__(self, input: Documents) -> Embeddings:
         batch_embeddings = embedding_model.encode(input)
         return batch_embeddings.tolist()
 
-def prepare_batch_data(data, mode):
+def prepare_batch_data(data, mode, code=True):
+    
     batch_docs = []
     for item in data:
-        for change in item['changes']:
-            if mode == 'patch_level':
-                for patch in change['patches']:
-                    batch_docs.append(patch['hunk'])
-            else:
-                batch_docs.append(change['whole_hunk'])
+        if code:
+            for change in item['changes']:
+                if mode == 'patch_level':
+                    for patch in change['patches']:
+                        deleted_lines, added_lines = separate_added_deleted(patch['hunk'])
+                        batch_docs.append(added_lines)
+                else:
+                    batch_docs.append(change['whole_hunk'])
+        else:
+            batch_docs.append(item["message"])
 
     return batch_docs
 
@@ -36,7 +54,7 @@ def make_basic_rag_db(lib, docs, mode='patch_level'):
     )
     
     batch_size = 50
-    batch_docs = prepare_batch_data(docs, mode)
+    batch_docs = prepare_batch_data(docs, mode, code=True)
     for i in tqdm(range(0, len(batch_docs), batch_size)):
         
         batch = batch_docs[i : i + batch_size]
@@ -68,9 +86,9 @@ def test_inference(lib):
     print(retriever_results["documents"])
     
 def main():
-    lib = 'tensorflow'
-    mode = 'file_level'
-    docs = load_json('data/RAG_data/TensorFlow_train_data.json')
+    lib = 'pytorch'
+    mode = 'patch_level'
+    docs = load_json('data/RAG_data/PyTorch_train_data.json')
     
     make_basic_rag_db(lib, docs, mode=mode)
     # test_inference(lib)

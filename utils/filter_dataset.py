@@ -75,30 +75,42 @@ def extract_within_time_range(data, lib_name):
     end = datetime.strptime(end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     j = 0
     for item in data:
+        commit_info = {
+            'commit_link': item['commit_link'],
+            'message': item['message'],
+            'date': item['date'],
+            'label': item['label'],
+            'changes': []
+        }
         if start <= datetime.fromisoformat(item['date']) <= end:
             for change in item['changes']:
                 if 'test' in change['path'] or 'tests' in change['path']:
                     continue
+                patches = []
                 for hunk in change['patches']:
                     deleted_lines, added_lines = separate_added_deleted(hunk['hunk'])
                     loc_changed = len(deleted_lines.split('\n')) + len(added_lines.split('\n'))
-                    if loc_changed <=20:
-                        if contains_checker(hunk['hunk'], [deleted_lines, added_lines]):
-                            j = j + 1
-                            new_output = {
+                    if loc_changed <=10 and contains_checker(hunk['hunk'], [deleted_lines, added_lines]):
+                        j = j + 1
+                        patch = {
                                 'Id': j,
-                                'link': item['commit_link'],
-                                'path': change['path'],
-                                'date': item['date'],
-                                'message': item['message'],
-                                'label': item['label'],
                                 'hunk size': loc_changed,
                                 'hunk': hunk['hunk']}
-                            with open(f'{lib_name}_test_data.json', 'a') as f:
-                                json.dump(new_output, f, indent=4)
-                                f.write(',')
-                                f.write('\n')
-                                
+
+                        patches.append(patch)
+                
+                changed_file = {
+                        'path': change['path'],
+                        'patches': patches
+                        }
+                if changed_file: 
+                    commit_info["changes"].append(changed_file)
+                
+        with open(f'{lib_name}_test_data.json', 'a') as f:
+                json.dump(commit_info, f, indent=4)
+                f.write(',')
+                f.write('\n')
+
 
 def extract_non_biased(buggy_data, all_data):
     counter = 0
@@ -130,9 +142,10 @@ def extract_non_biased(buggy_data, all_data):
     
 
 def main():
-    lib_name = 'pytorch'
-    data = load_json('data/RAG_data/PyTorch_test_data.json')
+    lib_name = 'tensorflow'
+    data = load_json('data/RAG_data/TensorFlow_test_data.json')
     extract_within_time_range(data, lib_name)
+
 
 if __name__ == '__main__':
     main()
