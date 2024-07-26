@@ -93,8 +93,10 @@ def get_token_count(string):
 
     return num_tokens
 
-def main(library_name):
-    REPO_LIST = [f"https://github.com/{library_name}/{library_name}"]
+def main(owner, repo_name):
+    owner = 'google'
+    repo_name = 'jax'
+    REPO_LIST = [f"https://github.com/{owner}/{repo_name}"]
     r_prime = REPO_LIST[0].split("/")
 
     v = REPO_LIST[0] + ".git"
@@ -131,6 +133,9 @@ def main(library_name):
 
     if r_prime[3] == 'pytorch':
         max_count = 69389
+        branch_name = 'main'
+    elif r_prime[3] == 'google':
+        max_count = 22127
         branch_name = 'main'
     else:
         max_count = 159725
@@ -171,7 +176,7 @@ def main(library_name):
                         print('this change is related to tests, so I am ignoring it.')
                         continue
                         # if no_matches_in_commit(com.message, patterns):
-                if _match1 or _match2 or _match3 or _match4:
+                #if _match1 or _match2 or _match3 or _match4:
                                 # prompt_ = stage_2_prompting(com.message, r_prime[3])
                                 # t_count = get_token_count(prompt_)
                                 # if t_count <= 4097:
@@ -181,13 +186,13 @@ def main(library_name):
                                 #     decision_split = decision.split('\n')
                                 #     filtered_list = list(filter(None, decision_split))
 
-                                commit_link = REPO_LIST[0] + "/commit/" + com.hexsha
-                                commit_date = com.committed_date
-                                dt_object = datetime.fromtimestamp(commit_date)
-                                commit_date = dt_object.replace(tzinfo=timezone.utc)
-                                if commit_date.year > 2021:
-                                    data = [commit_link, commit_date.strftime("%Y-%m-%d")]
-                                    save_commit(data, r_prime[3])
+                commit_link = REPO_LIST[0] + "/commit/" + com.hexsha
+                commit_date = com.committed_date
+                dt_object = datetime.fromtimestamp(commit_date)
+                commit_date = dt_object.replace(tzinfo=timezone.utc)
+                if commit_date.year == 2024 and commit_date.month > 6:
+                    data = [commit_link, commit_date.strftime("%Y-%m-%d")]
+                    save_commit(data, r_prime[3])
             else:
                 print('This commit has been already analyzed!')
 
@@ -195,6 +200,7 @@ def main(library_name):
         print(e)
 
 if __name__ == "__main__":
-    library_name = sys.argv[1]
+    owner = sys.argv[1]
+    repo_name = sys.argv[2]
     # library_name = 'pytorch'
-    main(library_name)
+    main(owner, repo_name)

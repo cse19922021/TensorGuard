@@ -90,7 +90,7 @@ def extract_within_time_range(data, lib_name):
                 for hunk in change['patches']:
                     deleted_lines, added_lines = separate_added_deleted(hunk['hunk'])
                     loc_changed = len(deleted_lines.split('\n')) + len(added_lines.split('\n'))
-                    if loc_changed <=10 and contains_checker(hunk['hunk'], [deleted_lines, added_lines]):
+                    if loc_changed <=15 and contains_checker(hunk['hunk'], [deleted_lines, added_lines]):
                         j = j + 1
                         patch = {
                                 'Id': j,
@@ -142,8 +142,8 @@ def extract_non_biased(buggy_data, all_data):
     
 
 def main():
-    lib_name = 'tensorflow'
-    data = load_json('data/RAG_data/TensorFlow_test_data.json')
+    lib_name = 'pytorch'
+    data = load_json('data/RAG_data/PyTorch_test_data.json')
     extract_within_time_range(data, lib_name)
 
 

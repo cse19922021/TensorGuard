@@ -65,25 +65,35 @@ def is_valid_file_type(file_path):
     valid_extensions = ('.py', '.cc', '.cpp', '.cu', '.h', '.hpp', '.sh', '.cmake')
     return file_path.endswith(valid_extensions)
 
-def get_commit_with_changes(repo_path, commit_hash, libname, idx, row):
+def get_commit_with_changes(repo_path, commit_hash,lib_owner, libname, idx, row):
     repo = git.Repo(repo_path)
     commit = repo.commit(commit_hash)
     parent_commit = commit.parents[0] if commit.parents else None
     # time.sleep(2)
     # response = bug_detection_agent(commit.message.strip())
     
-    output_list = [libname, f"https://github.com/{libname}/{libname}/commit/{commit_hash}"]
+    output_list = [libname, f"https://github.com/{lib_owner}/{libname}/commit/{commit_hash}"]
     
-    commit_info = {
-            "Id": idx, 
-            "commit_link": f"https://github.com/{libname}/{libname}/commit/{commit_hash}", 
-            "date": commit.committed_datetime.isoformat(),
-            "message": commit.message.strip(),
-            "label": row['Label'],
-            "changes": []
-        }
+    if 'Label' in row:
+        commit_info = {
+                "Id": idx, 
+                "commit_link": f"https://github.com/{lib_owner}/{libname}/commit/{commit_hash}", 
+                "date": commit.committed_datetime.isoformat(),
+                "message": commit.message.strip(),
+                "label": row['Label'],
+                "changes": []
+            }
+    else:
+        commit_info = {
+                "Id": idx, 
+                "commit_link": f"https://github.com/{lib_owner}/{libname}/commit/{commit_hash}", 
+                "date": commit.committed_datetime.isoformat(),
+                "message": commit.message.strip(),
+                "changes": []
+            }
 
-    if parent_commit and row['Verify'] == 1:
+
+    if parent_commit:
         diff = repo.git.diff(parent_commit, commit, ignore_blank_lines=True, ignore_space_at_eol=True)
         patch_set = PatchSet(diff)
         if len(patch_set.modified_files) < 10:
@@ -137,13 +147,15 @@ def get_commit_with_changes(repo_path, commit_hash, libname, idx, row):
 
             output_list.append(num_hunks)
             output_list.append(total_loc)
-            output_list.append(row['Label'])
+            if 'Label' in row:
+                output_list.append(row['Label'])
 
     return commit_info, output_list
 
-libname = 'TensorFlow'
-repo_path = f"ml_repos/{libname.lower()}/{libname.lower()}"
-data = pd.read_csv(f'data/{libname}_verified.csv')
+lib_owner = 'google'
+lib_name = 'jax'
+repo_path = f"ml_repos/{lib_owner.lower()}/{lib_name.lower()}"
+data = pd.read_csv(f'mining/commits_new/google/google.csv')
 train_df, test_df = train_test_split(data, test_size=0.3, random_state=42)
 data_dict = {
     'train_data': train_df,
@@ -154,11 +166,11 @@ for k, v in data_dict.items():
     for idx, row in v.iterrows():
         commit_hash = row['Commit Link'].split('/')[-1]
         print(f"Processed {commit_hash}::{idx}/{len(v)}")
-        commit_data, output_list = get_commit_with_changes(repo_path, commit_hash, libname, idx, row)
+        commit_data, output_list = get_commit_with_changes(repo_path, commit_hash, lib_owner,lib_name, idx, row)
 
         if commit_data['changes']:
-            write_to_csv(output_list , libname, k)
-            with open(f'{libname}_{k}.json', 'a') as f:
+            # write_to_csv(output_list , lib_name, k)
+            with open(f'{lib_name}_{k}.json', 'a') as f:
                 json.dump(commit_data, f, indent=4)
                 f.write(',')
                 f.write('\n')

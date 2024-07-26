@@ -91,6 +91,31 @@ def completions_with_backoff(prompt, model='gpt-3.5-turbo'):
         ]
     )
     return response
+def bug_interpretation_agent(item, exec_mode, level_mode, _shot):
+    if exec_mode == 'zero':
+        prompt_ = f"""
+        You are an AI trained to understand the root cause of bugs in deep learning library backend code-base based on commit messages and code changes. 
+        Given a commit message and code change, please explain why the code change is buggy.
+
+        Commit message: {item['Bug report']}
+        Code change:{item['Deleted lines']}{item['Added lines']} 
+        <output>
+        """
+    else:
+        prompt_ = f"""
+        You are an AI trained to understand the root cause of bugs in deep learning library backend code-base based on commit messages and code changes. 
+        Given a commit message and code change, please explain why the code change is buggy.
+
+        Example One:{_shot[0]['Deleted lines']}{_shot[0]['Added lines']}
+        Example Two:{_shot[1]['Deleted lines']}{_shot[1]['Added lines']}
+        
+        Commit message: {item['Bug report']}
+        Code change:{item['Deleted lines']}{item['Added lines']} 
+
+        <output>
+        """
+    response = completions_with_backoff(prompt_)
+    return response.choices[0].message.content
 
 def bug_detection_agent(item, exec_mode, level_mode, _shot):
     if exec_mode == 'zero':
@@ -191,22 +216,29 @@ def single_agent(commit_msg, deleted_code):
     response = completions_with_backoff(prompt_)
     return response.choices[0].message.content
 
-def tensorGuard(item, exec_mode, level_mode,_shot_list, lib_name, use_single_agent):
+def tensorGuard(item, exec_mode, level_mode,_shot_list, lib_name, task, use_single_agent):
     if use_single_agent:
         patch_ = single_agent(item['Bug report'], item['Deleted lines'])
     else:
+        
         bug_label = bug_detection_agent(item, exec_mode, level_mode, _shot_list)
-        if is_buggy(bug_label):
-            bug_understanding = root_cause_analysis_agent(item['Bug report'])
-            # fix_pattern = pattern_extraction_agent(item['Deleted lines'], item['Added lines'])
-            if level_mode == 'patch_level':
-                patch_ = path_generation_agent(bug_understanding, _shot_list, [item['Deleted lines'], item['Added lines']], exec_mode, level_mode, lib_name)
-                output_data = [item['Deleted lines'], f"{item['Added lines']}", patch_]
-            else:
-                patch_ = path_generation_agent(bug_understanding, _shot_list, [item['Whole deleted'], ''], exec_mode, level_mode, lib_name)
-                output_data = [item['Deleted lines'], item['Added lines'], patch_]
+        if task == 'detection' and is_buggy(bug_label):
+            output = bug_interpretation_agent(item, exec_mode, level_mode, _shot_list)
+            return [item['Deleted lines'], 'Yes', output]
+        elif task == 'detection' and not is_buggy(bug_label):
+            return [item['Deleted lines'], 'No']
         else:
-            output_data = [item['Deleted lines'], 'No']
+            if is_buggy(bug_label):
+                bug_understanding = root_cause_analysis_agent(item['Bug report'])
+                # fix_pattern = pattern_extraction_agent(item['Deleted lines'], item['Added lines'])
+                if level_mode == 'patch_level':
+                    patch_ = path_generation_agent(bug_understanding, _shot_list, [item['Deleted lines'], item['Added lines']], exec_mode, level_mode, lib_name)
+                    output_data = [item['Deleted lines'], f"{item['Added lines']}", patch_]
+                else:
+                    patch_ = path_generation_agent(bug_understanding, _shot_list, [item['Whole deleted'], ''], exec_mode, level_mode, lib_name)
+                    output_data = [item['Deleted lines'], item['Added lines'], patch_]
+            else:
+                output_data = [item['Deleted lines'], 'No']
     return output_data
 
 def main(args):
@@ -220,7 +252,7 @@ def main(args):
         exec_type = ['few']
     else:
         exec_type = ['zero', 'few']
-        
+    
     num_iter = args[1]
     level_mode = args[2]
 
@@ -273,10 +305,12 @@ def main(args):
                                     # 'Whole added': change['whole_added']
                                 }
                                 
-                            output_data = tensorGuard(new_item, exec_mode, level_mode, _shot, lib_name, use_single_agent=False)
+                            output_data = tensorGuard(new_item, exec_mode, level_mode, _shot, lib_name, args[4], use_single_agent=False)
                             output_data.insert(0, i)
                             output_data.insert(1, item['commit_link'])
-                            output_data.insert(2, item['label'])
+                            output_data.insert(2, exec_mode)
+                            if 'label' in item:
+                                output_data.insert(2, item['label'])
                             output_data.insert(3, change['path'])
                             output_data.insert(4, f"patch_{k}")
                             write_to_csv(output_data, output_mode)
@@ -289,5 +323,6 @@ if __name__ == '__main__':
     num_iter = sys.argv[2]
     granularity = sys.argv[3]
     exec_mod = sys.argv[4]
-    args = [libname, int(num_iter), granularity, exec_mod]
+    task = sys.argv[5]
+    args = [libname, int(num_iter), granularity, exec_mod, task]
     main(args)
