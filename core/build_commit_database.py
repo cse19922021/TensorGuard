@@ -16,6 +16,7 @@ load_dotenv()
 client = OpenAI(
     api_key=os.environ.get(".env")
 )
+issue_pattern = re.compile(r'(Fixes|Closes) #(\d+)')
 
 def separate_added_deleted(github_diff):
     diff_lines = github_diff.split('\n')
@@ -60,9 +61,18 @@ def completions_with_backoff(prompt, model='gpt-4-turbo'):
     )
     return response
 
-
+def extract_related_issues(repo_path, commit_hash,lib_owner, libname, idx, row):
+    repo = git.Repo(repo_path)
+    try:
+        commit = repo.commit(commit_hash)
+        issues = issue_pattern.findall(commit.message)
+        if issues:
+            print(f"Commit {commit.hexsha}:")
+    except Exception as e:
+        print(e)
+    
 def is_valid_file_type(file_path):
-    valid_extensions = ('.py', '.cc', '.cpp', '.cu', '.h', '.hpp', '.sh', '.cmake')
+    valid_extensions = ('.txt', '.ipynb', '.md')
     return file_path.endswith(valid_extensions)
 
 def get_commit_with_changes(repo_path, commit_hash,lib_owner, libname, idx, row):
@@ -103,8 +113,8 @@ def get_commit_with_changes(repo_path, commit_hash,lib_owner, libname, idx, row)
 
             for patched_file in patch_set:
                 file_path = patched_file.path
-                # if not is_valid_file_type(file_path):
-                #     continue 
+                if is_valid_file_type(file_path):
+                    continue 
                 
                 file_name = os.path.basename(file_path)
 
@@ -164,8 +174,9 @@ data_dict = {
 
 for k, v in data_dict.items():
     for idx, row in v.iterrows():
-        commit_hash = row['Commit Link'].split('/')[-1]
+        commit_hash = row.iloc[0].split('/')[-1]
         print(f"Processed {commit_hash}::{idx}/{len(v)}")
+        # extract_related_issues(repo_path, commit_hash, lib_owner,lib_name, idx, row)
         commit_data, output_list = get_commit_with_changes(repo_path, commit_hash, lib_owner,lib_name, idx, row)
 
         if commit_data['changes']:

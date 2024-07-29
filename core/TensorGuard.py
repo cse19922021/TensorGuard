@@ -123,6 +123,8 @@ def bug_detection_agent(item, exec_mode, level_mode, _shot):
         You are an AI trained to detect bugs in deep learning library backend code-base based on commit messages and code changes. 
         Given a commit message and code change, detect if it is a bug or not. Please generate YES or NO.
 
+        focus more specifically on cases where there is a missing/improper/insufficient checkers within the code change. 
+        
         Commit message: {item['Bug report']}
         Code change:{item['Deleted lines']}{item['Added lines']} 
         <output>
@@ -131,7 +133,9 @@ def bug_detection_agent(item, exec_mode, level_mode, _shot):
         prompt_ = f"""
         You are an AI trained to detect bugs in deep learning library backend code-base based on commit messages and code changes. 
         Given a commit message and code change, detect if it is a bug or not. Please generate YES or NO.
-
+        
+        focus more specifically on cases where there is a missing/improper/insufficient checkers within the code change. 
+        
         Example One:{_shot[0]['Deleted lines']}{_shot[0]['Added lines']}
         Example Two:{_shot[1]['Deleted lines']}{_shot[1]['Added lines']}
         
@@ -147,6 +151,7 @@ def bug_detection_agent(item, exec_mode, level_mode, _shot):
 def root_cause_analysis_agent(commit_message):
     prompt_ = f"""
     Please describe the root cause of the bug based on the following commit message: {commit_message}
+    
     <output>
     """
     response = completions_with_backoff(prompt_)
@@ -233,17 +238,17 @@ def tensorGuard(item, exec_mode, level_mode,_shot_list, lib_name, task, use_sing
                 # fix_pattern = pattern_extraction_agent(item['Deleted lines'], item['Added lines'])
                 if level_mode == 'patch_level':
                     patch_ = path_generation_agent(bug_understanding, _shot_list, [item['Deleted lines'], item['Added lines']], exec_mode, level_mode, lib_name)
-                    output_data = [item['Deleted lines'], f"{item['Added lines']}", patch_]
+                    output_data = [item['Deleted lines'], f"{item['Added lines']}", patch_, bug_understanding]
                 else:
                     patch_ = path_generation_agent(bug_understanding, _shot_list, [item['Whole deleted'], ''], exec_mode, level_mode, lib_name)
-                    output_data = [item['Deleted lines'], item['Added lines'], patch_]
+                    output_data = [item['Deleted lines'], item['Added lines'], patch_, bug_understanding]
             else:
                 output_data = [item['Deleted lines'], 'No']
     return output_data
 
 def main(args):
     lib_name = args[0]
-    data_path = f"{lib_name}_test_data.json"
+    data_path = f"data/test data/filter2/{lib_name}_test_data.json"
     rule_path = f"data/rule_set.json"
     
     if args[3] == 'zero':
@@ -309,10 +314,10 @@ def main(args):
                             output_data.insert(0, i)
                             output_data.insert(1, item['commit_link'])
                             output_data.insert(2, exec_mode)
-                            if 'label' in item:
-                                output_data.insert(2, item['label'])
-                            output_data.insert(3, change['path'])
-                            output_data.insert(4, f"patch_{k}")
+                            # if 'label' in item:
+                            output_data.insert(3, item['label'])
+                            output_data.insert(4, change['path'])
+                            output_data.insert(5, f"patch_{k}")
                             write_to_csv(output_data, output_mode)
                 else:
                     print('This instancee has been already processed!')
