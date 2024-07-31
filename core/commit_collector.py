@@ -28,10 +28,10 @@ def no_matches_in_commit(commit_message, patterns):
 
 
 def save_commit(data, lib):
-    if not os.path.exists(f'mining/commits_new/{lib}/'):
-        os.makedirs(f'mining/commits_new/{lib}/')
+    if not os.path.exists(f'mining/commits_rag/{lib}/'):
+        os.makedirs(f'mining/commits_rag/{lib}/')
 
-    with open(f"mining/commits_new/{lib}/{lib}.csv","a", newline="\n",) as fd:
+    with open(f"mining/commits_rag/{lib}/{lib}.csv","a", newline="\n",) as fd:
         writer_object = csv.writer(fd)
         writer_object.writerow(data)
 
@@ -94,8 +94,8 @@ def get_token_count(string):
     return num_tokens
 
 def main(owner, repo_name):
-    owner = 'google'
-    repo_name = 'jax'
+    # owner = 'google'
+    # repo_name = 'jax'
     REPO_LIST = [f"https://github.com/{owner}/{repo_name}"]
     r_prime = REPO_LIST[0].split("/")
 
@@ -186,11 +186,12 @@ def main(owner, repo_name):
                                 #     decision_split = decision.split('\n')
                                 #     filtered_list = list(filter(None, decision_split))
 
-                commit_link = REPO_LIST[0] + "/commit/" + com.hexsha
+                commit_link = REPO_LIST[0] + "/commits/" + com.hexsha
                 commit_date = com.committed_date
                 dt_object = datetime.fromtimestamp(commit_date)
                 commit_date = dt_object.replace(tzinfo=timezone.utc)
-                if commit_date.year == 2024 and commit_date.month > 6:
+                # print(commit_date.year)
+                if commit_date.year < 2024:
                     data = [commit_link, commit_date.strftime("%Y-%m-%d")]
                     save_commit(data, r_prime[3])
             else:

@@ -1,5 +1,5 @@
 import git
-import os
+import os, sys
 import json
 from unidiff import PatchSet
 import pandas as pd
@@ -162,26 +162,50 @@ def get_commit_with_changes(repo_path, commit_hash,lib_owner, libname, idx, row)
 
     return commit_info, output_list
 
-lib_owner = 'google'
-lib_name = 'jax'
-repo_path = f"ml_repos/{lib_owner.lower()}/{lib_name.lower()}"
-data = pd.read_csv(f'mining/commits_new/google/google.csv')
-train_df, test_df = train_test_split(data, test_size=0.3, random_state=42)
-data_dict = {
-    'train_data': train_df,
-    'test_data': test_df
-}
+def count_changes(changes):
+    total_patches = 0
+    for item in changes:
+        total_patches = total_patches + len(item['patches'])
+    return total_patches
 
-for k, v in data_dict.items():
-    for idx, row in v.iterrows():
-        commit_hash = row.iloc[0].split('/')[-1]
-        print(f"Processed {commit_hash}::{idx}/{len(v)}")
-        # extract_related_issues(repo_path, commit_hash, lib_owner,lib_name, idx, row)
-        commit_data, output_list = get_commit_with_changes(repo_path, commit_hash, lib_owner,lib_name, idx, row)
 
-        if commit_data['changes']:
-            # write_to_csv(output_list , lib_name, k)
-            with open(f'{lib_name}_{k}.json', 'a') as f:
+def main(lib_owner, lib_name):
+    repo_path = f"ml_repos/{lib_owner.lower()}/{lib_name.lower()}"
+    data = pd.read_csv(f'mining/commits_rag/{lib_owner}/{lib_name}.csv')
+    # train_df, test_df = train_test_split(data, test_size=0.3, random_state=42)
+    data_dict = {
+        'train_data': data
+        # 'test_data': test_df
+    }
+
+    total_modified_files = 0
+    total_changes = 0
+    f = open(f'data/RAG_data/{lib_name}_rag_data.json', 'a')
+    f.write('[')
+    for k, v in data_dict.items():
+        for idx, row in v.iterrows():
+            commit_hash = row.iloc[0].split('/')[-1]
+            print(f"Processed {commit_hash}::{idx}/{len(v)}")
+            # extract_related_issues(repo_path, commit_hash, lib_owner,lib_name, idx, row)
+            commit_data, output_list = get_commit_with_changes(repo_path, commit_hash, lib_owner,lib_name, idx, row)
+            total_modified_files = total_modified_files + len(commit_data['changes'])
+            total_changes = total_changes + count_changes(commit_data['changes'])
+            with open(f"data/RAG_data/metadata_{lib_name}.txt", "w") as file:
+                file.write(f"Total number of changes:{total_modified_files}" + "\n")
+                file.write(f"Total number of hunks:{total_changes}" + "\n")
+                            
+            if commit_data['changes']:
+                # write_to_csv(output_list , lib_name, k)
                 json.dump(commit_data, f, indent=4)
+                if idx == len(v)-1:
+                    break
                 f.write(',')
                 f.write('\n')
+        f.write(']')
+                    
+
+if __name__ == '__main__':
+    lib_owner = sys.argv[1]
+    lib_name = sys.argv[2]
+    main(lib_owner, lib_name)
+    

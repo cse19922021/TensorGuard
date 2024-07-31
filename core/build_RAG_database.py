@@ -1,7 +1,7 @@
 import chromadb
 from sentence_transformers import SentenceTransformer
 from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
-import json
+import json, sys
 from tqdm import tqdm
 
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -56,7 +56,6 @@ def make_basic_rag_db(lib, docs, mode='patch_level'):
     batch_size = 50
     batch_docs = prepare_batch_data(docs, mode, code=True)
     for i in tqdm(range(0, len(batch_docs), batch_size)):
-        
         batch = batch_docs[i : i + batch_size]
         batch_ids = [str(j+i) for j in range(len(batch))]
         # batch_ids = [str(item['Id']) for item in batch]
@@ -85,13 +84,13 @@ def test_inference(lib):
     )
     print(retriever_results["documents"])
     
-def main():
-    lib = 'pytorch'
+def main(libname):
     mode = 'patch_level'
-    docs = load_json('data/RAG_data/PyTorch_train_data.json')
+    docs = load_json(f'data/RAG_data/{libname}_rag_data.json')
     
-    make_basic_rag_db(lib, docs, mode=mode)
+    make_basic_rag_db(libname, docs, mode=mode)
     # test_inference(lib)
     
 if __name__ == '__main__':
-    main()
+    libname = sys.argv[1]
+    main(libname)
